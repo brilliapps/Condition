@@ -1,0 +1,253 @@
+//import 'dart:developer'; // for inspect(myVar); like print_r var_dump in php
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:collection/collection.dart'; // to have getters on a Map (DelegatingMap object - overrides operator [])
+//import 'package:shared_preferences/shared_preferences.dart';
+import 'condition_storage_drag_and_drop_box.dart';
+//import 'package:darttests/darttests.dart' as darttests;
+
+/// Create a normal Map object that uses custom getter for a given key of the Map hello['world'] = 'a getter return'
+class NavigationRoutingRulesCustomWidgetGetter/*<K, T>*/ extends DelegatingMap/*<K, T>*/ {
+  NavigationRoutingRulesCustomWidgetGetter(
+      Map/*<K, T> */ base, BuildContext context)
+      : super(base);
+
+  @override
+  /*T */ operator [](Object? key) => 'alamakota1';
+}
+
+void main() {
+  runApp(const MyApp());
+}
+
+class RouteGenerater {
+  static Route<dynamic> generateRoute(RouteSettings settings) {
+    debugPrint('dwa kompy');
+    print('ala ma kompa 5');
+    return MaterialPageRoute(
+        builder: (context) => MyHomePage(
+            key: GlobalKey(), //widget testowo bierze x,y,width,height widgeta,
+            title:
+                'Flutter Demo Home PageFlutter Demo Home Page 5') // You can also use MaterialApp's `home` property instead of '/'
+        );
+  }
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    var customRoutingMap =
+        new NavigationRoutingRulesCustomWidgetGetter({}, context);
+
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        // This is the theme of your application.
+        //
+        // Try running your application with "flutter run". You'll see the
+        // application has a blue toolbar. Then, without quitting the app, try
+        // changing the primarySwatch below to Colors.green and then invoke
+        // "hot reload" (press "r" in the console where you ran "flutter run",
+        // or simply save your changes to "hot reload" in a Flutter IDE).
+        // Notice that the counter didn't reset back to zero; the application
+        // is not restarted.
+        primarySwatch: Colors.blue,
+      ),
+      /*home: MyHomePage(
+          key: GlobalKey(), //widget testowo bierze x,y,width,height widgeta
+          title: 'Flutter Demo Home PageFlutter Demo Home Page0'),*/
+      //initialRoute: '/',
+      //routes: /*<String, WidgetBuilder>*/ customRoutingMap
+
+      //{
+      //  '/qw': (BuildContext context) => MyHomePage(
+      //      key: GlobalKey() /*widget testowo bierze x,y,width,height widgeta*/,
+      //      title: 'Flutter Demo Home PageFlutter Demo Home Page 1'),
+      //  '/signup': (BuildContext context) => MyHomePage(
+      //      key: GlobalKey() /*widget testowo bierze x,y,width,height widgeta*/,
+      //      title: 'Flutter Demo Home PageFlutter Demo Home Page 2'),
+
+      routes: {
+        '/qw': (BuildContext context) => MyHomePage(
+            key: GlobalKey(), //widget testowo bierze x,y,width,height widgeta,
+            title:
+                'Flutter Demo Home PageFlutter Demo Home Page 1'), // You can also use MaterialApp's `home` property instead of '/'
+        '/foo': (BuildContext context) => MyHomePage(
+            key: GlobalKey(), //widget testowo bierze x,y,width,height widgeta,
+            title:
+                'Flutter Demo Home PageFlutter Demo Home Page 2'), // You can also use MaterialApp's `home` property instead of '/'
+      },
+      onGenerateRoute: RouteGenerater.generateRoute,
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key, required this.title}) : super(key: key);
+
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
+  final String title;
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  void _incrementCounter() {
+    setState(() {
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter++;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
+    return Scaffold(
+      appBar: AppBar(
+          // Here we take the value from the MyHomePage object that was created by
+          // the App.build method, and use it to set our appbar title.
+          title: Text(widget.title),
+          leading: IconButton(
+              icon: const Icon(Icons.person_sharp),
+              tooltip: 'contacts',
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('This is a snackbar')));
+              }),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Show Snackbar',
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('This is a snackbar')));
+              },
+            ),
+          ]),
+      body: Row(children: <Widget>[
+        Column(
+          children: <Widget>[
+            const Text(
+              'You :',
+            ),
+            const Text(
+              'have :',
+            ),
+            ConditionDragTargetContainerWidget(
+                ConditionModelEachWidgetModel({}),
+                key: GlobalKey()),
+            /*
+                 DragTarget<T>(
+                 key: GlobalKey(),   // for getting x and y and size of the widget
+                 builder: (context, candidateItems, rejectedItems) {
+                   return  LongPressDraggable(
+                                        data: ['nothing', candidateItems, rejectedItems],
+                                        child: Text('___draggabledraggable___'),
+                                        dragAnchorStrategy: pointerDragAnchorStrategy,
+                                        feedback: const Icon(Icons.person_sharp)
+                                        //childWhenDraggingThe widget to display instead of child when one or more drags are under way. [...]                    
+                               );
+                 },
+                 onAccept: (item) {
+                   debugPrint('onAccept: '+item.toString());
+                 },
+                 onAcceptWithDetails: (item) {
+                   debugPrint('onAcceptWithDetails: '+item.toString());
+                   debugPrint('onAcceptWithDetails data: '+item.data.toString());
+                   debugPrint('onAcceptWithDetails offset: '+item.offset.toString());
+                   inspect(item);
+                 },
+                 onMove: (item) {
+                     
+                   debugPrint('#########');
+                   debugPrint('onMove: '+item.toString());
+                   debugPrint('onMove data: '+item.data.toString());
+                   debugPrint('onMove offset: '+item.offset.toString());
+                   debugPrint('------------------------------------');
+                   
+                   debugPrint('MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów');
+                   
+                   debugPrint('onMove this to string:'+this.toString());
+                   debugPrint('onMove this to string:'+this.widget.toString());
+                   //debugPrint(this.widget.key.currentContext.toString());
+                   
+                   
+                   RenderBox box = this.widget.key.currentContext.findRenderObject() as RenderBox;
+                   Offset position = box.localToGlobal(Offset.zero); //this is global position
+                   double y = position.dy; //this is y - I think it's what you want                   
+                   debugPrint('onMove: position y:'+y.toString());
+                   
+                   
+                 },
+                 onWillAccept: (item) {
+                   debugPrint('onWillAccept: ');
+                   debugPrint('onWillAccept: '+item.toString());
+                   //debugPrint('onAcceptWithMove data: '+item.data.toString());
+                   //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+                   return true;
+                 },
+                ), 
+                
+                */
+
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+          ],
+        ),
+        Column(
+          children: <Widget>[
+            const Text(
+              'You :',
+            ),
+            const Text(
+              'have :',
+            ),
+            LongPressDraggable(
+                data: "White",
+                child: Text('___draggabledraggable___'),
+                dragAnchorStrategy: pointerDragAnchorStrategy,
+                feedback: const Icon(Icons.person_sharp)
+                //childWhenDraggingThe widget to display instead of child when one or more drags are under way. [...]
+                ),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+          ],
+        )
+      ]),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
