@@ -50,3 +50,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+dartlaboratory
+test
+windows
+ios
+condition_data_management_driver_sql_local.sqlite
+condition_data_management_driver_sql_global.sqlite
+android
