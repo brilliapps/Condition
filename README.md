@@ -1,5 +1,8 @@
 # condition
 
+Welcome to a messy, draft documentation, not-consistent, reflecting changing decisions during the development process. This is still early work-in-progress.
+All however unimaginable it may seem this app/library/whatever is going to work on all platforms, so f.e. a replacement of a http server in the browser might be implemented also for web. The only way you can possibly run is on windows platform flutter run -d windows --debug -a debugging however a web might also be able to start (tested maybe one or two month ago and many things changed since then and the web doesn't catch up in a week or two it may change)
+
 https://www.bam.tech/article/how-to-create-a-custom-lint-in-flutter-with-custom-lints
 To understand private class:
 https://stackoverflow.com/questions/53495089/dart-should-the-instance-variables-be-private-or-public-in-a-private-class
