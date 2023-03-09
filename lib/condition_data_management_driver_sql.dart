@@ -44,6 +44,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     ConditionDataManagementDriver? driverGlobal,
     Completer<ConditionDataManagementDriver>? initCompleterGlobal,
     ConditionDataManagementDriverSqlSettings? settings,
+    ConditionModelApp? conditionModelApp,
   })  : settings = settings ??
             ConditionDataManagementDriverSqlSettings.getDefaultSettings(
                 // edit it is simpler: old version text: notice that super class also have this condition it probably won't be needed to change it
@@ -55,6 +56,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
                     ? true
                     : false),
         super(
+            conditionModelApp: conditionModelApp,
             initCompleter:
                 initCompleter, // ?? Completer(), // do we need this two tims? the optional assigning is already used in super class, isn't it?
             dbNamePrefix: dbNamePrefix,
@@ -180,6 +182,26 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     //  name TEXT NOT NULL
     //);
     //''');
+  }
+
+  @override
+  @protected
+  Future<String> requestGlobalServerAppKey() {
+    Completer<String> completer = Completer<String>();
+    completer.completeError(
+        'class\'s [ConditionDataManagement] method requestGlobalServerAppKey() not implemented');
+
+    return completer.future;
+  }
+
+  @override
+  @protected
+  Future<bool> checkOutIfGlobalServerAppKeyIsValid() {
+    Completer<bool> completer = Completer<bool>();
+    completer.completeError(
+        'class\'s [ConditionDataManagement] method checkOutIfGlobalServerAppKeyIsValid() not implemented');
+
+    return completer.future;
   }
 
   @override

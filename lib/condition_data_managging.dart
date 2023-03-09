@@ -894,6 +894,8 @@ abstract class ConditionDataManagementDriver {
   //@Deprecated('Replaced by dbNamePrefix, tableNamePrefix')
   //final String prefix = '';
 
+  late final ConditionModelApp conditionModelApp;
+
   /// (If not used [tableNamePrefix] value should be assigned) like 'iZf832_' this must be set but if you don't there is no error - by this you can use couple of applications with independent not conflicting db names in one db. Also it might prevent some sql attacks. Setting this up might prevent error when you forget to assign db name then prefix could became the full db name
   /// For comparison old property _prefix description: Kind of namespace prefix allowing you to store couple of separate databases in one overall database - you don't need to create two or five databases using this prefix all tables will be creaated from scratch with this prefix. !!! With this set up to not null and not empty, there would b two prefixes Prefix is only in development mode for simulating backend data storage and loading, see constructor desc. , see method [getNewDefaultDriver] code for backend driver
   final String dbNamePrefix;
@@ -918,15 +920,16 @@ abstract class ConditionDataManagementDriver {
   List<ConditionModelListenerFunction> _changesListeners = [];
 
   /// !!! Prefix is only in development mode for simulating backend data storage and loading, see the [_prefix] property desc, see method [getNewDefaultDriver] code for backend driver
-  ConditionDataManagementDriver({
-    initCompleter,
-    String? dbNamePrefix,
-    String? tableNamePrefix,
-    bool isGlobalDriver = false,
-    bool hasGlobalDriver = false,
-    ConditionDataManagementDriver? driverGlobal,
-    Completer<ConditionDataManagementDriver>? initCompleterGlobal,
-  })  : initCompleter =
+  ConditionDataManagementDriver(
+      {initCompleter,
+      String? dbNamePrefix,
+      String? tableNamePrefix,
+      bool isGlobalDriver = false,
+      bool hasGlobalDriver = false,
+      ConditionDataManagementDriver? driverGlobal,
+      Completer<ConditionDataManagementDriver>? initCompleterGlobal,
+      ConditionModelApp? conditionModelApp})
+      : initCompleter =
             initCompleter ?? Completer<ConditionDataManagementDriver>(),
         // WARNING THE FOLLOWING CONDITION REPEATED LATER IN THE CONSTRUCTOR MUST BE BOTH THE SAME
         hasGlobalDriver = !isGlobalDriver &&
@@ -946,6 +949,7 @@ abstract class ConditionDataManagementDriver {
                         (hasGlobalDriver == false && driverGlobal != null)))
                 ? null
                 : getNewDefaultDriver(
+                    conditionModelApp: conditionModelApp,
                     //Completer<ConditionDataManagementDriver>? initCompleter,
                     hasGlobalDriver:
                         false, // ! because you want a default driver that will be the backend driver, not a local driver with backend driver inside
@@ -963,6 +967,10 @@ abstract class ConditionDataManagementDriver {
                     as Completer<ConditionDataManagementDriver>?) {
     // In the extending class we call initStorage function - see description - the function must be overriden it is left in this class definition for learning purposes only
     // _initStorage(prefix, onInitialised);
+
+    if (null != conditionModelApp) {
+      this.conditionModelApp = conditionModelApp;
+    }
 
     _driverGlobal?.getDriverOnDriverInited().then((driver) {
       this.initCompleterGlobal!.complete(driver);
@@ -1047,11 +1055,31 @@ abstract class ConditionDataManagementDriver {
     _changesListeners.add(changesListener);
   }
 
+  /// Check also the [checkOutIfGlobalServerAppKeyIsValid]() description. Each ConditionDataManagement driver object is both local and global server. Each driver has its local driver which has or not global server driver [_driverGlobal]? if you want to save data of the app object model object (with the app model itself) you need to get and use this key in the [ConditionModelApp] app [server_key] with the global server driver or in other words global server aspect of any driver.
+  @protected
+  Future<String> requestGlobalServerAppKey() {
+    Completer<String> completer = Completer<String>();
+    completer.completeError(
+        'class\'s [ConditionDataManagement] method requestGlobalServerAppKey() not implemented');
+    return completer.future;
+  }
+
+  /// Check also the [requestGlobalServerAppKey]() description. The point of this method is that if you cannot synchronize your local server with the global server [_driverGlobal] property of local server driver object, if it happens f.e. after a restart, some longer time of unusing the app, it might be that the data of your app has been removed in the meantime, because of the global server implementation policy or the db has been damaged and replaced with new one or whatever. In such a case you check if the key is valid/handled, and if not (not error but anwser false) there is need to request a new key using the mentioned [requestGlobalServerAppKey](), and synchronize/send data from your app to the global server from scratch. All done automatically and possibly tricky.
+  @protected
+  Future<bool> checkOutIfGlobalServerAppKeyIsValid() {
+    Completer<bool> completer = Completer<bool>();
+    completer.completeError(
+        'class\'s [ConditionDataManagement] method checkOutIfGlobalServerAppKeyIsValid() not implemented');
+
+    return completer.future;
+  }
+
   /// [Edit:] Not up to date desc (prefix only in development mode for backend until [ConditioDataManagementDriverBackend] (OBSOLETE NO CLASS LIKE ...BACKEND - ONE CLASS FOR ALL) is impleented !!! see more on that in [ConditionDataManagementDriver]) It's the best option to call ConditionDataManagementDriver.getNewDefaultDriver() returning SQL... storage driver, because it can be used in the commandline also - so used elsewhere. But it can be later used for storing data in a file for example.
   @Stub()
   @Makeshift()
   static ConditionDataManagementDriver getNewDefaultDriver(
-      {Completer<ConditionDataManagementDriver>? initCompleter,
+      {ConditionModelApp? conditionModelApp,
+      Completer<ConditionDataManagementDriver>? initCompleter,
       bool isGlobalDriver = false,
       bool hasGlobalDriver =
           false, // !!! the meaning of this changes if true a driver has global server property _global_driver set INSIDE IT
@@ -1068,6 +1096,8 @@ abstract class ConditionDataManagementDriver {
     if (ConditionConfiguration.defaultAppDataEngine ==
         ConditionAppDataManagementEnginesEnum.sqlite3) {
       return ConditionDataManagementDriverSql(
+        conditionModelApp: conditionModelApp,
+
         initCompleter: initCompleter,
         dbNamePrefix: dbNamePrefix,
         tableNamePrefix: tableNamePrefix,
@@ -2369,7 +2399,7 @@ abstract class ConditionModel extends ConditionMap {
   @protected
   triggerLocalAndGlobalServerUpdatingProcess([String? columnName]) {
     debugPrint(
-        'C] triggerLocalAndGlobalServerUpdatingProcess(): a columnName \'$columnName\' value change is attempting to treigger updating process or related stuff is going to be performed');
+        'C] triggerLocalAndGlobalServerUpdatingProcess(): a columnName \'$columnName\' value change is attempting to treigger updating process or related stuff is going to be performed (if param columnName == null then the method invokation is related to just earlier setting up _triggerLocalAndGlobalServerUpdatingProcessRetrigerAfterFinish = true to again perform checking on any new changes on the model\'s properties)');
 
     // model.changed was just set to true
     // model.inited must be true or exception is to be thrown
@@ -3989,6 +4019,9 @@ class ConditionModelApp extends ConditionModel
                 )) {
     //super.driver.addInitCompleter(this.driver_init_completer);
 
+    this.driver.conditionModelApp = this;
+    this.driver._driverGlobal?.conditionModelApp = this;
+
     this.driver.getDriverOnDriverInited().then((param) {
       // something like this
       debugPrint(
@@ -4043,6 +4076,15 @@ class ConditionModelApp extends ConditionModel
           'Custom implementation of initCompleteModel(): Model of [ConditionModelApp] hasn\'t been initiated. The error of a Future (future.completeError()) thrown is ${e.toString()}');
       // ARE WE GOING TO USE NOT ENDLESSLY INVOKED TIMER TO invoke initModel() again with some addons if necessary? Some properties might has been set already.
     }
+
+    try {
+      // this may fail as the remote global server may be unavailable or there is no internet connetino at the moment
+      server_key ??= await driver._driverGlobal?.requestGlobalServerAppKey();
+    } catch (e) {
+      debugPrint(
+          'class [ConditionModelApp], method initCompleteModel() error: After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e');
+    }
+
     if (allowForUsersRelogin) {
       reloginAllLoggedUsers();
     }
