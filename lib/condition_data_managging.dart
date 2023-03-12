@@ -1066,7 +1066,7 @@ abstract class ConditionDataManagementDriver {
 
   /// Check also the [requestGlobalServerAppKey]() description. The point of this method is that if you cannot synchronize your local server with the global server [_driverGlobal] property of local server driver object, if it happens f.e. after a restart, some longer time of unusing the app, it might be that the data of your app has been removed in the meantime, because of the global server implementation policy or the db has been damaged and replaced with new one or whatever. In such a case you check if the key is valid/handled, and if not (not error but anwser false) there is need to request a new key using the mentioned [requestGlobalServerAppKey](), and synchronize/send data from your app to the global server from scratch. All done automatically and possibly tricky.
   @protected
-  Future<bool> checkOutIfGlobalServerAppKeyIsValid() {
+  Future<bool> checkOutIfGlobalServerAppKeyIsValid(String key) {
     Completer<bool> completer = Completer<bool>();
     completer.completeError(
         'class\'s [ConditionDataManagement] method checkOutIfGlobalServerAppKeyIsValid() not implemented');
@@ -2619,7 +2619,26 @@ abstract class ConditionModel extends ConditionMap {
                 'initModel() working_driver.read() is a Map so a model is not new and existed in the db now let\'s validate and set each value to the model: ${result.toString()}');
 
             try {
+              // server_key of ConditionModelApp from !!!read() only!!! will be set up differently
+              // because it's final and cannot be changed but the global server may has removed
+              // it or db was damaged - see the relevant properties of ConditiomModelApp
+              // also methods like initModelComplete()
+              // application only really starts working when there the attempts to get it
+              // correctly and make to work are performed fully, if failed the job is
+              // done in the background again and the app works for some time without the key.
+              bool skipSettingUpLocalServerKey = false;
+              if (this is ConditionModelApp) {
+                var conditionModelApp = (this as ConditionModelApp);
+                // it is assumed the result absolutely cannot and is not null;
+                conditionModelApp._serverKeyHelperContainer =
+                    result['server_key'];
+                skipSettingUpLocalServerKey = true;
+              }
+
               for (final String key in columnNamesAndTheirModelFields.keys) {
+                if (skipSettingUpLocalServerKey && key == 'server_key') {
+                  continue;
+                }
                 debugPrint(
                     '50A1initModel() validate and set key: $key and value ${result[key].toString()}');
                 // each value read from the db is to be validated and set up, or will be thrown exception if a value is not valid. Possible rather only in case of manually changing values in the db or in a malicious attempt.
@@ -2906,7 +2925,7 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModel
     a_one_time_insertion_key.init();
   }
 
-  // used by subclass too
+  /// used by a subclass too
   String getInsertionKey() => (UniqueKey().toString() +
           UniqueKey().toString() +
           UniqueKey().toString() +
@@ -3025,10 +3044,19 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
           isFinal: false);
 
   /// See also [ConditionModelIdAndOneTimeInsertionKeyModel] id property and similar. The properties below are counterparts of the loacal server properties. Global server id. You cannot update or remove widget without it's id on the remote global server server
-  @AppicationSideModelProperty()
+  @ServerSideModelProperty()
   @protected
   late final ConditionModelFieldIntOrNull a_server_id =
       ConditionModelFieldIntOrNull(this, 'server_id',
+          propertySynchronisation:
+              ConditionModelFieldDatabaseSynchronisationType
+                  .from_server_and_read_only,
+          isFinal: true);
+
+  @ServerSideModelProperty()
+  @protected
+  late final ConditionModelFieldIntOrNull a_server_parent_id =
+      ConditionModelFieldIntOrNull(this, 'server_parent_id',
           propertySynchronisation:
               ConditionModelFieldDatabaseSynchronisationType
                   .from_server_and_read_only,
@@ -3059,6 +3087,7 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
     a_local_id.init();
     a_to_be_synchronized.init();
     a_server_id.init();
+    a_server_parent_id.init();
     a_server_one_time_insertion_key.init();
   }
 
@@ -3085,6 +3114,10 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
       case 'server_id': // see [id_protected] setter, this is set internally but the property must be enlisted so that no exception can be thrown.
         server_id = value;
         break;
+      case 'server_parent_id': // see [id_protected] setter, this is set internally but the property must be enlisted so that no exception can be thrown.
+        server_parent_id = value;
+        break;
+
       default:
         super[key] = value;
         break;
@@ -3116,6 +3149,13 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
 
   /// See the parent's class id getter description
   int? get server_id => defValue['server_id'].value;
+
+  /// See the parent's class id setter description
+  @protected
+  set server_parent_id(int? value) => a_server_parent_id.validateAndSet(value);
+
+  /// See the parent's class id getter description
+  int? get server_parent_id => defValue['server_parent_id'].value;
 }
 
 abstract class ConditionModelCreationDateModel
@@ -3584,6 +3624,30 @@ abstract class ConditionModelEachWidgetModel
 @Stub()
 class ConditionModelContact extends ConditionModelEachWidgetModel
     implements ConditionModelCompleteModel {
+  @AppicationSideModelProperty()
+  @protected
+  late final ConditionModelFieldIntOrNull a_contact_user_id =
+      ConditionModelFieldIntOrNull(this, 'contact_user_id',
+          propertySynchronisation:
+              ConditionModelFieldDatabaseSynchronisationType.app_only);
+
+  /// see [_link_id] each link_id has it's equivalent property on the server side
+  @ServerSideModelProperty()
+  @protected
+  late final ConditionModelFieldIntOrNull a_server_contact_user_id =
+      ConditionModelFieldIntOrNull(this, 'server_contact_user_id',
+          propertySynchronisation:
+              ConditionModelFieldDatabaseSynchronisationType
+                  .from_server_and_read_only);
+
+  @BothAppicationAndServerSideModelProperty()
+  @protected
+  late final ConditionModelFieldIntOrNull a_contact_accepted_invitation =
+      ConditionModelFieldIntOrNull(this, 'contact_accepted_invitation',
+          propertySynchronisation:
+              ConditionModelFieldDatabaseSynchronisationType
+                  .both_app_and_server_synchronized);
+
   /// e-mail address field. contact with no e-mail nor phone number is a group to make matters simple, and this is left for this models's widget how to interpret it.
   @BothAppicationAndServerSideModelProperty()
   @protected
@@ -3630,6 +3694,9 @@ class ConditionModelContact extends ConditionModelEachWidgetModel
       conditionModelContact, defValue)
       : super(conditionModelApp, conditionModelUser, parentModel,
             conditionModelContact, defValue) {
+    a_contact_user_id.init();
+    a_server_contact_user_id.init();
+    a_contact_accepted_invitation.init();
     a_contact_e_mail.init();
     a_contact_phone_number.init();
     a_contact_local_server_key.init();
@@ -3645,6 +3712,16 @@ class ConditionModelContact extends ConditionModelEachWidgetModel
   @override
   void operator []=(key, value) {
     switch (key) {
+      case 'server_contact_user_id':
+        server_contact_user_id = value;
+        break;
+      case 'contact_user_id':
+        contact_user_id = value;
+        break;
+      case 'contact_accepted_invitation':
+        contact_accepted_invitation = value;
+        break;
+
       case 'contact_e_mail':
         contact_e_mail = value;
         break;
@@ -3661,6 +3738,18 @@ class ConditionModelContact extends ConditionModelEachWidgetModel
         super[key] = value;
     }
   }
+
+  set server_contact_user_id(int? value) =>
+      a_server_contact_user_id.validateAndSet(value);
+  int? get server_contact_user_id => defValue['server_contact_user_id'].value;
+
+  set contact_user_id(int? value) => a_contact_user_id.validateAndSet(value);
+  int? get contact_user_id => defValue['contact_user_id'].value;
+
+  set contact_accepted_invitation(int? value) =>
+      a_contact_accepted_invitation.validateAndSet(value);
+  int? get contact_accepted_invitation =>
+      defValue['contact_accepted_invitation'].value;
 
   set contact_e_mail(String? value) => a_contact_e_mail.validateAndSet(value);
   String? get contact_e_mail => defValue['contact_e_mail'].value;
@@ -3949,13 +4038,22 @@ class ConditionModelApp extends ConditionModel
 */
   // data fields:
 
-  /// each app has it's id on the global server, each user belongs to this id - this helps to synchronize data between app installations of the same user, between different users. Difficult to explain see especially README.me file for overall up-to-date architecture. Each app that uses your app (with it's local server always running) as a it's global server has the key which is stored in [ConditionModelApp]s (Apps not App) db table, and the first mentioned app has it's own id all data is stored mainly this way app_id -> user id -> contact id -> anything else.
+  /// Se also helper property [_serverKeyHelperContainer] desc. each app has it's id on the global server, each user belongs to this id - this helps to synchronize data between app installations of the same user, between different users. Difficult to explain see especially README.me file for overall up-to-date architecture. Each app that uses your app (with it's local server always running) as a it's global server has the key which is stored in [ConditionModelApp]s (Apps not App) db table, and the first mentioned app has it's own id all data is stored mainly this way app_id -> user id -> contact id -> anything else.
   @AppicationSideModelProperty()
   @protected
   late final ConditionModelFieldStringOrNull a_server_key =
       ConditionModelFieldStringOrNull(this, 'server_key',
           propertySynchronisation:
-              ConditionModelFieldDatabaseSynchronisationType.app_only);
+              ConditionModelFieldDatabaseSynchronisationType.app_only,
+          isFinal: true);
+
+  /// This variable stores the key from local server, checks if it is still valid, if not
+  /// the app will get a new one and all old synchronized data will be lost, new synchronizing
+  /// should begin, FOR WHATEVER REASON - YOU CHANGED GLOBAL SERVER SETTINGS - not now such an option or in development mode you clean a db of global server
+  /// it would be awfully configurable, it\'s probably going unnecessaryly far.
+  /// But developers might have more flexible approaches - the main approach is STABILITY!!!
+  @protected
+  late String? _serverKeyHelperContainer;
 
   /// If you add a new user to the app this var tells you what id to assign to it
   @AppicationSideModelProperty()
@@ -4060,11 +4158,49 @@ class ConditionModelApp extends ConditionModel
     //ConditionModelUser(conditionModelApp, parentModel, {'id'});
   }
 
+  /// Used by initCompleteModel in two scenarios so the code is moved to the method here so that not to be used twice
+  _requestGlobalServerAppKeyOnceAndThenPeriodically() async {
+    try {
+      server_key = await driver._driverGlobal!
+          .requestGlobalServerAppKey()
+          .timeout(const Duration(
+              seconds:
+                  12)); // leave 12 seconds for global server operations worst but successful case scenarion, f.e. sqlite3 db file was blocked by heavy trafic, three attempts of internal server operations to obtain the key for the app which are going to be performed in about 6 seconds for three internal method invokations + 6 seconds for internal db operations themselves
+    } catch (e) {
+      debugPrint(
+          'class [ConditionModelApp], method initCompleteModel() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed (now setting up cyclical checking out using Timer.periodic), and data synchronized. Exception thrown: $e');
+
+      // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
+      Timer.periodic(Duration(seconds: 13), (timer) async {
+        try {
+          server_key = await driver._driverGlobal!
+              .requestGlobalServerAppKey()
+              .timeout(const Duration(seconds: 12));
+          // it probably might be that the method will be called one time too much
+          if (timer.isActive) {
+            timer.cancel();
+          }
+        } catch (e) {
+          debugPrint(
+              'class [ConditionModelApp], method initCompleteModel() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e');
+        }
+      });
+    }
+  }
+
   @override
   initCompleteModel() async {
+    // yeah, just to await, for now din\'t plan what to do in case of exception
+    // but at least for the !local driver it is like it will "always" work
+    await driver.getDriverOnDriverInited();
+
     debugPrint('!!We\'ve entered the initCompleteModel() ');
     bool allowForUsersRelogin = false;
     try {
+      // if the model is read successfuly from local server the server_key
+      // want be set up normaly it will go to _serverKeyHelperContainer
+      // then if the global server still hadles it and considers valid
+      // it will be set up as server_key
       bool isInited = await initModel();
       debugPrint(
           'Custom implementation of initCompleteModel(): Model of [ConditionModelApp] has been initiated. Now we can restore or not f.e. last logged and last active user or whatever.');
@@ -4077,12 +4213,68 @@ class ConditionModelApp extends ConditionModel
       // ARE WE GOING TO USE NOT ENDLESSLY INVOKED TIMER TO invoke initModel() again with some addons if necessary? Some properties might has been set already.
     }
 
-    try {
-      // this may fail as the remote global server may be unavailable or there is no internet connetino at the moment
-      server_key ??= await driver._driverGlobal?.requestGlobalServerAppKey();
-    } catch (e) {
-      debugPrint(
-          'class [ConditionModelApp], method initCompleteModel() error: After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e');
+    // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
+    // ok, for now we need to have the server key if it is not set-ip because it is a new installation or completely new app object (two or more are possible)
+    // bu we cannot wait for too long to get the global server app key, and
+    // we assume that the server doesn't need to install itself creating tables
+    // what takes some time - THE GLOBAL SERVER IS READY. So couple of seconds to finish the operation
+    // In an emergency situation you need to wait for the internet connection or
+    // server availability anyway so max ten second is not too long and balanced approach
+    if (null != driver._driverGlobal) {
+      try {
+        await driver._driverGlobal!.getDriverOnDriverInited();
+        // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
+        // this may fail as the remote global server may be unavailable or there is no internet connetino at the moment
+        // In an emergency situation you need to wait for the internet connection or
+        // server availability anyway so max ten second is not too long and balanced approach
+        debugPrint(
+            'class [ConditionModelApp], method initCompleteModel() now awaiting for up to 12x2=24 seconds to get server_key from the global server of the [ConditionModelApp] object representing one app instance (may be one or more)');
+        // Again: doing this one time await allows for quicker and smoother data updates/synchronisation to global server
+        // because we can immediatelly use the server_key
+        // otherwise the data to be updated will be read from the database in less efficient way
+        // one change per some period, probably more dg table columns than only one changed for example
+        // yet to be designed :)
+        if (null != _serverKeyHelperContainer) {
+          if (_serverKeyHelperContainer!.isEmpty) {
+            debugPrint(
+                'initCompleteModel(): [ConditionModelApp] class we are throwing error because canTheKeyBeUsed == false, no db operation caused this error. This particular exception is not a problem, it is an option to avoid more sophisticated approach');
+            // must be error here because at the moment of writing this comment an exception would allow for generation new key, but first MUST the temporary key be check out properly
+            throw Error();
+          }
+          // it means that read() from the local server has been engaged to restore the model
+          // and _serverKeyHelperContainer has been set up
+          // if we can use it we will set up the final server_key if
+          // we cannot use it because it is invalid we create a new one
+
+          try {
+            bool canTheKeyBeUsed = await driver._driverGlobal!
+                .checkOutIfGlobalServerAppKeyIsValid(
+                    (_serverKeyHelperContainer as String))
+                .timeout(const Duration(seconds: 12));
+            if (!canTheKeyBeUsed) {
+              // reading the full condition this method will cause setting up a NEW value
+              // to server_key in normal way - it will be synchronized with global server
+              // IS THIS MODEL CLASS SYNCHRONIZED WITH GLOBAL SERVER? NO? DONT REMEMBER :)
+              await _requestGlobalServerAppKeyOnceAndThenPeriodically();
+            } else {
+              // now we can set up the final property, and we can do it once for this object life cycle.
+              // but!!! the model is already inited in this case it is from read() method (readRawer?)
+              // and we have to set the !!! server_key value using different way
+              // not to trigger any synchronization with global server but just validating beforehand
+              a_server_key._fullyFeaturedValidateAndSetValue(
+                  _serverKeyHelperContainer, true, false);
+            }
+          } catch (e) {
+            debugPrint(
+                'initCompleteModel(): [ConditionModelApp] class exception during checking out if we can use _serverKeyHelperContainer key read using read() model data method. Another attempts to set up the server_key later will be made. The error was: $e');
+          }
+        } else {
+          await _requestGlobalServerAppKeyOnceAndThenPeriodically();
+        }
+      } catch (e) {
+        debugPrint(
+            'initCompleteModel(): [ConditionModelApp] class, driver._driverGlobal!.getDriverOnDriverInited() not able to init global driver, error: $e only local serve can be used');
+      }
     }
 
     if (allowForUsersRelogin) {
@@ -4248,7 +4440,7 @@ class ConditionModelUser extends ConditionModelWidget
 
     var contactdebug =
         ConditionModelContact(conditionModelApp, this, null, null, {
-      'contact_e_mail': 'c.slaw.c@gmail.com',
+      'contact_e_mail': 'abcabcabcabc@gmail.com.debugging',
       'user_id': id,
     });
 

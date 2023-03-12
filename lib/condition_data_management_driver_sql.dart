@@ -184,22 +184,178 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     //''');
   }
 
-  @override
-  @protected
-  Future<String> requestGlobalServerAppKey() {
+  Future<String> requestGlobalServerAppKeyActualDBRequestHelper(
+      String key) async {
     Completer<String> completer = Completer<String>();
-    completer.completeError(
-        'class\'s [ConditionDataManagement] method requestGlobalServerAppKey() not implemented');
+
+    scheduleMicrotask(() async {
+      try {
+        await createRawer(
+            '${tableNamePrefix}ConditionModelApps', //the table name and model id (some models like ConditionModelMessage only) is taken from this or for name not model id dbTableName property is used
+            {key: key});
+/*
+  List<Map>? conditionMapList = await readAll(
+            '${tableNamePrefix}ConditionModelApps',
+            ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
+              ..add('key', key),
+            limit: 1,
+            columnNames: {'id'});
+
+      debugPrint(
+          'A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like:');
+
+      if (conditionMapList == null) {
+        debugPrint('It is null :(');
+        completer.completeError(
+            'error: requestGlobalServerAppKeyActualDBRequestHelper(key) The id value couldn\'t has been obtained. It normally means a record hasn\'t been inserted during a preceding create()/insert into operation. It requires to insert the model again into the db.');
+      } else {
+        debugPrint(
+            'requestGlobalServerAppKeyActualDBRequestHelper(key) result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0].toString())}');
+        // !!!!!! RIDICULOUS RETURN :)
+        //return completer.complete(int.tryParse(conditionMapList[0].toString()));
+        //completer.complete(int.tryParse(conditionMapList[0].toString()));
+        completer.complete(conditionMapList[0]['id']);
+      }
+
+*/
+      } catch (e) {
+        // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
+        completer.completeError(
+            'requestGlobalServerAppKeyActualDBRequestHelper(key) Predefined error message, rather throw Excepthion custom class, There was a db_error,error $e');
+      }
+    });
 
     return completer.future;
   }
 
   @override
   @protected
-  Future<bool> checkOutIfGlobalServerAppKeyIsValid() {
+  Future<String> requestGlobalServerAppKey() async {
+    Completer<String> completer = Completer<String>();
+
+    /// taken from getInsertionKey() => of [ConditionModelIdAndOneTimeInsertionKeyModel] class, you might need to see if there is an improvement to source methods.
+    String key = (UniqueKey().toString() +
+            UniqueKey().toString() +
+            UniqueKey().toString() +
+            UniqueKey().toString() +
+            UniqueKey().toString())
+        .replaceAll(RegExp(r'[\[\]#]'), '');
+
+    // check out if a generated key exists in db cyclically - the app requests
+    // the local server, not remote global, if it was a proxy ConditionModelDriver class
+    // implementation, proxy like, that constacts remote server via http, it would do it,
+    // maybe once not cyclicaly, then te remote server would lauch this cyclical method
+    // quite confusing, heh?
+    // but with limited number of attempts
+    try {
+      debugPrint(
+          'class [ConditionModelApp], method requestGlobalServerAppKey() now awaiting for up to 10 seconds to create db entry with earlier prepared global server key, inserting to table row. On success we will complete future with the key value ');
+      await requestGlobalServerAppKeyActualDBRequestHelper(key);
+      completer.complete(key);
+    } catch (e) {
+      debugPrint(
+          'class [ConditionModelApp], method requestGlobalServerAppKey() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): The key couldn\t has been inserted into the db, so will try to insert the key periodically not many times,  Exception thrown: $e');
+
+      int counter = 2;
+      // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
+      Timer.periodic(Duration(seconds: 3), (timer) async {
+        counter--;
+        try {
+          await requestGlobalServerAppKeyActualDBRequestHelper(key);
+          timer.cancel();
+        } catch (e) {
+          debugPrint(
+              'class [ConditionModelApp], method initCompleteModel() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e');
+        }
+        if (counter == 0) {
+          timer.cancel();
+          completer.completeError(
+              'class [ConditionModelApp], method requestGlobalServerAppKey() The key for the app to connect to the global server couldn\'t has been created, and returned');
+        }
+      });
+    }
+
+    return completer.future;
+  }
+
+  Future<bool> checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(
+      String key) async {
     Completer<bool> completer = Completer<bool>();
-    completer.completeError(
-        'class\'s [ConditionDataManagement] method checkOutIfGlobalServerAppKeyIsValid() not implemented');
+
+    try {
+      List<Map>? conditionMapList = await readAll(
+          '${tableNamePrefix}ConditionModelApps',
+          ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
+            ..add('key', key),
+          limit: 1,
+          columnNames: {'id'});
+
+      debugPrint(
+          'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper() A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like:');
+
+      if (conditionMapList == null || conditionMapList.isEmpty) {
+        debugPrint('It is null or empty :(');
+        completer.completeError(
+            'error: checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) The id value couldn\'t has been obtained. It normally means a record hasn\'t been inserted during a preceding create()/insert into operation. It requires to insert the model again into the db.');
+      } else {
+        debugPrint(
+            'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0].toString())}');
+        // !!!!!! RIDICULOUS RETURN :)
+        //return completer.complete(int.tryParse(conditionMapList[0].toString()));
+        //completer.complete(int.tryParse(conditionMapList[0].toString()));
+        //completer.complete(conditionMapList[0]['id']);
+        completer.complete(true);
+      }
+    } catch (e) {
+      // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
+      completer.completeError(
+          'requestGlobalServerAppKeyActualDBRequestHelper(key) Predefined error message, rather throw Excepthion custom class, There was a db_error,error $e');
+    }
+
+    return completer.future;
+  }
+
+  @override
+  @protected
+  Future<bool> checkOutIfGlobalServerAppKeyIsValid(String key) async {
+    Completer<bool> completer = Completer<bool>();
+
+    // the description taken from requestGlobalServerAppKey() it\'s late today not changing it
+    // check out if a generated key exists in db cyclically - the app requests
+    // the local server, not remote global, if it was a proxy ConditionModelDriver class
+    // implementation, proxy like, that constacts remote server via http, it would do it,
+    // maybe once not cyclicaly, then te remote server would lauch this cyclical method
+    // quite confusing, heh?
+    // but with limited number of attempts
+
+    try {
+      debugPrint(
+          'class [ConditionModelApp], method requestGlobalServerAppKey() now awaiting for up to 10 seconds to create db entry with earlier prepared global server key, inserting to table row. On success we will complete future with the key value ');
+      await checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key);
+      completer.complete(true);
+    } catch (e) {
+      debugPrint(
+          'class [ConditionModelApp], method requestGlobalServerAppKey() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): The key couldn\t has been inserted into the db, so will try to insert the key periodically not many times,  Exception thrown: $e');
+
+      int counter = 2;
+      // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
+      Timer.periodic(Duration(seconds: 3), (timer) async {
+        counter--;
+        try {
+          await checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key);
+          timer.cancel();
+          completer.complete(true);
+        } catch (e) {
+          debugPrint(
+              'class [ConditionModelApp], method initCompleteModel() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e');
+        }
+        if (counter == 0) {
+          timer.cancel();
+          completer.completeError(
+              'class [ConditionModelApp], method requestGlobalServerAppKey() The key for the app to connect to the global server couldn\'t has been created, and returned');
+        }
+      });
+    }
 
     return completer.future;
   }

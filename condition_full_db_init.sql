@@ -16,12 +16,12 @@ DROP TABLE IF EXISTS "ConditionModelApps";
 CREATE TABLE "ConditionModelApps" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "key" text NOT NULL,
-  "one_time_insertion_key" text NULL
-);
-
-CREATE INDEX "ConditionModelApps_key" ON "ConditionModelApps" ("key");
+  "creation_date_timestamp" integer NOT NULL
+, "one_time_insertion_key" integer NULL);
 
 CREATE INDEX "ConditionModelApps_one_time_insertion_key" ON "ConditionModelApps" ("one_time_insertion_key");
+
+CREATE INDEX "ConditionModelApps_key" ON "ConditionModelApps" ("key");
 
 
 DROP TABLE IF EXISTS "ConditionModelClasses";
@@ -30,6 +30,17 @@ CREATE TABLE "ConditionModelClasses" (
   "name" text NOT NULL
 );
 
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (1,	'ConditionModelContact');
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (2,	'ConditionModelMessage');
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (3,	'ConditionModelVideoConference');
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (4,	'ConditionModelTask');
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (5,	'ConditionTripAndFitness');
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (6,	'ConditionModelURLTicker');
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (7,	'ConditionModelReadingRoom');
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (8,	'ConditionModelWebPage');
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (9,	'ConditionModelShop');
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (10,	'ConditionModelProgramming');
+INSERT INTO "ConditionModelClasses" ("id", "name") VALUES (11,	'ConditionModelPodcasting');
 
 DROP TABLE IF EXISTS "ConditionModelUser";
 CREATE TABLE "ConditionModelUser" (
@@ -67,15 +78,19 @@ DROP TABLE IF EXISTS "ConditionModelWidget";
 CREATE TABLE "ConditionModelWidget" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "app_id" integer NULL,
-  "local_id" integer NOT NULL,
+  "local_id" integer NULL,
   "to_be_synchronized" integer NOT NULL,
   "user_id" integer NOT NULL,
   "model_type_id" integer NOT NULL,
   "server_id" integer NULL,
   "parent_id" integer NULL,
+  "server_parent_id" integer NULL,
   "url_alias" text NULL,
   "owner_contact_id" integer NULL,
   "server_owner_contact_id" integer NULL,
+  "contact_user_id" integer NULL,
+  "server_contact_user_id" integer NULL,
+  "contact_accepted_invitation" integer NULL,
   "contact_e_mail" text NULL,
   "contact_phone_number" text NULL,
   "contact_local_server_login" text NULL,
@@ -90,7 +105,8 @@ CREATE TABLE "ConditionModelWidget" (
   "title" text NULL,
   "description" integer NULL,
   "configuration" text NULL,
-  "one_time_insertion_key" text NULL
+  "one_time_insertion_key" text NULL,
+  "server_one_time_insertion_key" text NULL
 );
 
 CREATE INDEX "ConditionModelWidget_local_id" ON "ConditionModelWidget" ("local_id");
