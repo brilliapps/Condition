@@ -2634,8 +2634,11 @@ abstract class ConditionModel extends ConditionMap {
                     result['server_key'];
                 skipSettingUpLocalServerKey = true;
               }
+              debugPrint(
+                  '50A1initModel() validate and set key: columnNamesAndTheirModelFields.keys == ${columnNamesAndTheirModelFields.keys}');
 
               for (final String key in columnNamesAndTheirModelFields.keys) {
+                debugPrint('50A1initModel() validate and set key: $key');
                 if (skipSettingUpLocalServerKey && key == 'server_key') {
                   continue;
                 }
@@ -2649,9 +2652,17 @@ abstract class ConditionModel extends ConditionMap {
                 if (dontInitUserIdValueAgain == true && key == 'user_id') {
                   continue;
                 }
-                //this[key] = result[key];
-                columnNamesAndFullyFeaturedValidateAndSetValueMethods[key]!(
-                    result[key], true, false);
+
+                try {
+                  debugPrint('50A1 setup value');
+                  //this[key] = result[key];
+                  columnNamesAndFullyFeaturedValidateAndSetValueMethods[key]!(
+                      result[key], true, false);
+                  debugPrint('50A1 after setup value');
+                } catch (e) {
+                  debugPrint('Before 50A2nitModel() error e == $e');
+                  rethrow;
+                }
                 debugPrint(
                     '50A2nitModel() validate and set key: $key and value ${result[key].toString()}');
               }
@@ -2661,10 +2672,19 @@ abstract class ConditionModel extends ConditionMap {
 
               debugPrint(toString());
 
-              // It might has happened that a previous attempt of nullyfying the one_time_insertion_key db column of a row failed (however the rest of the stuff was successful). So we try to nullify it again now if needed.
-              if (this is ConditionModelIdAndOneTimeInsertionKeyModel &&
-                  this['one_time_insertion_key'] != null) {
-                nullifyOneTimeInsertionKey(working_driver);
+              _inited = true;
+              completerInitModel.complete(true);
+
+              // this part exception must be catched because if the nullifying failes it will be repeated later using cyclical db management and cleanups
+              try {
+                // It might has happened that a previous attempt of nullyfying the one_time_insertion_key db column of a row failed (however the rest of the stuff was successful). So we try to nullify it again now if needed.
+                if (this is ConditionModelIdAndOneTimeInsertionKeyModel &&
+                    this['one_time_insertion_key'] != null) {
+                  nullifyOneTimeInsertionKey(working_driver);
+                }
+              } catch (e) {
+                debugPrint(
+                    'initModel() nullifyOneTimeInsertionKey(working_driver); exception that is catched because the nullifying the key will be performed later using cyclical cleanups, etc - see if it is already implemented :) ');
               }
             } catch (e) {
               debugPrint(
@@ -2674,7 +2694,7 @@ abstract class ConditionModel extends ConditionMap {
               rethrow;
             }
 
-            completerInitModel.complete(true);
+            //completerInitModel.complete(true);
           }
         }).catchError((error) {
           debugPrint(
@@ -2709,6 +2729,7 @@ abstract class ConditionModel extends ConditionMap {
           }
 
           _inited = true;
+          completerInitModel.complete(true);
           // If during validation process no Exception was thrown:
           temporaryInitialData = {};
           if (this is ConditionModelIdAndOneTimeInsertionKeyModel) {
@@ -2720,7 +2741,6 @@ abstract class ConditionModel extends ConditionMap {
           debugPrint(
               '1:initModel() working_driver.create() also the created Model has just been inited it\'s id of ${this['id']} has been set. _inited==true and the model looks like this');
           debugPrint(toString());
-          completerInitModel.complete(true);
         }).catchError((error) {
           debugPrint(
               '1:initModel() working_driver.create() error result: ${error.toString()}');
@@ -2778,6 +2798,8 @@ abstract class ConditionModel extends ConditionMap {
 
   @protected
   set _inited(bool value) {
+    debugPrint(
+        '_inited setter of this.runtimetype == ${runtimeType} and value == $value');
     __inited = value;
     if (value) {
       _initedCompleter.complete(this);
@@ -2791,9 +2813,12 @@ abstract class ConditionModel extends ConditionMap {
 
   @protected
   bool get inited {
+    debugPrint('_inited getter of this.runtimetype == ${runtimeType}');
     try {
       return __inited;
     } catch (e) {
+      debugPrint(
+          '_inited error error getter of this.runtimetype == ${runtimeType}');
       return false;
     }
   }
@@ -3320,7 +3345,7 @@ abstract class ConditionModelBelongingToContact extends ConditionModelWidget {
   // !!! Widget id and server_id are defined in the parent class
   // !!! you don't need to have type_id because this is stored in the model class name - ConditionModelMessage has the information what table the information should be stored in. not the same with [link_type_id] and [server_link_type_id]
 
-  /// It says that a conctact belongs to a contact or group (for top contact == null), but a message, task always belongs to a contact id. if not null it has group (which technically is also a contact) as parent
+  /// It says that f.e. a message/task belongs to a contact or group (for top contact == null), but a message, task always belongs to a contact id. if not null it has group (which technically is also a contact) as parent
   @AppicationSideModelProperty()
   @protected
   late final ConditionModelFieldIntOrNull a_owner_contact_id =
@@ -4203,14 +4228,18 @@ class ConditionModelApp extends ConditionModel
       // it will be set up as server_key
       bool isInited = await initModel();
       debugPrint(
-          'Custom implementation of initCompleteModel(): Model of [ConditionModelApp] has been initiated. Now we can restore or not f.e. last logged and last active user or whatever.');
+          'Custom implementation of initCompleteModel() the value of isInited == $isInited : Model of [ConditionModelApp] has been initiated. Now we can restore or not f.e. last logged and last active user or whatever.');
+      debugPrint('The value of model.inited is: ${inited}');
       debugPrint(
           'Let\'s try to automatically relogin all logged users and then to bring to screen\'s front the last active logged in user with some of his/her lazily logged widgets');
       allowForUsersRelogin = true;
+      debugPrint('!!!!!!!!!!!!!!!!!!!!! 22222 WE ARE HERE ');
     } catch (e) {
+      // ARE WE GOING TO USE NOT ENDLESSLY INVOKED TIMER TO invoke initModel() again with some addons if necessary? Some properties might has been set already.
+      debugPrint('!!!!!!!!!!!!!!!!!!!!! 11111 WE ARE HERE ');
       debugPrint(
           'Custom implementation of initCompleteModel(): Model of [ConditionModelApp] hasn\'t been initiated. The error of a Future (future.completeError()) thrown is ${e.toString()}');
-      // ARE WE GOING TO USE NOT ENDLESSLY INVOKED TIMER TO invoke initModel() again with some addons if necessary? Some properties might has been set already.
+      rethrow;
     }
 
     // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
@@ -4247,16 +4276,24 @@ class ConditionModelApp extends ConditionModel
           // we cannot use it because it is invalid we create a new one
 
           try {
+            debugPrint(
+                'class [ConditionModelApp], method initCompleteModel() We are now going to check out if we can use the locally (in the local server) stored server_key canTheKeyBeUsed waiting for success or exception');
             bool canTheKeyBeUsed = await driver._driverGlobal!
                 .checkOutIfGlobalServerAppKeyIsValid(
                     (_serverKeyHelperContainer as String))
                 .timeout(const Duration(seconds: 12));
+            debugPrint(
+                'class [ConditionModelApp], method initCompleteModel() can we use server_key? : canTheKeyBeUsed == $canTheKeyBeUsed ');
             if (!canTheKeyBeUsed) {
+              debugPrint(
+                  'class [ConditionModelApp], method initCompleteModel() result of checkOutIfGlobalServerAppKeyIsValid is that: because as already said we cannot use the key we need to get a new one and set it up for server_key property using _requestGlobalServerAppKeyOnceAndThenPeriodically');
               // reading the full condition this method will cause setting up a NEW value
               // to server_key in normal way - it will be synchronized with global server
               // IS THIS MODEL CLASS SYNCHRONIZED WITH GLOBAL SERVER? NO? DONT REMEMBER :)
               await _requestGlobalServerAppKeyOnceAndThenPeriodically();
             } else {
+              debugPrint(
+                  'class [ConditionModelApp], method initCompleteModel() SUCCESS  result of checkOutIfGlobalServerAppKeyIsValid is that:- The key can be used so we set up server_key with the value we can use, for some internals see comments where this printed message is in the code');
               // now we can set up the final property, and we can do it once for this object life cycle.
               // but!!! the model is already inited in this case it is from read() method (readRawer?)
               // and we have to set the !!! server_key value using different way

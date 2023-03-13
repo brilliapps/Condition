@@ -191,8 +191,9 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     scheduleMicrotask(() async {
       try {
         await createRawer(
-            '${tableNamePrefix}ConditionModelApps', //the table name and model id (some models like ConditionModelMessage only) is taken from this or for name not model id dbTableName property is used
-            {key: key});
+            'ConditionModelApps', //the table name and model id (some models like ConditionModelMessage only) is taken from this or for name not model id dbTableName property is used
+            {'key': key});
+        completer.complete(key);
 /*
   List<Map>? conditionMapList = await readAll(
             '${tableNamePrefix}ConditionModelApps',
@@ -284,19 +285,19 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     try {
       List<Map>? conditionMapList = await readAll(
-          '${tableNamePrefix}ConditionModelApps',
+          'ConditionModelApps',
           ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
             ..add('key', key),
           limit: 1,
           columnNames: {'id'});
 
       debugPrint(
-          'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper() A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like:');
+          'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper() A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :');
 
       if (conditionMapList == null || conditionMapList.isEmpty) {
-        debugPrint('It is null or empty :(');
-        completer.completeError(
-            'error: checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) The id value couldn\'t has been obtained. It normally means a record hasn\'t been inserted during a preceding create()/insert into operation. It requires to insert the model again into the db.');
+        debugPrint(
+            'It is null or empty :( but it is NOT a db error! A new key will be obtained in a while or later');
+        completer.complete(false);
       } else {
         debugPrint(
             'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0].toString())}');
@@ -309,7 +310,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     } catch (e) {
       // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
       completer.completeError(
-          'requestGlobalServerAppKeyActualDBRequestHelper(key) Predefined error message, rather throw Excepthion custom class, There was a db_error,error $e');
+          'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) Predefined error message, rather throw Excepthion custom class, There was a db_error,error $e');
     }
 
     return completer.future;
@@ -330,29 +331,32 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     try {
       debugPrint(
-          'class [ConditionModelApp], method requestGlobalServerAppKey() now awaiting for up to 10 seconds to create db entry with earlier prepared global server key, inserting to table row. On success we will complete future with the key value ');
-      await checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key);
-      completer.complete(true);
+          'class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() now awaiting for up to 10 seconds to create db entry with earlier prepared global server key, inserting to table row. On success we will complete future with the key value ');
+      bool canTheKeyBeUsed =
+          await checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key);
+      completer.complete(canTheKeyBeUsed);
     } catch (e) {
       debugPrint(
-          'class [ConditionModelApp], method requestGlobalServerAppKey() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): The key couldn\t has been inserted into the db, so will try to insert the key periodically not many times,  Exception thrown: $e');
+          'class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): The key couldn\t has been inserted into the db, so will try to insert the key periodically not many times,  Exception thrown: $e');
 
       int counter = 2;
       // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
       Timer.periodic(Duration(seconds: 3), (timer) async {
         counter--;
         try {
-          await checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key);
+          bool canTheKeyBeUsed =
+              await checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(
+                  key);
           timer.cancel();
-          completer.complete(true);
+          completer.complete(canTheKeyBeUsed);
         } catch (e) {
           debugPrint(
-              'class [ConditionModelApp], method initCompleteModel() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e');
+              'class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e');
         }
         if (counter == 0) {
           timer.cancel();
           completer.completeError(
-              'class [ConditionModelApp], method requestGlobalServerAppKey() The key for the app to connect to the global server couldn\'t has been created, and returned');
+              'class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() trying to periodically get The key for the app to connect to the global server couldn\'t has been created, and returned');
         }
       });
     }
@@ -500,11 +504,11 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     );
 
     debugPrint(
-        'createRawer (createAll or similar: not create()): Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
+        'createRawer (createAll or similar: not create()): Not to get lost and to understand where we are we are going to see the development query...');
     debugPrint(query.queryPart);
-    throw Exception(
+    /*throw Exception(
         'createRawer (createAll or similar: not create()) And here we have the promised exception :)');
-
+*/
     scheduleMicrotask(() {
       dynamic result;
       try {
@@ -519,7 +523,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       debugPrint(result.toString());
 
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
-      completer.complete(result);
+      completer.complete(true);
     });
 
     return completer.future;
@@ -1026,12 +1030,22 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       debugPrint(
           'K] readAll() A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:');
       debugPrint(result.toString());
-      debugPrint('K] readAll() : result[0][\'id\'] == ${result[0]['id']}');
-      debugPrint(
-          'K] readAll() : result[0][\'id\'].runtimeType == ${result[0]['id'].runtimeType}');
-
+      if (result == null) {
+        debugPrint(
+            'K] readAll() : seeking result[0][\'id\'] BUT result == null');
+      } else if (result.isEmpty) {
+        debugPrint(
+            'K] readAll() : seeking result[0][\'id\'] BUT result.isEmpty == true');
+      } else {
+        debugPrint('K] readAll() : result[0][\'id\'] == ${result[0]['id']}');
+        debugPrint(
+            'K] readAll() : result[0][\'id\'].runtimeType == ${result[0]['id'].runtimeType}');
+      }
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
-      completer.complete(result);
+      // And if exception wasn\'t thrown
+      if (!completer.isCompleted) {
+        completer.complete(result);
+      }
     });
 
     return completer.future;
