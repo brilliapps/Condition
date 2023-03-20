@@ -32,8 +32,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       ConditionDataManagementDriverSqlite3RegexMatchesReplacementMethodsSqlite3(
           patterns, super.dbNamePrefix, super.tableNamePrefix);
 
-  @override
-  bool _initiated = false;
+  //@override
+  //bool inited = false;
 
   ConditionDataManagementDriverSql({
     Completer<ConditionDataManagementDriver>? initCompleter,
@@ -109,26 +109,26 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           throw UnimplementedError(
               'Not implemented native platform settings for slite3 db. Only windows supported now');
         }
-        // a method local variable not to confuse with [_initiated] this private property
-        bool isAppDbInitiated = true;
+        // a method local variable not to confuse with [inited] this private property
+        bool isAppDbinited = true;
         try {
           debugPrint(
               'SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;');
           // In this case We can only fully rely on exception thrown when a table doesn't exist
-          dynamic select_is_deb_initiated = _db.select('''
+          dynamic select_is_debinited = _db.select('''
           SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;
         ''');
           // when table exists this one will always return result of type int from 0 to more than 0
           debugPrint(
               'SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;' +
-                  select_is_deb_initiated[0]['count(*)'].toString());
+                  select_is_debinited[0]['count(*)'].toString());
         } catch (e) {
           debugPrint(
               'table doesn\'t exist, so no relevant table with initial data exists');
-          isAppDbInitiated = false;
+          isAppDbinited = false;
         }
 
-        if (!isAppDbInitiated) {
+        if (!isAppDbinited) {
           // HERE WHAT IS TO BE USED, SEE DEFNINITIONS OF THE CLASSES
           //ConditionDataManagementDriverSqlite3RegexPatterns patterns
           //ConditionDataManagementDriverSqlite3RegexMatchesReplacementMethods replacementMethods
@@ -149,13 +149,15 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
             debugPrint('db_init result' + resultdbe.toString());
 
-            _initiated = true;
+            inited = true;
             initCompleter.complete(this);
           }).catchError((error) {
             initCompleter.completeError(false);
           });
         } else {
-          _initiated = true;
+          debugPrint(
+              'Why i have no access to inited property - prefix ${tableNamePrefix}');
+          inited = true;
           initCompleter.complete(this);
         }
       } catch (e) {
@@ -184,7 +186,9 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     //''');
   }
 
-  Future<String> requestGlobalServerAppKeyActualDBRequestHelper(
+  @override
+  @protected
+  Future<String> _requestGlobalServerAppKeyActualDBRequestHelper(
       String key) async {
     Completer<String> completer = Completer<String>();
 
@@ -251,7 +255,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     try {
       debugPrint(
           'class [ConditionModelApp], method requestGlobalServerAppKey() now awaiting for up to 10 seconds to create db entry with earlier prepared global server key, inserting to table row. On success we will complete future with the key value ');
-      await requestGlobalServerAppKeyActualDBRequestHelper(key);
+      await _requestGlobalServerAppKeyActualDBRequestHelper(key);
       completer.complete(key);
     } catch (e) {
       debugPrint(
@@ -262,7 +266,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       Timer.periodic(Duration(seconds: 3), (timer) async {
         counter--;
         try {
-          await requestGlobalServerAppKeyActualDBRequestHelper(key);
+          await _requestGlobalServerAppKeyActualDBRequestHelper(key);
           timer.cancel();
         } catch (e) {
           debugPrint(
@@ -279,7 +283,9 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     return completer.future;
   }
 
-  Future<bool> checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(
+  @override
+  @protected
+  Future<bool> _checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(
       String key) async {
     Completer<bool> completer = Completer<bool>();
 
@@ -333,7 +339,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       debugPrint(
           'class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() now awaiting for up to 10 seconds to create db entry with earlier prepared global server key, inserting to table row. On success we will complete future with the key value ');
       bool canTheKeyBeUsed =
-          await checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key);
+          await _checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key);
       completer.complete(canTheKeyBeUsed);
     } catch (e) {
       debugPrint(
@@ -345,7 +351,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         counter--;
         try {
           bool canTheKeyBeUsed =
-              await checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(
+              await _checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(
                   key);
           timer.cancel();
           completer.complete(canTheKeyBeUsed);
@@ -365,6 +371,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
   }
 
   @override
+  @protected
   Future<int> getModelIdByOneTimeInsertionKey(
       ConditionModelIdAndOneTimeInsertionKeyModel model,
       {String? globalServerRequestKey}) {
@@ -373,11 +380,11 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           'model with model.one_time_insertion_key == null cannot be used in this method');
 
     // ??? : Condition should never be used, however some re-implementations can be wrong, this is after any other request is run, so on the first db request an Exception should already has been thrown
-    if (!_initiated) {
-      throw const ConditionDataManagementDriverNotInitiatedException();
+    if (!inited) {
+      throw const ConditionDataManagementDriverNotinitedException();
     }
     Completer<int> completer = Completer<int>();
-    storageOperationsQueue.add(completer);
+    //storageOperationsQueue.add(completer);
 
     readAll(
             model.runtimeType.toString(),
@@ -412,15 +419,18 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     return completer.future;
   }
 
+  /// At first glance, it's ridiculous i cannot understand why i couldn't just set model['one_time_insertion_key'] = null after _inited = true, but also when you have local_id and server_id set up!!! ????? It would also be synchronized with global server automatically i suppose !!!  Would it be that simple? Why i didnt\'t see it earlier? This could be done by model, the key may stay longer. Need to be investigated if i am wrong.
   @override
+  @Deprecated(
+      'Just setting one_time_insertion_key to null when _inited=true and also when you have local_id and server_id set up!!! Would it be that simple? Why i didnt\'t see it earlier?')
+  @protected
   Future<bool> nullifyOneTimeInsertionKey(
       ConditionModelIdAndOneTimeInsertionKeyModel model,
       {String? globalServerRequestKey = null}) {
     // Condition should never be used, however some re-implementations can be wrong, this is after any other request is run, so on the first db request an Exception should already has been thrown
-    if (!_initiated)
-      throw const ConditionDataManagementDriverNotInitiatedException();
+    if (!inited) throw const ConditionDataManagementDriverNotinitedException();
     Completer<bool> completer = Completer<bool>();
-    storageOperationsQueue.add(completer);
+    //storageOperationsQueue.add(completer);
 
     // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
     var query = ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon
@@ -461,6 +471,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
   // instead of createAll like readAll, because you create one entry in the db
   @override
+  @protected
   Future<bool> createRawer(
       String
           modelClassName, //the table name and model id (some models like ConditionModelMessage only) is taken from this or for name not model id dbTableName property is used
@@ -469,12 +480,12 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       String? dbTableName, // see modelClassName double slash comment
       String? globalServerRequestKey,
       String? tableNamePrefix}) {
-    if (!_initiated) {
-      throw const ConditionDataManagementDriverNotInitiatedException();
+    if (!inited) {
+      throw const ConditionDataManagementDriverNotinitedException();
     }
 
     Completer<bool> completer = Completer<bool>();
-    storageOperationsQueue.add(completer);
+    //storageOperationsQueue.add(completer);
     //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
 
     if (dbTableName != null) {
@@ -529,7 +540,14 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     return completer.future;
   }
 
+  Future<int> _getAppIdByAGivenGlobalServerKey(String globalServerKey) async {
+    Completer<int> completer = Completer<int>();
+
+    return completer.future;
+  }
+
   @override
+  @protected
   CreateModelOnServerFutureGroup<int?> create(ConditionModel model,
       {Set<String>? columnNames, String? globalServerRequestKey = null}) {
     // ------------------------------------------------------------
@@ -538,9 +556,14 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     // HAS PROPERTY: appCoreModelClassesCommonDbTableName SET TO 'ConditionModelWidget'
     // AND MAYBE HERE SOME OTHER STUFF LIKE - IS A MODEL DYNAMIC? ONE ROW MODEL OF ID = 1 ALWAYS?
 
-    if (!_initiated) {
-      throw const ConditionDataManagementDriverNotInitiatedException();
+    if (!inited) {
+      throw const ConditionDataManagementDriverNotinitedException();
+    } else if (null != globalServerRequestKey &&
+        globalServerRequestKey.isEmpty) {
+      throw Exception(
+          'DataManagementDriver create() method: exception: the mode cannot be updated on the global aspect of the server, because while the globalServerRequestKey is not null, however it\'s empty.');
     }
+
     Completer<int?> completerCreate = Completer<int?>();
     // notice it is int not int? below:
     Completer<int> completerModelIdByOneTimeInsertionKey = Completer<int>();
@@ -548,52 +571,72 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         CreateModelOnServerFutureGroup<int?>(completerCreate.future,
             completerModelIdByOneTimeInsertionKey.future);
 
-    storageOperationsQueue.add(completerCreate);
-    storageOperationsQueue.add(completerModelIdByOneTimeInsertionKey);
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // READ THIS YOU MUST TAKE CARE IF A MODEL
-    // HAS PROPERTY: appCoreModelClassesCommonDbTableName SET TO 'ConditionModelWidget'
-    // AND MAYBE HERE SOME OTHER STUFF LIKE - IS A MODEL DYNAMIC? ONE ROW MODEL OF ID = 1 ALWAYS?
-
-    //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
-    //var abc = CreateModelFutureGroup();
-
-    //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
-
-    // to go any further you need to know what db.execute returns on insert - returns id?
-    debugPrint('=================================================');
-    debugPrint('HOW MANY TIMES ARE WE IN THE CRATE METHOD? LETS SEE ');
-    // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
-    var query =
-        ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon(
-            model,
-            columnNames: columnNames);
-
-    // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
-    var queryPart = query.queryPart;
-    debugPrint(
-        'we are now in the ConditionDataManagement object invoking create method. let\' see how the query looks like and then throw exception until it is ok:');
-    debugPrint(queryPart);
-
-    if (model is! ConditionModelOneDbEntryModel) {
-      debugPrint(
-          'DataManagementDriver create() method: The model is NOT of ConditionModelOneDbEntryModel class/mixin/whatever');
-      //throw Exception('The just promised Exception thrown');
-    } else {
-      debugPrint(
-          'DataManagementDriver create() method: The model IS of ConditionModelOneDbEntryModel class/mixin/whatever');
-    }
-
-    if (model is! ConditionModelIdAndOneTimeInsertionKeyModel) {
-      debugPrint(
-          'DataManagementDriver create() method: The model is NOT of ConditionModelIdAndOneTimeInsertionKeyModel class/mixin/whatever');
-    } else {
-      debugPrint(
-          'DataManagementDriver create() method: The model IS of ConditionModelIdAndOneTimeInsertionKeyModel class/mixin/whatever');
-    }
-
+    //storageOperationsQueue.add(completerCreate);
+    //storageOperationsQueue.add(completerModelIdByOneTimeInsertionKey);
     // scheduleMicrotask is to run the function asynchronously so that it the later created [CreateModelFutureGroup] can be returned now and the db operations can be done later
-    scheduleMicrotask(() {
+    scheduleMicrotask(() async {
+      Map<String, dynamic>? overwriteModelProperties;
+      if (null != globalServerRequestKey) {
+        try {
+          int app_id =
+              await _getAppIdByAGivenGlobalServerKey(globalServerRequestKey);
+          // for create we don't need to overwrite id with null value because the query builder
+          // will skip the column for the main constructor of the query accepting model object.
+          if (null != columnNames) columnNames.add('app_id');
+          overwriteModelProperties = {'app_id': app_id};
+        } catch (e) {
+          debugPrint(
+              'DataManagementDriver create() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e');
+          completerCreate.completeError(
+              'DataManagementDriver create() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so creating a global server db table row based on model data that was sent from client app to the global server cannot be performed.');
+          completerModelIdByOneTimeInsertionKey.completeError(
+              'DataManagementDriver create() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so creating a global server db table row based on model data that was sent from client app to the global server cannot be performed.');
+        }
+      }
+
+      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      // READ THIS YOU MUST TAKE CARE IF A MODEL
+      // HAS PROPERTY: appCoreModelClassesCommonDbTableName SET TO 'ConditionModelWidget'
+      // AND MAYBE HERE SOME OTHER STUFF LIKE - IS A MODEL DYNAMIC? ONE ROW MODEL OF ID = 1 ALWAYS?
+
+      //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
+      //var abc = CreateModelFutureGroup();
+
+      //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
+
+      // to go any further you need to know what db.execute returns on insert - returns id?
+      debugPrint('=================================================');
+      debugPrint('HOW MANY TIMES ARE WE IN THE CRATE METHOD? LETS SEE ');
+      // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
+      var query =
+          ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon(
+              model,
+              columnNames: columnNames,
+              overwriteModelProperties: overwriteModelProperties);
+
+      // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
+      var queryPart = query.queryPart;
+      debugPrint(
+          'we are now in the ConditionDataManagement object invoking create method. let\' see how the query looks like and then throw exception until it is ok:');
+      debugPrint(queryPart);
+
+      if (model is! ConditionModelOneDbEntryModel) {
+        debugPrint(
+            'DataManagementDriver create() method: The model is NOT of ConditionModelOneDbEntryModel class/mixin/whatever');
+        //throw Exception('The just promised Exception thrown');
+      } else {
+        debugPrint(
+            'DataManagementDriver create() method: The model IS of ConditionModelOneDbEntryModel class/mixin/whatever');
+      }
+
+      if (model is! ConditionModelIdAndOneTimeInsertionKeyModel) {
+        debugPrint(
+            'DataManagementDriver create() method: The model is NOT of ConditionModelIdAndOneTimeInsertionKeyModel class/mixin/whatever');
+      } else {
+        debugPrint(
+            'DataManagementDriver create() method: The model IS of ConditionModelIdAndOneTimeInsertionKeyModel class/mixin/whatever');
+      }
+
       dynamic result;
       try {
         debugPrint(
@@ -645,6 +688,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
   /// while officially it does return List<int>? containing rows affected, the result is to be ignored and treated as unreliable with only completer.completeError() telling that something went wrong. The result may be null for now - implementation may be difficult for each platform. Checking what rows might has been affected should be done programmatically in a separate request while update data should contain something unique to check what rows might has been affected - f.e. using the same where query but for select query while using readAll method.
   @override
+  @protected
   Future<List<int>?> updateAll(
       String
           modelClassName, //the table name and model id (some models like ConditionModelMessage only) is taken from this or for name not model id dbTableName property is used
@@ -656,12 +700,12 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       String? dbTableName, // see modelClassName double slash comment
       String? globalServerRequestKey,
       String? tableNamePrefix}) {
-    if (!_initiated) {
-      throw const ConditionDataManagementDriverNotInitiatedException();
+    if (!inited) {
+      throw const ConditionDataManagementDriverNotinitedException();
     }
 
     Completer<List<int>?> completer = Completer<List<int>?>();
-    storageOperationsQueue.add(completer);
+    //storageOperationsQueue.add(completer);
     //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
 
     if (dbTableName != null) {
@@ -720,42 +764,164 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     return completer.future;
   }
 
+  _checkingModelsCredentialsForOperation(
+      ConditionModel model, String methodName) async {
+    try {
+      throw Exception(
+          'DataManagementDriver $methodName() CATCHED EXCEPTION method calling _commonBasicNeccesaryValidation() and it calling _checkingModelsCredentialsForOperation: HANDLED exception NOT IMPLEMENTED: ');
+    } catch (e) {
+      debugPrint('catched exception: $e');
+    }
+  }
+
+  _commonBasicNeccesaryValidation(ConditionModel model, String methodName,
+      {Set<String>? columnNames,
+      String? globalServerRequestKey = null,
+      ConditionModelUser? userForGlobalRequest,
+      Map? userLoginDataForGlobalRequest}) async {
+    //debugPrint('_commonBasicNeccesaryValidation 1');
+    //debugPrint(
+    //    '_commonBasicNeccesaryValidation 1 : model[\'local_id\'] == ${model['local_id']}');
+    //
+    //debugPrint('_commonBasicNeccesaryValidation 2');
+    //debugPrint(
+    //    '_commonBasicNeccesaryValidation 2 : model[\'server_id\'] == ${model['server_id']}');
+    //debugPrint('_commonBasicNeccesaryValidation 3');
+
+    // some model properties may havent't been initialized so they throw exceptions
+    // so we need apply some remedy to it :).
+    bool is_local_id_viable_to_be_used = true;
+    bool is_server_id_viable_to_be_used = true;
+    try {
+      if (model['local_id'] == null) {
+        is_local_id_viable_to_be_used = false;
+      }
+    } catch (e) {
+      is_local_id_viable_to_be_used = false;
+    }
+
+    try {
+      if (model['server_id'] == null) {
+        is_server_id_viable_to_be_used = false;
+      }
+    } catch (e) {
+      is_server_id_viable_to_be_used = false;
+    }
+
+    // ??? comment from other method??? or invoked method has this validation better:
+    // old comment here simple key checking, which is enough, but later more advanced
+    if (!inited) {
+      throw const ConditionDataManagementDriverNotinitedException();
+    } else if (null != globalServerRequestKey) {
+      if (globalServerRequestKey.isEmpty) {
+        throw Exception(
+            'DataManagementDriver $methodName() method calling _commonBasicNeccesaryValidation(): exception: the model cannot be updated on the global aspect of the server, because while the globalServerRequestKey is not null, however it\'s empty.');
+      } else if (!is_server_id_viable_to_be_used &&
+          !is_server_id_viable_to_be_used) {
+        // Comments to be updated because now are used for condition: updated !is_server_id_viable_to_be_used && !is_server_id_viable_to_be_used
+        // Read also comments, exception of the next condition where null != model['server_id']
+        // in this case an app instance (app_id) sends its own model which is indicated by local_id
+        // so the other app instances if not designed differently will be using server_id only.
+        // The architecture with no using server_id in some cases can make it work faster probably
+        throw Exception(
+            'DataManagementDriver $methodName() method calling _commonBasicNeccesaryValidation(): exception: the model cannot be updated on the global aspect of the server, because the model[\'local_id\'] is null or the valule is not inited.}');
+      } else if (is_server_id_viable_to_be_used) {
+        //read for the previous else if statement with local_id and description
+        try {
+          throw Exception(
+              'DataManagementDriver $methodName() CATCHED EXCEPTION, WHY?! method calling _commonBasicNeccesaryValidation(): exception: the app/library/whatever is in the early stage. A request using server_id (model[\'server_id\'] ) is going to be performed. However there is no checking if a client app has right to perform any operation on the relevant unique row of id == server_id');
+        } catch (e) {
+          debugPrint(
+              'DataManagementDriver $methodName() CATCHED EXCEPTION, WHY?! method calling _commonBasicNeccesaryValidation(): exception: catched exception, pointing to an vitally important security checking implementation, error thrown: $e');
+        }
+        if (model['server_id'] < 1) {
+          throw Exception(
+              'DataManagementDriver $methodName() method calling _commonBasicNeccesaryValidation(): exception: the model cannot be updated on the global aspect of the server, because the model[\'server_id\'] < 1. model[\'server_id\'] == ${model['server_id']}');
+        }
+      }
+    } else {
+      if (model is! ConditionModelOneDbEntryModel &&
+          (model['id'] == null || model['id'] is! int || model['id'] < 1)) {
+        Exception(
+            'DataManagementDriver $methodName() method calling _commonBasicNeccesaryValidation(): exception: Because globalServerRequestKey == null then: model with no defined model.id or model[\'id\'] or null, or less than 1 cannot be used');
+      }
+    }
+
+    await _checkingModelsCredentialsForOperation(model, methodName);
+  }
+
   @override
+  @protected
   Future<bool> update(ConditionModel model,
-      {Set<String>? columnNames, String? globalServerRequestKey = null}) {
-    if (model['id'] == null || model['id'] < 1) {
-      Exception(
-          'model with no defined model.id or model[\'id\'] or null, or less than 1 cannot be used');
-    }
-    if (!_initiated) {
-      throw const ConditionDataManagementDriverNotInitiatedException();
-    }
+      {Set<String>? columnNames,
+      String? globalServerRequestKey = null,
+      ConditionModelUser? userForGlobalRequest,
+      Map? userLoginDataForGlobalRequest}) {
     //return Future.value();
     Completer<bool> completer = Completer<bool>();
-    storageOperationsQueue.add(completer);
+    //storageOperationsQueue.add(completer);
 
-    // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
-    var query =
-        ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon(
-            model,
-            columnNames: columnNames);
-    debugPrint(
-        'UPDATE model == ${model.runtimeType} we are now in the ConditionDataManagement object invoking UPDATE method. let\' see how the query looks like and then throw exception until it is ok:');
-    debugPrint(query.queryPart);
-    //throw Exception('UPDATE The just promised Exception thrown');
+    scheduleMicrotask(() async {
+      try {
+        await _commonBasicNeccesaryValidation(model, 'update',
+            globalServerRequestKey: globalServerRequestKey,
+            userForGlobalRequest: userForGlobalRequest,
+            userLoginDataForGlobalRequest: userLoginDataForGlobalRequest);
+      } catch (e) {
+        completer.completeError(
+            'DataManagementDriver update() method calling _getAppIdByAGivenGlobalServerKey() error: _commonBasicNeccesaryValidation() failed. error thrown: $e');
+        rethrow;
+      }
 
-    scheduleMicrotask(() {
+      Map<String, dynamic>? overwriteModelProperties;
+      if (null != globalServerRequestKey) {
+        // more careful checking
+        if (model['server_id'] != null) {
+          // Remidner if you use just server id you must check out if a client making
+          // the update request has right to make the changes see all the method body with
+          // comments
+        } else {
+          try {
+            int app_id =
+                await _getAppIdByAGivenGlobalServerKey(globalServerRequestKey);
+            if (null != columnNames) {
+              columnNames.add('app_id');
+            }
+            overwriteModelProperties = {'app_id': app_id};
+          } catch (e) {
+            debugPrint(
+                'DataManagementDriver update() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e');
+            completer.completeError(
+                'DataManagementDriver update() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so updating of model data that was sent from client app to the global server cannot be performed.');
+          }
+        }
+      }
+
+      // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
+      var query =
+          ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon(
+              model,
+              columnNames: columnNames,
+              overwriteModelProperties: overwriteModelProperties,
+              // earlier more thorough key checking or exception up there
+              isGlobalServerAspectUpdate:
+                  null != globalServerRequestKey ? true : false);
+      debugPrint(
+          'UPDATE model == ${model.runtimeType} we are now in the ConditionDataManagement object invoking UPDATE method. let\' see how the query looks like and then throw exception until it is ok:');
+      debugPrint(query.queryPart);
+      //throw Exception('UPDATE The just promised Exception thrown');
+
       dynamic result;
       try {
         result = _db.execute(query.queryPart);
       } catch (e) {
         completer.completeError(false);
         debugPrint(
-            'An exception during third party library operation occured: ${e.toString()}');
+            'DataManagementDriver update() method An exception during third party library operation occured: ${e.toString()}');
       }
 
       debugPrint(
-          'A result of update method has arrived and in the debug mode it seems it successfully done and it looks like this:');
+          'DataManagementDriver update() method A result of update method has arrived and in the debug mode it seems it successfully done and it looks like this:');
       debugPrint(result.toString());
 
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
@@ -767,6 +933,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
   /// while officially it does return int? containing rows affected, the result is to be ignored and treated as unreliable with only completer.completeError() telling that something went wrong. The result may be null for now - implementation may be difficult for each platform. Checking what rows might has been affected should be done programmatically in a separate request while update data should contain something unique to check what rows might has been affected - f.e. using the same where query but for select query while using readAll method.
   @override
+  @protected
   Future<List<int>?> deleteAll(
       String
           modelClassName, //the table name and model id (some models like ConditionModelMessage only) is taken from this or for name not model id dbTableName property is used
@@ -776,12 +943,12 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       String? dbTableName, // see modelClassName double slash comment
       String? globalServerRequestKey,
       String? tableNamePrefix}) {
-    if (!_initiated) {
-      throw const ConditionDataManagementDriverNotInitiatedException();
+    if (!inited) {
+      throw const ConditionDataManagementDriverNotinitedException();
     }
 
     Completer<List<int>?> completer = Completer<List<int>?>();
-    storageOperationsQueue.add(completer);
+    //storageOperationsQueue.add(completer);
     //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
 
     if (dbTableName != null) {
@@ -840,28 +1007,63 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
   }
 
   @override
+  @protected
   Future<bool> delete(ConditionModel model,
-      {String? globalServerRequestKey = null}) {
-    if (model['id'] == null || model['id'] < 1) {
-      Exception(
-          'delete(): model with no defined model.id or model[\'id\'] or null, or less than 1 cannot be used');
-    }
-    if (!_initiated) {
-      throw const ConditionDataManagementDriverNotInitiatedException();
-    }
-    //return Future.value();
+      {String? globalServerRequestKey = null,
+      ConditionModelUser? userForGlobalRequest,
+      Map? userLoginDataForGlobalRequest}) {
     Completer<bool> completer = new Completer<bool>();
-    storageOperationsQueue.add(completer);
-    var query =
-        ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlCommon(
-            model);
 
-    debugPrint(
-        'delete(): Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
-    debugPrint(query.queryPart);
-    throw Exception('And here we have the promised exception :)');
+    scheduleMicrotask(() async {
+      try {
+        await _commonBasicNeccesaryValidation(model, 'delete',
+            globalServerRequestKey: globalServerRequestKey,
+            userForGlobalRequest: userForGlobalRequest,
+            userLoginDataForGlobalRequest: userLoginDataForGlobalRequest);
+      } catch (e) {
+        completer.completeError(
+            'DataManagementDriver delete() method calling _getAppIdByAGivenGlobalServerKey() error: _commonBasicNeccesaryValidation() failed. error thrown: $e');
+        rethrow;
+      }
 
-    scheduleMicrotask(() {
+      Map<String, dynamic>? overwriteModelProperties;
+      if (null != globalServerRequestKey) {
+        // more careful checking
+        if (model['server_id'] != null) {
+          // Remidner if you use just server id you must check out if a client making
+          // the update request has right to make the changes see all the method body with
+          // comments
+        } else {
+          try {
+            int app_id =
+                await _getAppIdByAGivenGlobalServerKey(globalServerRequestKey);
+            //if (null != columnNames) {
+            //  columnNames.add('app_id');
+            //}
+            overwriteModelProperties = {'app_id': app_id};
+          } catch (e) {
+            debugPrint(
+                'DataManagementDriver delete() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e');
+            completer.completeError(
+                'DataManagementDriver delete() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so updating of model data that was sent from client app to the global server cannot be performed.');
+          }
+        }
+      }
+
+      //storageOperationsQueue.add(completer);
+      var query =
+          ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlCommon(
+              model,
+              overwriteModelProperties: overwriteModelProperties,
+              // earlier more thorough key checking or exception up there
+              isGlobalServerAspectUpdate:
+                  null != globalServerRequestKey ? true : false);
+
+      debugPrint(
+          'delete(): Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
+      debugPrint(query.queryPart);
+      throw Exception('And here we have the promised exception :)');
+
       dynamic result;
       try {
         result = _db.execute(query.queryPart);
@@ -881,29 +1083,25 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
   }
 
   @override
+  @protected
   Future<Map?> read(ConditionModel model,
-      {String? globalServerRequestKey, Set<String>? columnNames}
+      {Set<String>? columnNames,
+      String? globalServerRequestKey = null,
+      ConditionModelUser? userForGlobalRequest,
+      Map? userLoginDataForGlobalRequest}
       /*ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon
           whereClause*/
       ) {
     debugPrint('Model debug print: ${model['id']}');
 
     debugPrint(model.toString());
-    if (model is! ConditionModelOneDbEntryModel &&
-        (model['id'] == null || model['id'] < 1)) {
-      Exception(
-          'model with expected but not defined model.id or model[\'id\'] or null, or less than 1 cannot be used');
-    }
 
     debugPrint(
         'read() We are now in the read method of native platform ConditionDataManagementDriverSql driver.:');
     //debugPrint(whereClause.queryPart);
-    if (!_initiated) {
-      throw const ConditionDataManagementDriverNotInitiatedException();
-    }
     Completer<Map?> completer = Completer<Map?>();
 
-    storageOperationsQueue.add(completer);
+    //storageOperationsQueue.add(completer);
 
     /*var query =
         ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
@@ -931,17 +1129,57 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
 
     */
-    var query =
-        ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon(
-            model,
-            columnNames: columnNames);
 
-    debugPrint(
-        'read() Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
-    debugPrint(query.queryPart);
-    // throw Exception('And here we have the promised exception :)');
+    scheduleMicrotask(() async {
+      try {
+        await _commonBasicNeccesaryValidation(model, 'read',
+            globalServerRequestKey: globalServerRequestKey,
+            userForGlobalRequest: userForGlobalRequest,
+            userLoginDataForGlobalRequest: userLoginDataForGlobalRequest);
+      } catch (e) {
+        completer.completeError(
+            'DataManagementDriver read() method calling _getAppIdByAGivenGlobalServerKey() error: _commonBasicNeccesaryValidation() failed. error thrown: $e');
+        rethrow;
+      }
 
-    scheduleMicrotask(() {
+      Map<String, dynamic>? overwriteModelProperties;
+      if (null != globalServerRequestKey) {
+        // more careful checking
+        if (model['server_id'] != null) {
+          // Remidner if you use just server id you must check out if a client making
+          // the update request has right to make the changes see all the method body with
+          // comments
+        } else {
+          try {
+            int app_id =
+                await _getAppIdByAGivenGlobalServerKey(globalServerRequestKey);
+            if (null != columnNames) {
+              columnNames.add('app_id');
+            }
+            overwriteModelProperties = {'app_id': app_id};
+          } catch (e) {
+            debugPrint(
+                'DataManagementDriver read() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e');
+            completer.completeError(
+                'DataManagementDriver read() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so updating of model data that was sent from client app to the global server cannot be performed.');
+          }
+        }
+      }
+
+      var query =
+          ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon(
+              model,
+              columnNames: columnNames,
+              overwriteModelProperties: overwriteModelProperties,
+              // earlier more thorough key checking or exception up there
+              isGlobalServerAspectUpdate:
+                  null != globalServerRequestKey ? true : false);
+
+      debugPrint(
+          'read() Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
+      debugPrint(query.queryPart);
+      // throw Exception('And here we have the promised exception :)');
+
       dynamic result;
       try {
         result = _db.select(query.queryPart);
@@ -965,6 +1203,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
   }
 
   @override
+  @protected
   Future<List<Map>?> readAll(
       String
           modelClassName, //the table name and model id (some models like ConditionModelMessage only) is taken from this or for name not model id dbTableName property is used
@@ -975,12 +1214,12 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       String? dbTableName, // see modelClassName double slash comment
       String? globalServerRequestKey,
       String? tableNamePrefix}) {
-    if (!_initiated) {
-      throw const ConditionDataManagementDriverNotInitiatedException();
+    if (!inited) {
+      throw const ConditionDataManagementDriverNotinitedException();
     }
 
     Completer<List<Map>?> completer = Completer<List<Map>?>();
-    storageOperationsQueue.add(completer);
+    //storageOperationsQueue.add(completer);
     //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
 
     if (dbTableName != null) {
