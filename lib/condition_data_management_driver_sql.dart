@@ -793,20 +793,27 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     bool is_local_id_viable_to_be_used = true;
     bool is_server_id_viable_to_be_used = true;
     try {
+      debugPrint('GGGG1');
       if (model['local_id'] == null) {
         is_local_id_viable_to_be_used = false;
       }
+      debugPrint('GGGG2');
     } catch (e) {
       is_local_id_viable_to_be_used = false;
     }
 
     try {
+      debugPrint('GGGG3');
       if (model['server_id'] == null) {
         is_server_id_viable_to_be_used = false;
       }
+      debugPrint('GGGG4');
     } catch (e) {
       is_server_id_viable_to_be_used = false;
     }
+
+    debugPrint(
+        'GGGG5 is_local_id_viable_to_be_used == $is_local_id_viable_to_be_used , is_server_id_viable_to_be_used == $is_server_id_viable_to_be_used');
 
     // ??? comment from other method??? or invoked method has this validation better:
     // old comment here simple key checking, which is enough, but later more advanced
@@ -817,14 +824,14 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         throw Exception(
             'DataManagementDriver $methodName() method calling _commonBasicNeccesaryValidation(): exception: the model cannot be updated on the global aspect of the server, because while the globalServerRequestKey is not null, however it\'s empty.');
       } else if (!is_server_id_viable_to_be_used &&
-          !is_server_id_viable_to_be_used) {
+          !is_local_id_viable_to_be_used) {
         // Comments to be updated because now are used for condition: updated !is_server_id_viable_to_be_used && !is_server_id_viable_to_be_used
         // Read also comments, exception of the next condition where null != model['server_id']
         // in this case an app instance (app_id) sends its own model which is indicated by local_id
         // so the other app instances if not designed differently will be using server_id only.
         // The architecture with no using server_id in some cases can make it work faster probably
         throw Exception(
-            'DataManagementDriver $methodName() method calling _commonBasicNeccesaryValidation(): exception: the model cannot be updated on the global aspect of the server, because the model[\'local_id\'] is null or the valule is not inited.}');
+            'DataManagementDriver $methodName() method calling _commonBasicNeccesaryValidation(): exception: the model cannot be updated on the global aspect of the server, because the model[\'local_id\'] is null or the valule is not inited. model = ${model.toString()}}');
       } else if (is_server_id_viable_to_be_used) {
         //read for the previous else if statement with local_id and description
         try {

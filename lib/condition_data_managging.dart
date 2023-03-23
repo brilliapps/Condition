@@ -2421,6 +2421,9 @@ abstract class ConditionModel extends ConditionMap {
   @protected
   List<ConditionModel> children = [];
 
+  Completer<bool> _completerInitModel = Completer<bool>();
+  Completer<bool> _completerInitModelGlobalServer = Completer<bool>();
+
   @Deprecated(
       'All stuff will be managed differently i guess - ConditionDataManager is going to some changes like global server updates')
   List<ConditionModelListenerFunction> changesListeners = [];
@@ -2493,8 +2496,16 @@ abstract class ConditionModel extends ConditionMap {
     }
   }
 
+  /// If the getter is to be compatible with map it must return null on a not found value of key
   @override
-  operator [](key) => defValue[key]?.value;
+  operator [](key) {
+    try {
+      return defValue[key]?.value;
+    } catch (e) {
+      debugPrint(
+          'ConditionModel [] getter CATCHED exception: key == $key, error: $e');
+    }
+  }
 
   nullifyOneTimeInsertionKey(ConditionDataManagementDriver workingDriver) {
     if (this is ConditionModelIdAndOneTimeInsertionKeyModel) {
@@ -2550,7 +2561,7 @@ abstract class ConditionModel extends ConditionMap {
 
   /// Do the method private and pass to the [ConditionModelFields] fields as callback this cannot be called from outside, the fields themselves also pass something safaly as callback (_valueAndSet or something like that).  This is called from ConditionModelField object [validateAndSet](...) method. See mostly the [_fieldsToBeUpdated] property description
   @protected
-  _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(
+  Future<bool> _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(
       /*[String? columnName]*/) async {
     // Especially In the early process of development all these conditions may be needed but later after you make sure all is well designed and implemented you will know what to remove;
     if (this is! ConditionModelIdAndOneTimeInsertionKeyModelServer) {
@@ -2572,6 +2583,8 @@ abstract class ConditionModel extends ConditionMap {
       throw Exception(
           'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): exception: global driver is defined but isn\'t inited (is being initialized now). The model cannot be synchronized now with the global server it is supposed to be synchronized later (check out if implemented already).');
     }
+
+    var completer = Completer<bool>();
 
     ConditionModelApp conditionModelApp =
         (this as ConditionModelIdAndOneTimeInsertionKeyModelServer)
@@ -2596,7 +2609,8 @@ abstract class ConditionModel extends ConditionMap {
       _modelIsBeingUpdatedGlobalServer = false;
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       // !!!!! This is the moment we can trigger the global server update (granted the [ConditionModelApp] object has its global server enabled)
-      return;
+      completer.complete(true);
+      //return;
     }
 
     // Fot Timer: https://stackoverflow.com/questions/34140488/dart-timer-periodic-not-honoring-granularity-of-duration-in-vm
@@ -2649,16 +2663,23 @@ abstract class ConditionModel extends ConditionMap {
               if (_fieldsNowBeingInTheProcessOfUpdateGlobalServer.isEmpty &&
                   _fieldsToBeUpdatedGlobalServer.isEmpty) {
                 timer.cancel();
+                completer.completeError(
+                    'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update _fieldsNowBeingInTheProcessOfUpdateGlobalServer.isEmpty && _fieldsToBeUpdatedGlobalServer.isEmpty. Not sure if it is an error but at best it may be not a well designed piece of code somewhere.');
                 return;
               }
             });
             if (attemptsLimitCountDownCounter-- == 0) {
               timer.cancel();
+              completer.completeError(
+                  'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer updateattemptsLimitCountDownCounter-- == 0, we cannot update the model quickly and directly from the currently updated model. Probably, if already implemented, by design the model will be updated from local server db record in a cyclical slower way.');
             }
           });
+          return false;
         });
       });
     }
+
+    return completer.future;
   }
 
   // Used by (non private now with no uderscore? : ) [_triggerLocalAndGlobalServerUpdatingProcess]
@@ -2779,6 +2800,7 @@ abstract class ConditionModel extends ConditionMap {
               }
             });
           });
+          return false;
         });
       });
     }
@@ -2800,6 +2822,62 @@ abstract class ConditionModel extends ConditionMap {
 // The only way is to validate any data
   }
 
+  _doDirectUpdateOnGlobalServer(ConditionDataManagementDriver working_driver,
+      ConditionModelApp conditionModelAppInstance) {
+    // ?asynchronous and we don't wait for it to finish
+    // ?not vary sure very much if mixed future and async/await syntax
+    // ?will always produce the expected results
+    if (null == conditionModelAppInstance.server_key) {
+      _completerInitModelGlobalServer.completeError(
+          '2:2:initModel() working_driver._driverGlobal.create() async exception: server_key of ConditionModelApp is null, we cannot immediately and directly (this is not non-cyclical synchronization) synchroznize local server model with the global server now waiting for the key and for synchronizing later (if already implemented)');
+    } else if (!working_driver._driverGlobal!.inited) {
+      _completerInitModelGlobalServer.completeError(
+          '2:2:initModel() working_driver._driverGlobal.create() async exception: !working_driver._driverGlobal!.inited is not inited so it cannot be used now. Depending on how it is designed so far the model may be synchronized later with the global server');
+    } else {
+      working_driver._driverGlobal!
+          .create(this,
+              globalServerRequestKey: conditionModelAppInstance.server_key)
+          .future
+          .then((List<int?> result) {
+        bool nullifyTheKey = false;
+        if (result[0] != null && result[0]! > 0) {
+          //this['id'] = result[0];
+          columnNamesAndFullyFeaturedValidateAndSetValueMethods['server_id']!(
+              result[0], true, false);
+          nullifyTheKey = true;
+        } else if (result[1] != null && result[1]! > 0) {
+          //this['id'] = result[1];
+          columnNamesAndFullyFeaturedValidateAndSetValueMethods['server_id']!(
+              result[1], true, false);
+          nullifyTheKey = true;
+        } else {
+          _completerInitModelGlobalServer.completeError(
+              '2:initModel() working_driver._driverGlobal.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
+        }
+
+        // this will trigger nullifying the key on local and the global server
+        // finishing it with any error is not a big deal, it should be later
+        // checked - is it already implemented for both servers?
+        if (nullifyTheKey == true) {
+          this['one_time_insertion_key'] = null;
+        }
+        /*
+                    try {
+                      // probably we dont need the method
+                      // it should be enough to just set model['one_time_insertion_key'] to null
+                      nullifyOneTimeInsertionKey(working_driver);
+                    } catch (e) {
+                      debugPrint(
+                          '1:initModel() nullifyOneTimeInsertionKey error - at this state it may fail will be done later [to do]: error: e == $e');
+                    }
+                    */
+      }).catchError((error) {
+        _completerInitModelGlobalServer.completeError(
+            '2:initModel() working_driver._driverGlobal.create() error: With a list of one or two possible integers containing no int id a model initiation could\'t has been finished. Exception thrown: error == $error');
+      });
+    }
+  }
+
   /// See [ConditionModelCompleteModel] class desc. This method must be called in a complete model class that is not extended by other classess but is an object that is stored in the db
   @nonVirtual
   @protected
@@ -2815,7 +2893,26 @@ abstract class ConditionModel extends ConditionMap {
       }
     }
 
-    Completer<bool> completerInitModel = Completer<bool>();
+    // this is to be removed when it is listened somewhere else and options for listening are added.
+    // not that initModel returns just _completerInitModel.future
+    // but nothing like that for the global server model initModelGlobal server or something
+    _completerInitModelGlobalServer.future.catchError((error) {
+      debugPrint(
+          'initModel() _completerInitModelGlobalServer.future exception catched see code of initModel seek the debugPrint, and the async exception thrown is: $error');
+    });
+
+// coulnd\t use conditionModelApp property, it may be that it would be overlapping
+// with the property name of ConditionModelIdAndOneTimeInsertionKeyModelServer
+    ConditionModelApp? conditionModelAppInstance;
+    if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
+      conditionModelAppInstance =
+          (this as ConditionModelIdAndOneTimeInsertionKeyModelServer)
+              .conditionModelApp;
+      if (null == driver._driverGlobal) {
+        _completerInitModelGlobalServer.completeError(
+            'initModel global driver is null so no data can be synchronized');
+      }
+    }
 
     bool dontInitIdValueAgain = false;
     bool dontInitUserIdValueAgain = false;
@@ -2899,25 +2996,23 @@ abstract class ConditionModel extends ConditionMap {
                 columnNamesAndFullyFeaturedValidateAndSetValueMethods['id']!(
                     result[1], true, false);
               } else {
-                completerInitModel.completeError(
+                _completerInitModel.completeError(
                     '2:initModel() working_driver.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
                 return;
               }
 
               if (this is ConditionModelIdAndOneTimeInsertionKeyModel) {
-                // not awaiting nullifying:
-                try {
-                  nullifyOneTimeInsertionKey(working_driver);
-                } catch (e) {
-                  debugPrint(
-                      '1:initModel() nullifyOneTimeInsertionKey error - at this state it may fail will be done later [to do]: error: e == $e');
-                }
                 // this one must work, even with timers to try again
                 columnNamesAndFullyFeaturedValidateAndSetValueMethods[
                     'local_id']!(this['id'], true, false);
 
                 // this will local_id on a local - if fails it will do it until it will success that the conde will execute further
                 await _updateLocalId(working_driver);
+
+                if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
+                  _doDirectUpdateOnGlobalServer(working_driver,
+                      conditionModelAppInstance as ConditionModelApp);
+                }
               }
               _inited = true;
               // If during validation process no Exception was thrown:
@@ -2928,11 +3023,11 @@ abstract class ConditionModel extends ConditionMap {
               debugPrint(
                   '2:initModel() working_driver.create() also the created Model has just been inited it\'s id of ${this['id']} has been set. _inited==true and the model looks like this');
               debugPrint(toString());
-              completerInitModel.complete(true);
+              _completerInitModel.complete(true);
             }).catchError((error) {
               debugPrint(
                   '2:initModel() working_driver.create() error result: ${error.toString()}');
-              completerInitModel.completeError(
+              _completerInitModel.completeError(
                   'The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure creating a db record');
             });
           } else {
@@ -2994,14 +3089,18 @@ abstract class ConditionModel extends ConditionMap {
               debugPrint(toString());
 
               _inited = true;
-              completerInitModel.complete(true);
+              _completerInitModel.complete(true);
 
               // this part exception must be catched because if the nullifying failes it will be repeated later using cyclical db management and cleanups
               try {
                 // It might has happened that a previous attempt of nullyfying the one_time_insertion_key db column of a row failed (however the rest of the stuff was successful). So we try to nullify it again now if needed.
-                if (this is ConditionModelIdAndOneTimeInsertionKeyModel &&
+                /*if (this is ConditionModelIdAndOneTimeInsertionKeyModel &&
                     this['one_time_insertion_key'] != null) {
                   nullifyOneTimeInsertionKey(working_driver);
+                }*/
+                if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
+                  _doDirectUpdateOnGlobalServer(working_driver,
+                      conditionModelAppInstance as ConditionModelApp);
                 }
               } catch (e) {
                 debugPrint(
@@ -3010,12 +3109,12 @@ abstract class ConditionModel extends ConditionMap {
             } catch (e) {
               debugPrint(
                   'The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure during validating and setting each field received from a db record. One field failed not passing validation or setting it\'s value');
-              completerInitModel.completeError(
+              _completerInitModel.completeError(
                   'The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure during validating and setting each field received from a db record. One field failed not passing validation or setting it\'s value');
               rethrow;
             }
 
-            //completerInitModel.complete(true);
+            //_completerInitModel.complete(true);
           }
         }).catchError((error) {
           debugPrint(
@@ -3025,8 +3124,8 @@ abstract class ConditionModel extends ConditionMap {
           debugPrint(
               '====================================================================================');
           debugPrint(
-              '!!!!!!!!!! Is the future complete? ${completerInitModel.isCompleted.toString()}');
-          completerInitModel.completeError(
+              '!!!!!!!!!! Is the future complete? ${_completerInitModel.isCompleted.toString()}');
+          _completerInitModel.completeError(
               'The model of class ${runtimeType.toString()} couldn\'t has been read from the db - an db engine error occured. The error result: ${error.toString()}');
         });
       } else {
@@ -3044,7 +3143,7 @@ abstract class ConditionModel extends ConditionMap {
             columnNamesAndFullyFeaturedValidateAndSetValueMethods['id']!(
                 result[1], true, false);
           } else {
-            completerInitModel.completeError(
+            _completerInitModel.completeError(
                 '1:initModel() working_driver.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
             return;
           }
@@ -3066,7 +3165,7 @@ abstract class ConditionModel extends ConditionMap {
           }
 
           _inited = true;
-          completerInitModel.complete(true);
+          _completerInitModel.complete(true);
           temporaryInitialData = {};
           // If during validation process no Exception was thrown:
 
@@ -3079,7 +3178,7 @@ abstract class ConditionModel extends ConditionMap {
         }).catchError((error) {
           debugPrint(
               '1:initModel() working_driver.create() error result: ${error.toString()}');
-          completerInitModel.completeError(
+          _completerInitModel.completeError(
               'The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure creating a db record. The error result: ${error.toString()}');
         });
       }
@@ -3122,7 +3221,7 @@ abstract class ConditionModel extends ConditionMap {
       // So we can play with the db. But first some debugPrint
     });
 
-    return completerInitModel.future;
+    return _completerInitModel.future;
   }
 
   _updateLocalId(ConditionDataManagementDriver working_driver) async {
