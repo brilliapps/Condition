@@ -35,6 +35,9 @@ enum ConditioDataManagementDriverBackendEnginesEnum { json, xml }
 
 /// See the many coments and got to a conclusion, that all here should be strings to export the settings to json or anything else
 class ConditionConfiguration {
+  /// there are two entry points for the app main.dart (client app with graphic interface) and condition_server_app.dart which is only server side. Of course each main.dart app has two aspects of data management - local storage and global server storage. condition_server_app.dart is to serve as global server backend (not entirely, implementing some keybord input or in/out pipelines also for local aspect may be even planned). If isClientApp is set to true, it tells the app's ConditionDataManagementDriver class derived classess to choose between  drier or driver._DriverGlobal object for performing data operations which also is important because any driver normally contains different database or table name prefixex to make them distinguished, or allowing to contain couple of apps using one db. You sould be able to understand it better when you analyse the driver classes code.
+  static late final bool
+      isClientApp; // set up later - in the frontend in main() function
   static late final bool
       debugMode; // set up later - in the frontend in main() function
   static const bool isWeb = kIsWeb;

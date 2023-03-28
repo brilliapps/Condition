@@ -62,6 +62,7 @@ CREATE TABLE "ConditionModelUser" (
   "update_date_timestamp" integer NULL,
   "server_update_date_timestamp" integer NULL,
   "parent_id" integer NULL,
+  "server_parent_id" integer NULL,
   "user_id" integer NOT NULL
 );
 
@@ -78,7 +79,7 @@ DROP TABLE IF EXISTS "ConditionModelWidget";
 CREATE TABLE "ConditionModelWidget" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "app_id" integer NULL,
-  "local_id" integer NULL,
+  "local_id" integer NOT NULL,
   "to_be_synchronized" integer NOT NULL,
   "user_id" integer NOT NULL,
   "model_type_id" integer NOT NULL,
@@ -105,8 +106,7 @@ CREATE TABLE "ConditionModelWidget" (
   "title" text NULL,
   "description" integer NULL,
   "configuration" text NULL,
-  "one_time_insertion_key" text NULL,
-  "server_one_time_insertion_key" text NULL
+  "one_time_insertion_key" text NULL
 );
 
 CREATE INDEX "ConditionModelWidget_local_id" ON "ConditionModelWidget" ("local_id");

@@ -185,11 +185,12 @@ void main(List<String> args) async {
   ///  debugPrint('checkitout5');
   ///debugPrint('checkitout6');
   //////debugPrint('checkitout7');
-/////  debugPrint(jsonEncode(    jsonDecode(ConditionDebugDataForDevelopmentAndTesting.widgets_configs))///);
+  /////  debugPrint(jsonEncode(    jsonDecode(ConditionDebugDataForDevelopmentAndTesting.widgets_configs))///);
 
   ///debugPrint('checkitout8');
   ///debugPrint(args.toString());
   ConditionConfiguration.debugMode = args.contains('debugging') ? true : false;
+  ConditionConfiguration.isClientApp = true;
   //inspect(args);
   //debugPrint(jsonEncode(new ABCD()));
 

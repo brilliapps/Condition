@@ -112,6 +112,7 @@ class ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon
   /// See [model] property description first. There are methods of [ConditionDataManagementDriver] class like [read](), that receive a [ConditionModel] object, but there is [readModelType]() method reading based on class name toString, and in such a case in not all but some cases a custom dbTableName to be used can be passed. This value is more important than [model].[appCoreModelClassesCommonDbTableName] and the latter is more important thant default [model].[runtimeType].[toString]() table name.
   final String? dbTableName;
   Map<String, dynamic>? overwriteModelProperties;
+  final bool isGlobalRequest;
 
   ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon(
     ConditionModel
@@ -120,19 +121,19 @@ class ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon
     this.columnNames,
     //this.dbTableName,
     this.overwriteModelProperties,
-    bool isGlobalServerAspectUpdate = false,
     this.maxNumberOfReturnedResults =
         ConditionConfiguration.maxNumberOfReturnedResultsFromDb,
+    this.isGlobalRequest = false,
   })  : dbTableName = null,
         this.whereClause =
             ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
                 .add(
-                    !isGlobalServerAspectUpdate
+                    !isGlobalRequest
                         ? 'id'
                         : model['server_id'] != null
                             ? 'server_id'
                             : 'local_id',
-                    !isGlobalServerAspectUpdate
+                    !isGlobalRequest
                         ? model is ConditionModelOneDbEntryModel
                             ? 1
                             : model['id']
@@ -141,12 +142,12 @@ class ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon
                             : model['local_id'])
                 .add(
                     // if null, this method call will be ignored but the query object will be returned
-                    !isGlobalServerAspectUpdate
+                    !isGlobalRequest
                         ? null
                         : model['server_id'] != null
                             ? null
                             : 'app_id',
-                    !isGlobalServerAspectUpdate
+                    !isGlobalRequest
                         ? null
                         : model['server_id'] != null
                             ? null
@@ -158,6 +159,7 @@ class ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon
     this.columnNames,
     this.maxNumberOfReturnedResults =
         ConditionConfiguration.maxNumberOfReturnedResultsFromDb,
+    this.isGlobalRequest = false,
   }) : model = null;
 
   String get queryPart {
@@ -177,8 +179,10 @@ class ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon
       }
     }
 
+    //queryPart += ' FROM "${dbTableName ?? model!.driver.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" ';
+
     queryPart +=
-        ' FROM "${dbTableName ?? model!.driver.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" ';
+        ' FROM "${dbTableName ?? (!isGlobalRequest ? model!.driver : ConditionConfiguration.isClientApp ? model!.driver.driverGlobal : model!.driver)!.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" ';
 
     if (null != whereClause) {
       queryPart += whereClause!.queryPart;
@@ -200,6 +204,7 @@ class ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlite3
     //this.dbTableName,
     super.maxNumberOfReturnedResults =
         ConditionConfiguration.maxNumberOfReturnedResultsFromDb,
+    super.isGlobalRequest = false,
   });
 
   ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlite3.dbTableNameQuery(
@@ -208,11 +213,14 @@ class ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlite3
     columnNames,
     maxNumberOfReturnedResults =
         ConditionConfiguration.maxNumberOfReturnedResultsFromDb,
+    isGlobalRequest = false,
   }) : super.dbTableNameQuery(
-            dbTableName, // not null in this constructor
-            whereClause,
-            columnNames: columnNames,
-            maxNumberOfReturnedResults: maxNumberOfReturnedResults);
+          dbTableName, // not null in this constructor
+          whereClause,
+          columnNames: columnNames,
+          maxNumberOfReturnedResults: maxNumberOfReturnedResults,
+          isGlobalRequest: isGlobalRequest,
+        );
 }
 
 /// For now the one update version updates models only with all or chosen columns
@@ -235,6 +243,7 @@ class ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon
 
   /// See [model] property description first. There are methods of [ConditionDataManagementDriver] class like [read](), that receive a [ConditionModel] object, but there is [readModelType]() method reading based on class name toString, and in such a case in not all but some cases a custom dbTableName to be used can be passed. This value is more important than [model].[appCoreModelClassesCommonDbTableName] and the latter is more important thant default [model].[runtimeType].[toString]() table name.
   final String? dbTableName;
+  final bool isGlobalRequest;
 
   ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon(
     ConditionModel
@@ -246,18 +255,18 @@ class ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon
     // below removed maxNumberOfReturnedResults https://stackoverflow.com/questions/29071169/update-query-with-limit-cause-sqlite
     // this.maxNumberOfReturnedResults = ConditionConfiguration.maxNumberOfReturnedResultsFromDb,
     this.dontUpdateOnEmptyWhereClause = true,
-    bool isGlobalServerAspectUpdate = false,
+    this.isGlobalRequest = false,
   })  : dbTableName = null,
         noModelColumnNamesWithValues = null,
         whereClause =
             ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
                 .add(
-                    !isGlobalServerAspectUpdate
+                    !isGlobalRequest
                         ? 'id'
                         : model['server_id'] != null
                             ? 'server_id'
                             : 'local_id',
-                    !isGlobalServerAspectUpdate
+                    !isGlobalRequest
                         ? model is ConditionModelOneDbEntryModel
                             ? 1
                             : model['id']
@@ -266,12 +275,12 @@ class ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon
                             : model['local_id'])
                 .add(
                     // if null, this method call will be ignored but the query object will be returned
-                    !isGlobalServerAspectUpdate
+                    !isGlobalRequest
                         ? null
                         : model['server_id'] != null
                             ? null
                             : 'app_id',
-                    !isGlobalServerAspectUpdate
+                    !isGlobalRequest
                         ? null
                         : model['server_id'] != null
                             ? null
@@ -286,6 +295,7 @@ class ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon
     // below removed maxNumberOfReturnedResults https://stackoverflow.com/questions/29071169/update-query-with-limit-cause-sqlite
     // this.maxNumberOfReturnedResults = ConditionConfiguration.maxNumberOfReturnedResultsFromDb,
     this.dontUpdateOnEmptyWhereClause = true,
+    this.isGlobalRequest = false,
   })  : this.model = null,
         this.whereClause = whereClause ??
             ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
@@ -296,8 +306,11 @@ class ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon
     //model.appCoreModelClassesCommonDbTableName
     String queryPart = '';
 
+    //queryPart +='UPDATE "${dbTableName ?? model!.driver.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" SET ';
+
     queryPart +=
-        'UPDATE "${dbTableName ?? model!.driver.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" SET ';
+        'UPDATE "${dbTableName ?? (!isGlobalRequest ? model!.driver : ConditionConfiguration.isClientApp ? model!.driver.driverGlobal : model!.driver)!.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" SET ';
+
 //    if (null == columnNames || columnNames!.isEmpty) {
     //queryPart += '* ';
 
@@ -317,9 +330,9 @@ class ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon
         if (isNotFirstIteration) queryPart += ', ';
         try {
           if (null != overwriteModelProperties &&
-              overwriteModelProperties!.keys.contains('app_id')) {
+              overwriteModelProperties!.keys.contains(key)) {
             queryPart +=
-                '${getColumnName(key)} = ${getValuePart(overwriteModelProperties!['app_id'])}';
+                '${getColumnName(key)} = ${getValuePart(overwriteModelProperties![key])}';
           } else {
             queryPart += '${getColumnName(key)} = ${getValuePart(model![key])}';
           }
@@ -394,12 +407,14 @@ class ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlite3
     whereClause, {
     columnNames,
     dontUpdateOnEmptyWhereClause = true,
+    isGlobalRequest = false,
   }) : super.dbTableNameQuery(
           dbTableName, // not null in this constructor
           noModelColumnNamesWithValues, // not null in this constructor
           whereClause,
           columnNames: columnNames,
           dontUpdateOnEmptyWhereClause: dontUpdateOnEmptyWhereClause,
+          isGlobalRequest: isGlobalRequest,
         );
 }
 
@@ -415,6 +430,7 @@ class ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlCommon {
   final String? dbTableName;
 
   Map<String, dynamic>? overwriteModelProperties;
+  final bool isGlobalRequest;
 
   ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlCommon(
     ConditionModel
@@ -429,6 +445,7 @@ class ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlCommon {
     //this.dbTableName,
     // below removed maxNumberOfReturnedResults https://stackoverflow.com/questions/29071169/update-query-with-limit-cause-sqlite
     // this.maxNumberOfReturnedResults = ConditionConfiguration.maxNumberOfReturnedResultsFromDb,
+    this.isGlobalRequest = false,
   })  : dbTableName = null,
         whereClause =
             ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
@@ -460,19 +477,22 @@ class ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlCommon {
 
   ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlCommon.dbTableNameQuery(
     String this.dbTableName, // not null in this constructor
-    this.whereClause, //{
+    this.whereClause, {
+    this.isGlobalRequest = false,
     // below removed maxNumberOfReturnedResults https://stackoverflow.com/questions/29071169/update-query-with-limit-cause-sqlite
     // this.maxNumberOfReturnedResults = ConditionConfiguration.maxNumberOfReturnedResultsFromDb,
-    // }
-  ) : model = null;
+  }) : model = null;
 
   String get queryPart {
     // dont need to cache anything - the select part is short, but the whereClause part may return a casched whereClause.queryPart String
     //model.appCoreModelClassesCommonDbTableName
     String queryPart = '';
 
+    //queryPart += 'DELETE FROM "${dbTableName ?? model!.driver.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" ';
+
     queryPart +=
-        'DELETE FROM ${dbTableName ?? model!.driver.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" ';
+        'DELETE FROM "${dbTableName ?? (!isGlobalRequest ? model!.driver : ConditionConfiguration.isClientApp ? model!.driver.driverGlobal : model!.driver)!.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" ';
+
     if (null != whereClause) {
       queryPart += whereClause!.queryPart;
     }
@@ -486,18 +506,20 @@ class ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlCommon {
 class ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlite3
     extends ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlCommon {
   ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlite3(
-    super.model,
-  );
+    super.model, {
+    super.isGlobalRequest = false,
+  });
 
   ConditionDataManagementDriverQueryBuilderPartDeleteClauseSqlite3.dbTableNameQuery(
     dbTableName, // not null in this constructor
     whereClause, {
     maxNumberOfReturnedResults =
         ConditionConfiguration.maxNumberOfReturnedResultsFromDb,
+    isGlobalRequest = false,
   }) : super.dbTableNameQuery(
-          dbTableName, // not null in this constructor
-          whereClause,
-        );
+            dbTableName, // not null in this constructor
+            whereClause,
+            isGlobalRequest: isGlobalRequest);
 }
 
 /// A callback function. If passed to a contstructor of a class like [ConditionDataManagementDriverQueryBuilderWhereClause] it is invoked each time a query part is to be used in a buildig a full query string. If returns true a query part is to be used. If you not pass this argument a query string buildging proces might be faster which is important only in big data apps, which seems not to be the case. These solutions is to give you more control over parts of a full query - f.e. right now some services of your app are available but some not, you can turn off some parts of the query, to speed up the app, save resources like memory, bandwidth, procesor. Again this means anyghing in big data.
@@ -716,8 +738,9 @@ class ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon
     with
         ConditionDataManagementDriverQueryBuilderPartColumnNamesAndValuesSqlCommon {
   /// If null, all columns will be red (wildcard SELECT *). If not nUll this means column Names that will be selected.
-  Set<String>? columnNames;
+  final Set<String>? columnNames;
   Map<String, dynamic>? overwriteModelProperties;
+  final bool isGlobalRequest;
 
   /// Model to be updated. Depending on the constructor used the model is used or [dbTableName] property Instead
   final ConditionModel? model;
@@ -732,6 +755,7 @@ class ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon
     {
     this.columnNames,
     this.overwriteModelProperties,
+    this.isGlobalRequest = false,
   })  : dbTableName = null,
         noModelColumnNamesWithValues = null;
 
@@ -741,13 +765,14 @@ class ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon
         this.noModelColumnNamesWithValues, // not null in this constructor
     {
     this.columnNames,
+    this.isGlobalRequest = false,
   }) : model = null;
 
   /// No need to cashe for now - it seems the class is kind of one time, if it was cashed and big, it might be permanent memory consuming
   String get queryPart {
     //implement it with those properties in mind.
     String queryPart =
-        'INSERT INTO "${dbTableName ?? model!.driver.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" (';
+        'INSERT INTO "${dbTableName ?? (!isGlobalRequest ? model!.driver : ConditionConfiguration.isClientApp ? model!.driver.driverGlobal : model!.driver)!.tableNamePrefix + (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}" (';
 
 //    if (null == columnNames || columnNames!.isEmpty) {
     //queryPart += '* ';
@@ -847,8 +872,8 @@ class ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon
           debugPrint(
               'key $key of ${model.runtimeType.toString()} will be assigned to query');
           if (null != overwriteModelProperties &&
-              overwriteModelProperties!.keys.contains('app_id')) {
-            queryPart += getValuePart(overwriteModelProperties!['app_id']);
+              overwriteModelProperties!.keys.contains(key)) {
+            queryPart += getValuePart(overwriteModelProperties![key]);
           } else {
             queryPart += getValuePart(model![key]);
           }
@@ -1001,11 +1026,12 @@ abstract class ConditionDataManagementDriver {
   /// like 'te2xTa_' this must be set but if you don't there is no error - by this you can use couple of applications with independent not conflicting table names in one db. Also it might prevent some sql attacks.
   final String tableNamePrefix;
 
-  /// if true and global_driver is null, the default global driver will be created, See [_driverGlobal] description. If _driverGlobal was not supplied and this property is true a default global driver (global server driver object is created)
+  /// if true and global_driver is null, the default global driver will be created, See [driverGlobal] description. If driverGlobal was not supplied and this property is true a default global driver (global server driver object is created)
   final bool hasGlobalDriver;
 
   /// see also [hasGlobalDriver] desc. if this is set a driver cares for synchronizing it's data with the backend server, also to checkout for new incoming messages or other stuff from other users and downloading it to the local server.
-  final ConditionDataManagementDriver? _driverGlobal;
+  @protected
+  final ConditionDataManagementDriver? driverGlobal;
 
   // using normal constructor you get the ConditionDataManagementDriver object and when the driver asynchronously gets ready (f.e. connects to a remote database) it completes the completer with the driver which you already have because you used the regular constructor. Why the same driver not just to pass true? Because a static method createDriver uses the contstuctor, before that the method creates a [Completer]<[ConditionDataManagementDriver]> internaly, the method returnes the completers future ([Future]<[ConditionDataManagementDriver]>), and finishes the Future using the completer.complete() method. So the static method createDriver is more prefable and convinient that the regular constructor
   final Completer<ConditionDataManagementDriver> initCompleter;
@@ -1041,7 +1067,7 @@ abstract class ConditionDataManagementDriver {
         tableNamePrefix = tableNamePrefix ??
             ConditionConfiguration
                 .local_http_server_settings['table_name_prefix'],
-        _driverGlobal = driverGlobal ??
+        this.driverGlobal = driverGlobal ??
             // WARNING THE FOLLOWING CONDITION REPEATED EARLIER IN THE CONSTRUCTOR MUST BE BOTH THE SAME
             (!(!isGlobalDriver &&
                     (hasGlobalDriver == true ||
@@ -1071,7 +1097,7 @@ abstract class ConditionDataManagementDriver {
       this.conditionModelApp = conditionModelApp;
     }
 
-    _driverGlobal?.getDriverOnDriverInited().then((driver) {
+    driverGlobal?.getDriverOnDriverInited().then((driver) {
       this.initCompleterGlobal!.complete(driver);
     }).catchError((error) {
       debugPrint(
@@ -1154,7 +1180,7 @@ abstract class ConditionDataManagementDriver {
     _changesListeners.add(changesListener);
   }
 
-  /// Check also the [checkOutIfGlobalServerAppKeyIsValid]() description. Each ConditionDataManagement driver object is both local and global server. Each driver has its local driver which has or not global server driver [_driverGlobal]? if you want to save data of the app object model object (with the app model itself) you need to get and use this key in the [ConditionModelApp] app [server_key] with the global server driver or in other words global server aspect of any driver.
+  /// Check also the [checkOutIfGlobalServerAppKeyIsValid]() description. Each ConditionDataManagement driver object is both local and global server. Each driver has its local driver which has or not global server driver [driverGlobal]? if you want to save data of the app object model object (with the app model itself) you need to get and use this key in the [ConditionModelApp] app [server_key] with the global server driver or in other words global server aspect of any driver.
   @protected
   Future<String> requestGlobalServerAppKey() {
     Completer<String> completer = Completer<String>();
@@ -1163,7 +1189,7 @@ abstract class ConditionDataManagementDriver {
     return completer.future;
   }
 
-  /// Check also the [requestGlobalServerAppKey]() description. The point of this method is that if you cannot synchronize your local server with the global server [_driverGlobal] property of local server driver object, if it happens f.e. after a restart, some longer time of unusing the app, it might be that the data of your app has been removed in the meantime, because of the global server implementation policy or the db has been damaged and replaced with new one or whatever. In such a case you check if the key is valid/handled, and if not (not error but anwser false) there is need to request a new key using the mentioned [requestGlobalServerAppKey](), and synchronize/send data from your app to the global server from scratch. All done automatically and possibly tricky.
+  /// Check also the [requestGlobalServerAppKey]() description. The point of this method is that if you cannot synchronize your local server with the global server [driverGlobal] property of local server driver object, if it happens f.e. after a restart, some longer time of unusing the app, it might be that the data of your app has been removed in the meantime, because of the global server implementation policy or the db has been damaged and replaced with new one or whatever. In such a case you check if the key is valid/handled, and if not (not error but anwser false) there is need to request a new key using the mentioned [requestGlobalServerAppKey](), and synchronize/send data from your app to the global server from scratch. All done automatically and possibly tricky.
   @protected
   Future<bool> checkOutIfGlobalServerAppKeyIsValid(String key) {
     Completer<bool> completer = Completer<bool>();
@@ -1835,7 +1861,9 @@ class ConditionModelFieldInt extends ConditionModelFieldIntUniversal {
 
   @override
   _fullyFeaturedValidateAndSetValue(int value,
-      [bool isToBeSet = true, isToBeSynchronized = true]) {
+      [bool isToBeSet = true,
+      isToBeSynchronized = true,
+      isToBeSynchronizedLocallyOnly = false]) {
     //!!!!! READ: you have model property here - you need it to finally validate the field
 
     if (isToBeSet == true && (!model.inited && isToBeSynchronized)) {
@@ -1858,7 +1886,8 @@ class ConditionModelFieldInt extends ConditionModelFieldIntUniversal {
       }
       if (isToBeSynchronized) {
         model.changed = true;
-        model.triggerLocalAndGlobalServerUpdatingProcess(columnName);
+        model.triggerLocalAndGlobalServerUpdatingProcess(
+            columnName, isToBeSynchronizedLocallyOnly);
       }
     }
     // here we are doing the ConditionModelFieldInt validation
@@ -1945,7 +1974,9 @@ class ConditionModelFieldIntOrNull
 
   @override
   _fullyFeaturedValidateAndSetValue(int? value,
-      [bool isToBeSet = true, isToBeSynchronized = true]) {
+      [bool isToBeSet = true,
+      isToBeSynchronized = true,
+      isToBeSynchronizedLocallyOnly = false]) {
     //!!!!! READ: you have model property here - you need it to finally validate the field
     if (isToBeSet == true && (!model.inited && isToBeSynchronized)) {
       throw ConditionModelModelNotInitedException();
@@ -1969,7 +2000,8 @@ class ConditionModelFieldIntOrNull
 
       if (isToBeSynchronized) {
         model.changed = true;
-        model.triggerLocalAndGlobalServerUpdatingProcess(columnName);
+        model.triggerLocalAndGlobalServerUpdatingProcess(
+            columnName, isToBeSynchronizedLocallyOnly);
       }
     }
     // here we are doing the ConditionModelFieldInt validation
@@ -2057,7 +2089,9 @@ class ConditionModelFieldString extends ConditionModelFieldStringUniversal {
 
   @override
   _fullyFeaturedValidateAndSetValue(String value,
-      [bool isToBeSet = true, isToBeSynchronized = true]) {
+      [bool isToBeSet = true,
+      isToBeSynchronized = true,
+      isToBeSynchronizedLocallyOnly = false]) {
     //!!!!! READ: you have model property here - you need it to finally validate the field
 
     if (isToBeSet == true && (!model.inited && isToBeSynchronized)) {
@@ -2079,7 +2113,8 @@ class ConditionModelFieldString extends ConditionModelFieldStringUniversal {
 
       if (isToBeSynchronized) {
         model.changed = true;
-        model.triggerLocalAndGlobalServerUpdatingProcess(columnName);
+        model.triggerLocalAndGlobalServerUpdatingProcess(
+            columnName, isToBeSynchronizedLocallyOnly);
       }
     }
     // here we are doing the ConditionModelFieldInt validation
@@ -2167,7 +2202,9 @@ class ConditionModelFieldStringOrNull
 
   @override
   _fullyFeaturedValidateAndSetValue(String? value,
-      [bool isToBeSet = true, isToBeSynchronized = true]) {
+      [bool isToBeSet = true,
+      isToBeSynchronized = true,
+      isToBeSynchronizedLocallyOnly = false]) {
     //!!!!! READ: you have model property here - you need it to finally validate the field
 
     if (isToBeSet == true && (!model.inited && isToBeSynchronized)) {
@@ -2192,7 +2229,8 @@ class ConditionModelFieldStringOrNull
       }
       if (isToBeSynchronized) {
         model.changed = true;
-        model.triggerLocalAndGlobalServerUpdatingProcess(columnName);
+        model.triggerLocalAndGlobalServerUpdatingProcess(
+            columnName, isToBeSynchronizedLocallyOnly);
       }
     }
     // here we are doing the ConditionModelFieldInt validation
@@ -2533,7 +2571,7 @@ abstract class ConditionModel extends ConditionMap {
           'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() inside _fieldsNowBeingInTheProcessOfUpdateGlobalServer async completer.completeError because _fieldsNowBeingInTheProcessOfUpdate.isEmpty');
     } else {
       // conditionModelApp.server_key is check if not empty or null in the _triggerLocalAndGlobalServerUpdatingProcessGlobalServer()
-      driver._driverGlobal!
+      driver.driverGlobal!
           .update(this,
               columnNames: _fieldsNowBeingInTheProcessOfUpdateGlobalServer,
               globalServerRequestKey: conditionModelApp.server_key)
@@ -2567,18 +2605,18 @@ abstract class ConditionModel extends ConditionMap {
     if (this is! ConditionModelIdAndOneTimeInsertionKeyModelServer) {
       throw Exception(
           'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): exception: the mode cannot be updated on the global server because it is not an instance of ConditionModelIdAndOneTimeInsertionKeyModelServer class (doesn\'t have to be immediate parent it can be far anchestor).');
-    } else if (null == driver._driverGlobal) {
+    } else if (null == driver.driverGlobal) {
       throw Exception(
           'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): exception: global driver isn\'t defined for the model and by extention for the entire ConditionModelApp app the model cannot be synchronized with the global server');
-    } else if (!driver._driverGlobal!.inited) {
+    } else if (!driver.driverGlobal!.inited) {
       debugPrint(
           'C]!!!!3 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): model.runtimeType == ${runtimeType} driver.inited == ${driver.inited}, driver.inited == ${driver.inited}');
       debugPrint(
           'C]!!!!3 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver == ${driver}');
       debugPrint(
-          'C]!!!!4 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver._driverGlobal!.inited == ${driver._driverGlobal!.inited}, driver._driverGlobal!.inited == ${driver._driverGlobal!.inited}');
+          'C]!!!!4 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver.driverGlobal!.inited == ${driver.driverGlobal!.inited}, driver.driverGlobal!.inited == ${driver.driverGlobal!.inited}');
       debugPrint(
-          'C]!!!!4 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver._driverGlobal == ${driver._driverGlobal}');
+          'C]!!!!4 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver.driverGlobal == ${driver.driverGlobal}');
 
       throw Exception(
           'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): exception: global driver is defined but isn\'t inited (is being initialized now). The model cannot be synchronized now with the global server it is supposed to be synchronized later (check out if implemented already).');
@@ -2590,94 +2628,117 @@ abstract class ConditionModel extends ConditionMap {
         (this as ConditionModelIdAndOneTimeInsertionKeyModelServer)
             .conditionModelApp;
 
-    // Especially In the early process of development all these conditions may be needed but later after you make sure all is well designed and implemented you will know what to remove;
-    if (conditionModelApp.server_key == null ||
-        conditionModelApp.server_key!.isEmpty) {
-      throw Exception(
-          'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): exception: conditionModelApp is defined but its server key is null or otherwhise empty string, just check for null: (conditionModelApp.server_key == null) == ${conditionModelApp.server_key == null}');
-    }
-
     debugPrint(
-        'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): a columnName == no columnName in globalServer update - all in queue at once\'}\' value change is attempting to treigger updating process or related stuff is going to be performed (if param columnName == null then the method invokation is related to just earlier setting up _triggerServerUpdatingProcessRetrigerAfterFinish = true to again perform checking on any new changes on the model\'s properties. Adding single columns to the queue is done using triggerLocalAndGlobalServerUpdatingProcess())');
+        'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): a columnName == no columnName in globalServer update - all in queue at once\'}\' value change is attempting to treigger updating process or related stuff is going to be performed (if param columnName == null then the method invokation is related to just earlier setting up _triggerServerUpdatingProcessRetrigerAfterFinish = true to again perform checking on any new changes on the model\'s properties. Adding single columns to the queue is done using triggerLocalAndGlobalServerUpdatingProcess()), model == $this');
 
     debugPrint(
         'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): model _modelIsBeingUpdatedGlobalServer == $_modelIsBeingUpdatedGlobalServer and _fieldsToBeUpdatedGlobalServer.toString() == ${_fieldsToBeUpdatedGlobalServer.toString()}');
 
-    if (_triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer &&
-        _fieldsToBeUpdatedGlobalServer.isEmpty) {
-      _triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer = false;
-      _modelIsBeingUpdatedGlobalServer = false;
-      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      // !!!!! This is the moment we can trigger the global server update (granted the [ConditionModelApp] object has its global server enabled)
-      completer.complete(true);
-      //return;
-    }
+    scheduleMicrotask(() {
+      if ((_triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer &&
+              _fieldsToBeUpdatedGlobalServer.isEmpty) ||
+          (_fieldsToBeUpdatedGlobalServer.isEmpty &&
+              _fieldsNowBeingInTheProcessOfUpdateGlobalServer.isEmpty)) {
+        _triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer = false;
+        _modelIsBeingUpdatedGlobalServer = false;
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // !!!!! This is the moment we can trigger the global server update (granted the [ConditionModelApp] object has its global server enabled)
+        debugPrint(
+            '?????????????? C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer()');
+        completer.complete(true);
+        return;
+      }
 
-    // Fot Timer: https://stackoverflow.com/questions/34140488/dart-timer-periodic-not-honoring-granularity-of-duration-in-vm
-    //    a: The minimal resolution of the timer is 1ms. When asking for a 500ns duration is rounded to 0ms, aka: as fast as possible. The code is:
-    //    b: !!! Note: If Dart code using Timer is compiled to JavaScript, the finest
-    //       granularity available in the browser is !!!!4 milliseconds.
-    // The delay is needed so that to lessen the risk of starting to performe the update
-    // before all changes to the models properties were performed
-    // f.e this['title']='abc' and then this['description']=cde;
-    // By this you have to update the model at once not in two or more stages
-    // the granularity chosen is as little as possible and as neglectible in terms of
-    // real time operations, possibly video conference (in distant unpredictable future :) )
-    if (!_modelIsBeingUpdatedGlobalServer ||
-        _triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer) {
-      debugPrint(
-          'C]V Inside triggerLocalAndGlobalServerUpdatingProcess(): model _modelIsBeingUpdatedGlobalServer == $_modelIsBeingUpdatedGlobalServer and _triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer == $_triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer');
-      // this should be set up now not in event loop asynchronous method read just below Timer() comments:
-      _modelIsBeingUpdatedGlobalServer = true;
-      // one time operation not Timer.periodic:
-      Timer(const Duration(milliseconds: 8), () {
-        // this should be set up now in the event loop asynchronous method:
-        _fieldsNowBeingInTheProcessOfUpdateGlobalServer
-            .addAll(_fieldsToBeUpdatedGlobalServer);
-        // before you do anything here see a fragment like this below in this method
-        // with it's description:
-        //scheduleMicrotask(
-        //    _fieldsToBeUpdated.add(columnName);
-        //);
-        // this should be set up now in the event loop asynchronous method:
-        _fieldsToBeUpdatedGlobalServer.clear();
-        _performTheModelUpdateUsingDriverGlobalServer(conditionModelApp)
-            .catchError((error) {
+      // Fot Timer: https://stackoverflow.com/questions/34140488/dart-timer-periodic-not-honoring-granularity-of-duration-in-vm
+      //    a: The minimal resolution of the timer is 1ms. When asking for a 500ns duration is rounded to 0ms, aka: as fast as possible. The code is:
+      //    b: !!! Note: If Dart code using Timer is compiled to JavaScript, the finest
+      //       granularity available in the browser is !!!!4 milliseconds.
+      // The delay is needed so that to lessen the risk of starting to performe the update
+      // before all changes to the models properties were performed
+      // f.e this['title']='abc' and then this['description']=cde;
+      // By this you have to update the model at once not in two or more stages
+      // the granularity chosen is as little as possible and as neglectible in terms of
+      // real time operations, possibly video conference (in distant unpredictable future :) )
+      if (!_modelIsBeingUpdatedGlobalServer ||
+          _triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer) {
+        debugPrint(
+            'C]V Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): model _modelIsBeingUpdatedGlobalServer == $_modelIsBeingUpdatedGlobalServer and _triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer == $_triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer');
+        // this should be set up now not in event loop asynchronous method read just below Timer() comments:
+        _modelIsBeingUpdatedGlobalServer = true;
+        // one time operation not Timer.periodic:
+        Timer(const Duration(milliseconds: 8), () async {
+          // this should be set up now in the event loop asynchronous method:
+          _fieldsNowBeingInTheProcessOfUpdateGlobalServer
+              .addAll(_fieldsToBeUpdatedGlobalServer);
+
           debugPrint(
-              'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() a Timer invoked the performTheModelUpdateUsingDriver() which invoked update() and returned error, NOT updated, result error, depending on the type of error (two processess accessed the same db file (if sqlite3) at the same time, internet connection lost, etc) !!!we now are trying to update the model doing it once per some longer time!!!: ${error.toString()}');
-          // For the local server there is no attemptsLimitCountDownCounter localServer is supposed to work always in all circumstances, but for global server you can loose the internet connection, the server bandwitdh may be too much congested, etc.
-          int attemptsLimitCountDownCounter = 2;
-          Timer.periodic(const Duration(seconds: 5), (timer) {
+              'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): START OF: await conditionModelApp.getServerKeyWhenReady(); ');
+          // the below may even never end, but it's ok, any invoking of this method
+          // will cause that the code will not reach this Timer() invokation which is ok.
+          // if the future completes (should never throw exception) it will allow the code
+          // beneath it to execute which means an attempt to update the data on the global server
+          // The next time the code alway resolves quickly, not waiting because it is already true
+          try {
+            await conditionModelApp.getServerKeyWhenReady();
+          } catch (e) {
             debugPrint(
-                'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update attempt: A cyclical attempts to update the model of class [${runtimeType.toString()}] on the local server are being performed. This is invokation');
-            _performTheModelUpdateUsingDriverGlobalServer(conditionModelApp)
-                .then((result) {
-              // result must be always true or throw error (catch error of future)
-              // you dont need to do anything special here _performTheModelUpdateUsingDriver() does the job.
-              timer.cancel();
-            }).catchError((error) {
+                'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): await conditionModelApp.getServerKeyWhenReady(); error: $e');
+          }
+          debugPrint(
+              'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): SUCCESSFUL END OF: await conditionModelApp.getServerKeyWhenReady(); ');
+          // Especially In the early process of development all these conditions may be needed but later after you make sure all is well designed and implemented you will know what to remove;
+          // above doeas the job: await conditionModelApp.getServerKeyWhenReady();
+          //if (conditionModelApp.server_key == null ||
+          //    conditionModelApp.server_key!.isEmpty) {
+          //  throw Exception(
+          //      'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): exception: conditionModelApp is defined but its server key is null or otherwhise empty string, just check for null: (conditionModelApp.server_key == null) == ${conditionModelApp.server_key == null}');
+          //}
+//
+          // before you do anything here see a fragment like this below in this method
+          // with it's description:
+          //scheduleMicrotask(
+          //    _fieldsToBeUpdated.add(columnName);
+          //);
+          // this should be set up now in the event loop asynchronous method:
+          _fieldsToBeUpdatedGlobalServer.clear();
+          _performTheModelUpdateUsingDriverGlobalServer(conditionModelApp)
+              .catchError((error) {
+            debugPrint(
+                'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() a Timer invoked the performTheModelUpdateUsingDriver() which invoked update() and returned error, NOT updated, result error, depending on the type of error (two processess accessed the same db file (if sqlite3) at the same time, internet connection lost, etc) !!!we now are trying to update the model doing it once per some longer time!!!: ${error.toString()}');
+            // For the local server there is no attemptsLimitCountDownCounter localServer is supposed to work always in all circumstances, but for global server you can loose the internet connection, the server bandwitdh may be too much congested, etc.
+            int attemptsLimitCountDownCounter = 2;
+            Timer.periodic(const Duration(seconds: 5), (timer) {
               debugPrint(
-                  'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update attempt _fieldsNowBeingInTheProcessOfUpdateGlobalServer == $_fieldsNowBeingInTheProcessOfUpdateGlobalServer , _fieldsToBeUpdatedGlobalServer == $_fieldsToBeUpdatedGlobalServer : error: ${error.toString()}');
-              // !!!!! Even if it works not much sure if something elsevhere was designed worse
-              // than it should be - find out one day why the condition below shouldn't be here
-              if (_fieldsNowBeingInTheProcessOfUpdateGlobalServer.isEmpty &&
-                  _fieldsToBeUpdatedGlobalServer.isEmpty) {
+                  'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update attempt: A cyclical attempts to update the model of class [${runtimeType.toString()}] on the local server are being performed. This is invokation');
+              _performTheModelUpdateUsingDriverGlobalServer(conditionModelApp)
+                  .then((result) {
+                // result must be always true or throw error (catch error of future)
+                // you dont need to do anything special here _performTheModelUpdateUsingDriver() does the job.
+                timer.cancel();
+              }).catchError((error) {
+                debugPrint(
+                    'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update attempt _fieldsNowBeingInTheProcessOfUpdateGlobalServer == $_fieldsNowBeingInTheProcessOfUpdateGlobalServer , _fieldsToBeUpdatedGlobalServer == $_fieldsToBeUpdatedGlobalServer : error: ${error.toString()}');
+                // !!!!! Even if it works not much sure if something elsevhere was designed worse
+                // than it should be - find out one day why the condition below shouldn't be here
+                if (_fieldsNowBeingInTheProcessOfUpdateGlobalServer.isEmpty &&
+                    _fieldsToBeUpdatedGlobalServer.isEmpty) {
+                  timer.cancel();
+                  completer.completeError(
+                      'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update _fieldsNowBeingInTheProcessOfUpdateGlobalServer.isEmpty && _fieldsToBeUpdatedGlobalServer.isEmpty. Not sure if it is an error but at best it may be not a well designed piece of code somewhere.');
+                  return;
+                }
+              });
+              if (attemptsLimitCountDownCounter-- == 0) {
                 timer.cancel();
                 completer.completeError(
-                    'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update _fieldsNowBeingInTheProcessOfUpdateGlobalServer.isEmpty && _fieldsToBeUpdatedGlobalServer.isEmpty. Not sure if it is an error but at best it may be not a well designed piece of code somewhere.');
-                return;
+                    'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer updateattemptsLimitCountDownCounter-- == 0, we cannot update the model quickly and directly from the currently updated model. Probably, if already implemented, by design the model will be updated from local server db record in a cyclical slower way.');
               }
             });
-            if (attemptsLimitCountDownCounter-- == 0) {
-              timer.cancel();
-              completer.completeError(
-                  'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer updateattemptsLimitCountDownCounter-- == 0, we cannot update the model quickly and directly from the currently updated model. Probably, if already implemented, by design the model will be updated from local server db record in a cyclical slower way.');
-            }
+            return false;
           });
-          return false;
         });
-      });
-    }
+      }
+    });
 
     return completer.future;
   }
@@ -2703,7 +2764,7 @@ abstract class ConditionModel extends ConditionMap {
         completer.complete(result);
         _fieldsNowBeingInTheProcessOfUpdate.clear();
         _triggerServerUpdatingProcessRetrigerAfterFinish = true;
-        triggerLocalAndGlobalServerUpdatingProcess();
+        triggerLocalAndGlobalServerUpdatingProcess(null);
       }).catchError((error) {
         debugPrint(
             'C] Inside triggerLocalAndGlobalServerUpdatingProcess(), inside _performTheModelUpdateUsingDriver() a Timer invoked the update(), NOT updated, result error: ${error.toString()}');
@@ -2715,7 +2776,8 @@ abstract class ConditionModel extends ConditionMap {
 
   /// Do the method private and pass to the [ConditionModelFields] fields as callback this cannot be called from outside, the fields themselves also pass something safaly as callback (_valueAndSet or something like that).  This is called from ConditionModelField object [validateAndSet](...) method. See mostly the [_fieldsToBeUpdated] property description
   @protected
-  triggerLocalAndGlobalServerUpdatingProcess([String? columnName]) {
+  triggerLocalAndGlobalServerUpdatingProcess(
+      [String? columnName, bool isToBeSynchronizedLocallyOnly = false]) {
     debugPrint(
         'C] triggerLocalAndGlobalServerUpdatingProcess(): a columnName \'$columnName\' value change is attempting to treigger updating process or related stuff is going to be performed (if param columnName == null then the method invokation is related to just earlier setting up _triggerServerUpdatingProcessRetrigerAfterFinish = true to again perform checking on any new changes on the model\'s properties)');
 
@@ -2731,10 +2793,13 @@ abstract class ConditionModel extends ConditionMap {
     scheduleMicrotask(() {
       if (columnName != null) {
         _fieldsToBeUpdated.add(columnName);
+        if (!isToBeSynchronizedLocallyOnly) {
+          _fieldsToBeUpdatedGlobalServer.add(columnName);
+        }
       }
 
       debugPrint(
-          'C] Inside triggerLocalAndGlobalServerUpdatingProcess(): model _modelIsBeingUpdated == $_modelIsBeingUpdated and _fieldsToBeUpdated.toString() == ${_fieldsToBeUpdated.toString()}');
+          'C] Inside triggerLocalAndGlobalServerUpdatingProcess(): model _modelIsBeingUpdated == $_modelIsBeingUpdated and right now at the beginning of the current method body: _fieldsToBeUpdated.toString() == ${_fieldsToBeUpdated.toString()}, _fieldsToBeUpdatedGlobalServer.toString() == $_fieldsToBeUpdatedGlobalServer');
 
       debugPrint('C]2:1!!!');
 
@@ -2743,7 +2808,8 @@ abstract class ConditionModel extends ConditionMap {
         debugPrint('C]2:2!!!');
         _triggerServerUpdatingProcessRetrigerAfterFinish = false;
         _modelIsBeingUpdated = false;
-        _triggerLocalAndGlobalServerUpdatingProcessGlobalServer();
+        if (!isToBeSynchronizedLocallyOnly)
+          _triggerLocalAndGlobalServerUpdatingProcessGlobalServer();
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // !!!!! This is the moment we can trigger the global server update (granted the [ConditionModelApp] object has its global server enabled)
         debugPrint('C]2:3!!!');
@@ -2770,7 +2836,7 @@ abstract class ConditionModel extends ConditionMap {
       Timer(const Duration(milliseconds: 8), () {
         // this should be set up now in the event loop asynchronous method:
         _fieldsNowBeingInTheProcessOfUpdate.addAll(_fieldsToBeUpdated);
-        _fieldsToBeUpdatedGlobalServer.addAll(_fieldsToBeUpdated);
+        // earlier in code: if (!isToBeSynchronizedLocallyOnly) {_fieldsToBeUpdatedGlobalServer.addAll(_fieldsToBeUpdated);}
         // before you do anything here see a fragment like this below in this method
         // with it's description:
         //scheduleMicrotask(
@@ -2822,19 +2888,23 @@ abstract class ConditionModel extends ConditionMap {
 // The only way is to validate any data
   }
 
-  _doDirectUpdateOnGlobalServer(ConditionDataManagementDriver working_driver,
+  _doDirectCreateOnGlobalServer(ConditionDataManagementDriver working_driver,
       ConditionModelApp conditionModelAppInstance) {
     // ?asynchronous and we don't wait for it to finish
     // ?not vary sure very much if mixed future and async/await syntax
     // ?will always produce the expected results
+    debugPrint(
+        '2:2:initModel() in _doDirectCreateOnGlobalServer() working_driver.driverGlobal.create()');
     if (null == conditionModelAppInstance.server_key) {
       _completerInitModelGlobalServer.completeError(
-          '2:2:initModel() working_driver._driverGlobal.create() async exception: server_key of ConditionModelApp is null, we cannot immediately and directly (this is not non-cyclical synchronization) synchroznize local server model with the global server now waiting for the key and for synchronizing later (if already implemented)');
-    } else if (!working_driver._driverGlobal!.inited) {
+          '2:2:initModel() in _doDirectCreateOnGlobalServer() working_driver.driverGlobal.create() async exception: server_key of ConditionModelApp is null, we cannot immediately and directly (this is not non-cyclical synchronization) synchroznize local server model with the global server now waiting for the key and for synchronizing later (if already implemented)');
+    } else if (!working_driver.driverGlobal!.inited) {
       _completerInitModelGlobalServer.completeError(
-          '2:2:initModel() working_driver._driverGlobal.create() async exception: !working_driver._driverGlobal!.inited is not inited so it cannot be used now. Depending on how it is designed so far the model may be synchronized later with the global server');
+          '2:2:initModel() in _doDirectCreateOnGlobalServer() working_driver.driverGlobal.create() async exception: !working_driver.driverGlobal!.inited is not inited so it cannot be used now. Depending on how it is designed so far the model may be synchronized later with the global server');
     } else {
-      working_driver._driverGlobal!
+      debugPrint(
+          '2:2:initModel() in _doDirectCreateOnGlobalServer() WE CAN CRETAE NOW IN GLOBAL SERVER working_driver.driverGlobal.create()');
+      working_driver.driverGlobal!
           .create(this,
               globalServerRequestKey: conditionModelAppInstance.server_key)
           .future
@@ -2842,17 +2912,26 @@ abstract class ConditionModel extends ConditionMap {
         bool nullifyTheKey = false;
         if (result[0] != null && result[0]! > 0) {
           //this['id'] = result[0];
+          //to do NOW
+          //First no server_id set up on the server side (should be set up when record is created)
+          //Second we need to then update the received id (is correct for now)
+          //on local server with no update to the global server this should solve the problems
+          //why there is no server_id both on local and global server
+          debugPrint(
+              '2:2:initModel() in _doDirectCreateOnGlobalServer() setting up server_id with no to global server update result[0] = ${result[0]}');
           columnNamesAndFullyFeaturedValidateAndSetValueMethods['server_id']!(
-              result[0], true, false);
+              result[0], true, true, true);
           nullifyTheKey = true;
         } else if (result[1] != null && result[1]! > 0) {
+          debugPrint(
+              '2:2:initModel() in _doDirectCreateOnGlobalServer() setting up server_id with no to global server update result[1] = ${result[1]}');
           //this['id'] = result[1];
           columnNamesAndFullyFeaturedValidateAndSetValueMethods['server_id']!(
-              result[1], true, false);
+              result[1], true, true, true);
           nullifyTheKey = true;
         } else {
           _completerInitModelGlobalServer.completeError(
-              '2:initModel() working_driver._driverGlobal.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
+              '2:initModel() in _doDirectCreateOnGlobalServer() working_driver.driverGlobal.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
         }
 
         // this will trigger nullifying the key on local and the global server
@@ -2873,7 +2952,7 @@ abstract class ConditionModel extends ConditionMap {
                     */
       }).catchError((error) {
         _completerInitModelGlobalServer.completeError(
-            '2:initModel() working_driver._driverGlobal.create() error: With a list of one or two possible integers containing no int id a model initiation could\'t has been finished. Exception thrown: error == $error');
+            '2:initModel() working_driver.driverGlobal.create() error: With a list of one or two possible integers containing no int id a model initiation could\'t has been finished. Exception thrown: error == $error');
       });
     }
   }
@@ -2899,6 +2978,7 @@ abstract class ConditionModel extends ConditionMap {
     _completerInitModelGlobalServer.future.catchError((error) {
       debugPrint(
           'initModel() _completerInitModelGlobalServer.future exception catched see code of initModel seek the debugPrint, and the async exception thrown is: $error');
+      return false;
     });
 
 // coulnd\t use conditionModelApp property, it may be that it would be overlapping
@@ -2908,7 +2988,7 @@ abstract class ConditionModel extends ConditionMap {
       conditionModelAppInstance =
           (this as ConditionModelIdAndOneTimeInsertionKeyModelServer)
               .conditionModelApp;
-      if (null == driver._driverGlobal) {
+      if (null == driver.driverGlobal) {
         _completerInitModelGlobalServer.completeError(
             'initModel global driver is null so no data can be synchronized');
       }
@@ -3010,7 +3090,7 @@ abstract class ConditionModel extends ConditionMap {
                 await _updateLocalId(working_driver);
 
                 if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
-                  _doDirectUpdateOnGlobalServer(working_driver,
+                  _doDirectCreateOnGlobalServer(working_driver,
                       conditionModelAppInstance as ConditionModelApp);
                 }
               }
@@ -3090,22 +3170,6 @@ abstract class ConditionModel extends ConditionMap {
 
               _inited = true;
               _completerInitModel.complete(true);
-
-              // this part exception must be catched because if the nullifying failes it will be repeated later using cyclical db management and cleanups
-              try {
-                // It might has happened that a previous attempt of nullyfying the one_time_insertion_key db column of a row failed (however the rest of the stuff was successful). So we try to nullify it again now if needed.
-                /*if (this is ConditionModelIdAndOneTimeInsertionKeyModel &&
-                    this['one_time_insertion_key'] != null) {
-                  nullifyOneTimeInsertionKey(working_driver);
-                }*/
-                if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
-                  _doDirectUpdateOnGlobalServer(working_driver,
-                      conditionModelAppInstance as ConditionModelApp);
-                }
-              } catch (e) {
-                debugPrint(
-                    'initModel() nullifyOneTimeInsertionKey(working_driver); exception that is catched because the nullifying the key will be performed later using cyclical cleanups, etc - see if it is already implemented :) ');
-              }
             } catch (e) {
               debugPrint(
                   'The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure during validating and setting each field received from a db record. One field failed not passing validation or setting it\'s value');
@@ -3149,19 +3213,17 @@ abstract class ConditionModel extends ConditionMap {
           }
 
           if (this is ConditionModelIdAndOneTimeInsertionKeyModel) {
-            // not awaiting nullifying:
-            try {
-              nullifyOneTimeInsertionKey(working_driver);
-            } catch (e) {
-              debugPrint(
-                  '1:initModel() nullifyOneTimeInsertionKey error - at this state it may fail will be done later [to do]: error: e == $e');
-            }
             // this one must work, even with timers to try again
             columnNamesAndFullyFeaturedValidateAndSetValueMethods['local_id']!(
                 this['id'], true, false);
 
             // this will local_id on a local - if fails it will do it until it will success that the conde will execute further
             await _updateLocalId(working_driver);
+
+            if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
+              _doDirectCreateOnGlobalServer(working_driver,
+                  conditionModelAppInstance as ConditionModelApp);
+            }
           }
 
           _inited = true;
@@ -3526,6 +3588,16 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
                   .from_server_and_read_only,
           isFinal: true);
 
+  /// WARNING [TO DO:] or to rethink again later: take care (as it is now) that app_id is taken by the ConditionModelApp server key on the global server not on app_id property. And the local app should\'nt rather "know" the app_id. Yet to rethink if such restrictions are needed. It is starting to seem that actually the key may not be finally absolutely neccessary and app_id would be faster. Don\'t change your mind in a hurry.
+  @ServerSideModelProperty()
+  @protected
+  late final ConditionModelFieldIntOrNull a_app_id =
+      ConditionModelFieldIntOrNull(this, 'app_id',
+          propertySynchronisation:
+              ConditionModelFieldDatabaseSynchronisationType
+                  .from_server_and_read_only,
+          isFinal: true);
+
   // On a completely new model crettion or each change/update to the model this is set to 1 depending on whether or not a property needs to be synchronized
   @AppicationSideModelProperty()
   @protected
@@ -3554,7 +3626,7 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
                   .from_server_and_read_only,
           isFinal: true);
 
-  /// Cannot be final, because there may be a duplicate in the sql backend server (almost impossible, but almost). Warning, whether or not you use the key a message is received by the destination second user anyway and immediately. Also the model itself cares to remove the key if for some reason a record was created but the model was not able to get it's own id, after a year internally by the backend system - we say about completely rare situations. In 99.9% cases or more you get the key and remove the key after less than a second model was sent to be inserted into sql db. It can be reasonalby assumed that if let's say you sent a [ConditionModelMessage] message it will be received by the destination user without the model trying to get to know the id that was inserted into the db. So even in critical situations this shouldn't have impact on speed in crucial tasks. If video, audio transmission is ever implemented it might be done differently without using [__one_time_insertion_key] solutions like this.
+  /*/// Cannot be final, because there may be a duplicate in the sql backend server (almost impossible, but almost). Warning, whether or not you use the key a message is received by the destination second user anyway and immediately. Also the model itself cares to remove the key if for some reason a record was created but the model was not able to get it's own id, after a year internally by the backend system - we say about completely rare situations. In 99.9% cases or more you get the key and remove the key after less than a second model was sent to be inserted into sql db. It can be reasonalby assumed that if let's say you sent a [ConditionModelMessage] message it will be received by the destination user without the model trying to get to know the id that was inserted into the db. So even in critical situations this shouldn't have impact on speed in crucial tasks. If video, audio transmission is ever implemented it might be done differently without using [__one_time_insertion_key] solutions like this.
   /// Special sql db property for id retrieving in some more complicated situations. See also [__one_time_insertion_key] and [getModelIdByOneTimeInsertionKey] method of [ConditionDataManagementDriver] class. Only a driver assigned to the object can change the value of this property (when two rows has the same unique key). You as user don't use it up on your own (except for a getter, no need for a setter). On a completely new model creation this unique key is set up automatically and internally to obtain the id of the model after it has been crated. After the id was obtained the key on the db is to be nullified.
   @BothAppicationAndServerSideModelProperty()
   @protected
@@ -3564,7 +3636,7 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
               ConditionModelFieldDatabaseSynchronisationType
                   .both_app_and_server_synchronized,
           isFinal: false);
-
+*/
   ConditionModelIdAndOneTimeInsertionKeyModelServer(super.conditionModelApp,
       super.conditionModelUser, super.parentModel, super.defValue,
       {super.appCoreModelClassesCommonDbTableName}) {
@@ -3572,21 +3644,22 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
       // id is possibly set in the class extending but here
       temporaryInitialData['to_be_synchronized'] = 1;
       // this is called on top: f.e ConditionModelMessage: validateInitialData(this); // not implemented, maybe done with little delay
-      _createAndSetOneTimeInsertionKeyServer();
+      //  _createAndSetOneTimeInsertionKeyServer();
     } else {
       temporaryInitialData['local_id'] = temporaryInitialData['id'];
     }
     a_local_id.init();
+    a_app_id.init();
     a_to_be_synchronized.init();
     a_server_id.init();
     a_server_parent_id.init();
-    a_server_one_time_insertion_key.init();
+    // a_server_one_time_insertion_key.init();
   }
 
   /// See [_createAndSetOneTimeInsertionKey] description with optionally contents of the method and it's comments.
-  void _createAndSetOneTimeInsertionKeyServer() {
-    defValue['server_one_time_insertion_key'] = getInsertionKey();
-  }
+  //void _createAndSetOneTimeInsertionKeyServer() {
+  //  defValue['server_one_time_insertion_key'] = getInsertionKey();
+  //}
 
   @override
   void operator []=(key, value) {
@@ -3596,13 +3669,16 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
       case 'local_id':
         local_id = value;
         break;
+      case 'app_id':
+        app_id = value;
+        break;
       case 'to_be_synchronized': // this is set internally but the property must be enlisted so that no exception can be thrown.
         to_be_synchronized = value;
         break;
 
-      case 'server_one_time_insertion_key': // this is set internally but the property must be enlisted so that no exception can be thrown.
-        server_one_time_insertion_key = value;
-        break;
+      //case 'server_one_time_insertion_key': // this is set internally but the property must be enlisted so that no exception can be thrown.
+      //  server_one_time_insertion_key = value;
+      //  break;
       case 'server_id': // see [id_protected] setter, this is set internally but the property must be enlisted so that no exception can be thrown.
         server_id = value;
         break;
@@ -3622,18 +3698,23 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
   int get local_id => defValue['local_id'].value;
 
   @protected
+  set app_id(int? value) => a_app_id.validateAndSet(value);
+
+  int? get app_id => defValue['app_id'].value;
+
+  @protected
   set to_be_synchronized(int value) =>
       a_to_be_synchronized.validateAndSet(value);
 
   int get to_be_synchronized => defValue['to_be_synchronized'].value;
 
-  @protected
-  set server_one_time_insertion_key(String? value) =>
-      a_server_one_time_insertion_key.validateAndSet(value);
-
-  /// see more [_server_one_time_insertion_key] and parent-class [_one_time_insertion_key]
-  String? get server_one_time_insertion_key =>
-      defValue['server_one_time_insertion_key'].value;
+//  @protected
+//  set server_one_time_insertion_key(String? value) =>
+//      a_server_one_time_insertion_key.validateAndSet(value);
+//
+//  /// see more [_server_one_time_insertion_key] and parent-class [_one_time_insertion_key]
+//  String? get server_one_time_insertion_key =>
+//      defValue['server_one_time_insertion_key'].value;
 
   /// See the parent's class id setter description
   @protected
@@ -4539,6 +4620,8 @@ class ConditionModelApp extends ConditionModel
               ConditionModelFieldDatabaseSynchronisationType.app_only,
           isFinal: true);
 
+  Completer<bool> serverKeyReadyCompleter = Completer<bool>();
+
   /// This variable stores the key from local server, checks if it is still valid, if not
   /// the app will get a new one and all old synchronized data will be lost, new synchronizing
   /// should begin, FOR WHATEVER REASON - YOU CHANGED GLOBAL SERVER SETTINGS - not now such an option or in development mode you clean a db of global server
@@ -4610,7 +4693,7 @@ class ConditionModelApp extends ConditionModel
     //super.driver.addInitCompleter(this.driver_init_completer);
 
     this.driver.conditionModelApp = this;
-    this.driver._driverGlobal?.conditionModelApp = this;
+    this.driver.driverGlobal?.conditionModelApp = this;
 
     this.driver.getDriverOnDriverInited().then((param) {
       // something like this
@@ -4653,22 +4736,37 @@ class ConditionModelApp extends ConditionModel
   /// Used by initCompleteModel in two scenarios so the code is moved to the method here so that not to be used twice
   _requestGlobalServerAppKeyOnceAndThenPeriodically() async {
     try {
-      server_key = await driver._driverGlobal!
+      debugPrint(
+          'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key value');
+      String serverKeyTemp = await driver.driverGlobal!
           .requestGlobalServerAppKey()
           .timeout(const Duration(
               seconds:
                   12)); // leave 12 seconds for global server operations worst but successful case scenarion, f.e. sqlite3 db file was blocked by heavy trafic, three attempts of internal server operations to obtain the key for the app which are going to be performed in about 6 seconds for three internal method invokations + 6 seconds for internal db operations themselves
+      debugPrint(
+          'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key - just now should has been set up server_key = $server_key');
+      a_server_key._fullyFeaturedValidateAndSetValue(
+          serverKeyTemp, true, false, true);
+      serverKeyReadyCompleter.complete(true);
     } catch (e) {
       debugPrint(
-          'class [ConditionModelApp], method initCompleteModel() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed (now setting up cyclical checking out using Timer.periodic), and data synchronized. Exception thrown: $e');
+          'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically(), method initCompleteModel() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed (now setting up cyclical checking out using Timer.periodic), and data synchronized. Exception thrown: $e');
 
       // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
       Timer.periodic(Duration(seconds: 13), (timer) async {
         try {
-          server_key = await driver._driverGlobal!
+          debugPrint(
+              'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() PERIODIC trying to set up the server_key value');
+          String serverKeyTemp = await driver.driverGlobal!
               .requestGlobalServerAppKey()
               .timeout(const Duration(seconds: 12));
           // it probably might be that the method will be called one time too much
+          a_server_key._fullyFeaturedValidateAndSetValue(
+              serverKeyTemp, true, false, true);
+          serverKeyReadyCompleter.complete(true);
+          debugPrint(
+              'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() PERIODIC to set up the server_key - just now should has been set up server_key = $server_key');
+
           if (timer.isActive) {
             timer.cancel();
           }
@@ -4716,9 +4814,9 @@ class ConditionModelApp extends ConditionModel
     // what takes some time - THE GLOBAL SERVER IS READY. So couple of seconds to finish the operation
     // In an emergency situation you need to wait for the internet connection or
     // server availability anyway so max ten second is not too long and balanced approach
-    if (null != driver._driverGlobal) {
+    if (null != driver.driverGlobal) {
       try {
-        await driver._driverGlobal!.getDriverOnDriverInited();
+        await driver.driverGlobal!.getDriverOnDriverInited();
         // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
         // this may fail as the remote global server may be unavailable or there is no internet connetino at the moment
         // In an emergency situation you need to wait for the internet connection or
@@ -4745,7 +4843,7 @@ class ConditionModelApp extends ConditionModel
           try {
             debugPrint(
                 'class [ConditionModelApp], method initCompleteModel() We are now going to check out if we can use the locally (in the local server) stored server_key canTheKeyBeUsed waiting for success or exception');
-            bool canTheKeyBeUsed = await driver._driverGlobal!
+            bool canTheKeyBeUsed = await driver.driverGlobal!
                 .checkOutIfGlobalServerAppKeyIsValid(
                     (_serverKeyHelperContainer as String))
                 .timeout(const Duration(seconds: 12));
@@ -4766,7 +4864,8 @@ class ConditionModelApp extends ConditionModel
               // and we have to set the !!! server_key value using different way
               // not to trigger any synchronization with global server but just validating beforehand
               a_server_key._fullyFeaturedValidateAndSetValue(
-                  _serverKeyHelperContainer, true, false);
+                  _serverKeyHelperContainer, true, false, true);
+              serverKeyReadyCompleter.complete(true);
             }
           } catch (e) {
             debugPrint(
@@ -4777,7 +4876,7 @@ class ConditionModelApp extends ConditionModel
         }
       } catch (e) {
         debugPrint(
-            'initCompleteModel(): [ConditionModelApp] class, driver._driverGlobal!.getDriverOnDriverInited() not able to init global driver, error: $e only local serve can be used');
+            'initCompleteModel(): [ConditionModelApp] class, driver.driverGlobal!.getDriverOnDriverInited() not able to init global driver, error: $e only local serve can be used');
       }
     }
 
@@ -4869,8 +4968,23 @@ class ConditionModelApp extends ConditionModel
   }
 
   @protected
-  set server_key(String? value) => a_server_key.validateAndSet(value);
+  set server_key(String? value) {
+    debugPrint('server_key setter: stage 1');
+    a_server_key.validateAndSet(value);
+    debugPrint('server_key setter: stage 2');
+    if (server_key != null && server_key!.isNotEmpty) {
+      debugPrint('server_key setter: stage 3');
+
+      serverKeyReadyCompleter.complete(true);
+      debugPrint('server_key setter: stage 4');
+    }
+  }
+
   String? get server_key => defValue['server_key'].value;
+  Future<bool> getServerKeyWhenReady() {
+    return serverKeyReadyCompleter.future;
+  }
+
   @protected
   set users_counter(int? value) => a_users_counter.validateAndSet(value);
   int? get users_counter => defValue['users_counter'].value;

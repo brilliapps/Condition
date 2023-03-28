@@ -289,13 +289,23 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       String key) async {
     Completer<bool> completer = Completer<bool>();
 
+    // WARNING: TAKE CARE THAT
+    // _getAppIdByAGivenGlobalServerKey(String globalServerKey) works similarly
+    // the method mentioned returns int or error
+    // but this method returns true, false (not error) or error/exception
+    // both methods maybe should rather be maintained independently not
+    // to miss the important differences in returning results
+
     try {
+      debugPrint(
+          'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper() we are to check if the key == $key is valid using readAll method');
       List<Map>? conditionMapList = await readAll(
           'ConditionModelApps',
           ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
             ..add('key', key),
           limit: 1,
-          columnNames: {'id'});
+          columnNames: {'id'},
+          globalServerRequestKey: key);
 
       debugPrint(
           'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper() A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :');
@@ -375,9 +385,10 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
   Future<int> getModelIdByOneTimeInsertionKey(
       ConditionModelIdAndOneTimeInsertionKeyModel model,
       {String? globalServerRequestKey}) {
-    if (model.one_time_insertion_key == null)
-      Exception(
+    if (model.one_time_insertion_key == null) {
+      throw Exception(
           'model with model.one_time_insertion_key == null cannot be used in this method');
+    }
 
     // ??? : Condition should never be used, however some re-implementations can be wrong, this is after any other request is run, so on the first db request an Exception should already has been thrown
     if (!inited) {
@@ -396,7 +407,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             globalServerRequestKey: globalServerRequestKey)
         .then((List<Map>? conditionMapList) {
       debugPrint(
-          'A result of readAll (that was invoked by getModelIdByOneTimeInsertionKey) has arrived. Here how it looks like:');
+          'getModelIdByOneTimeInsertionKey(), A result of readAll (that was invoked by getModelIdByOneTimeInsertionKey) has arrived. Here how it looks like:');
 
       if (conditionMapList == null) {
         debugPrint('It is null :(');
@@ -404,16 +415,30 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             'error: getModelIdByOneTimeInsertionKey() The id value couldn\'t has been obtained. It normally means a record hasn\'t been inserted during a preceding create()/insert into operation. It requires to insert the model again into the db.');
       } else {
         debugPrint(
-            'It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0].toString())}');
+            'getModelIdByOneTimeInsertionKey(), It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0]['id'].toString())}');
         // !!!!!! RIDICULOUS RETURN :)
         //return completer.complete(int.tryParse(conditionMapList[0].toString()));
         //completer.complete(int.tryParse(conditionMapList[0].toString()));
-        completer.complete(conditionMapList[0]['id']);
+
+        dynamic id = int.tryParse(conditionMapList[0]['id'].toString());
+        if (null != id && id is int && id > 0) {
+          debugPrint(
+              'getModelIdByOneTimeInsertionKey id result SUCCESS: it is correnct integer value');
+          completer.complete(id);
+        } else {
+          completer.completeError(
+              'getModelIdByOneTimeInsertionKey result exception: is not valid operation and result is: int.tryParse(conditionMapList.toString()) == $conditionMapList');
+        }
       }
     }).catchError((e) {
+      //here RangeError ???
+      //Predefined error message, rather throw Excepthion custom class, There was a db_error : e == RangeError (index): Invalid value: Valid value range is empty: 0
       // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
+      String message =
+          '\nparam: ${model.runtimeType.toString()}\nparam: model.one_time_insertion_key == ${model.one_time_insertion_key}\nparam: ${(ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()..add('one_time_insertion_key', model.one_time_insertion_key)).queryPart}\nparam: dbTableName: ${model.appCoreModelClassesCommonDbTableName},\nparam: globalServerRequestKey: $globalServerRequestKey);';
+
       completer.completeError(
-          'Predefined error message, rather throw Excepthion custom class, There was a db_error');
+          'Predefined error message, rather throw Excepthion custom class, There was a db_error : e == $e  ## But Additionally $message');
     });
 
     return completer.future;
@@ -540,8 +565,55 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     return completer.future;
   }
 
+  @Deprecated(
+      'It is not deprecated, just wanted to notify it must be quickly implemented :) ')
   Future<int> _getAppIdByAGivenGlobalServerKey(String globalServerKey) async {
     Completer<int> completer = Completer<int>();
+
+    // how to implement it?
+    //isGlobalRequest: null != globalServerRequestKey ? true : false
+    debugPrint(
+        '_getAppIdByAGivenGlobalServerKey Not implemented. NOT Throwing fatal error for now. I was kinda thinking it\'s been implemented :)');
+
+//    throw Error();
+
+    try {
+      List<Map>? conditionMapList = await readAll(
+          'ConditionModelApps',
+          ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
+            ..add('key', globalServerKey),
+          limit: 1,
+          columnNames: {'id'});
+      debugPrint(
+          '_getAppIdByAGivenGlobalServerKey() A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :');
+
+      if (conditionMapList == null || conditionMapList.isEmpty) {
+        debugPrint(
+            '_getAppIdByAGivenGlobalServerKey() It is null or empty :( but it is NOT a db error! A new key will be obtained in a while or later');
+        completer.completeError(
+            '_getAppIdByAGivenGlobalServerKey() exception: It is null or empty :( but it is NOT a db error we cannot do anything about! A new key will be obtained in a while or later');
+      } else {
+        debugPrint(
+            '_getAppIdByAGivenGlobalServerKey() result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0]['id'].toString())}');
+        // !!!!!! RIDICULOUS RETURN :)
+        //return completer.complete(int.tryParse(conditionMapList[0].toString()));
+        //completer.complete(int.tryParse(conditionMapList[0].toString()));
+        //completer.complete(conditionMapList[0]['id']);
+        dynamic app_id = int.tryParse(conditionMapList[0]['id'].toString());
+        if (null != app_id && app_id is int && app_id > 0) {
+          debugPrint(
+              '_getAppIdByAGivenGlobalServerKey() app_id result SUCCESS: it is correnct integer value');
+          completer.complete(app_id);
+        } else {
+          completer.completeError(
+              '_getAppIdByAGivenGlobalServerKey() result exception: is not valid operation and result is: int.tryParse(conditionMapList[0].toString()) == $app_id');
+        }
+      }
+    } catch (e) {
+      // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
+      completer.completeError(
+          '_getAppIdByAGivenGlobalServerKey() overall readAll exception not related to a successfully performed operation with wrong result but possibly some different error, Predefined error/exception message, rather throw Excepthion custom class, There was a db_error,error $e');
+    }
 
     return completer.future;
   }
@@ -582,6 +654,9 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
               await _getAppIdByAGivenGlobalServerKey(globalServerRequestKey);
           // for create we don't need to overwrite id with null value because the query builder
           // will skip the column for the main constructor of the query accepting model object.
+          debugPrint(
+              'DataManagementDriver create() method we have app_id == $app_id and columnNames = $columnNames');
+
           if (null != columnNames) columnNames.add('app_id');
           overwriteModelProperties = {'app_id': app_id};
         } catch (e) {
@@ -591,6 +666,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
               'DataManagementDriver create() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so creating a global server db table row based on model data that was sent from client app to the global server cannot be performed.');
           completerModelIdByOneTimeInsertionKey.completeError(
               'DataManagementDriver create() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so creating a global server db table row based on model data that was sent from client app to the global server cannot be performed.');
+          return;
         }
       }
 
@@ -612,8 +688,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon(
               model,
               columnNames: columnNames,
-              overwriteModelProperties: overwriteModelProperties);
-
+              overwriteModelProperties: overwriteModelProperties,
+              isGlobalRequest: null != globalServerRequestKey ? true : false);
       // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
       var queryPart = query.queryPart;
       debugPrint(
@@ -643,10 +719,13 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             '###################################### 8IE### EXECUTE INSERT INTO NOW OR THROW EXCEPTION');
         result = _db.execute(query.queryPart);
       } catch (e) {
+        debugPrint(
+            'DataManagementDriver create() method async exception: ## point 1');
         completerCreate.completeError(
-            'An object couldn\'t has been created the raw driver error: ${e.toString()}');
+            'DataManagementDriver create() method async exception: An object couldn\'t has been created the raw driver error: ${e.toString()}');
         completerModelIdByOneTimeInsertionKey.completeError(
-            'Getting id by getModelIdByOneTimeInsertionKey() method has failed because an earlier operation of creating db table row had also failed');
+            'DataManagementDriver create() CDV1 method async exception: Getting id by getModelIdByOneTimeInsertionKey() method has failed because an earlier operation of creating db table row had also failed');
+        return;
       }
 
       debugPrint(
@@ -655,31 +734,75 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
       if (model is ConditionModelOneDbEntryModel) {
+        debugPrint(
+            'DataManagementDriver create() method async exception: ## point 3');
         completerCreate.complete(1);
         completerModelIdByOneTimeInsertionKey.complete(1);
         return;
       } else {
+        debugPrint(
+            'DataManagementDriver create() method async exception: ## point 4');
         completerCreate.complete(null);
       }
 
       if (model is ConditionModelIdAndOneTimeInsertionKeyModel) {
         getModelIdByOneTimeInsertionKey(model).then((id) {
           debugPrint(
-              'A result of getModelIdByOneTimeInsertionKey invoked by create method has arrived and in the debug mode it seems it successfully done and it looks like this:');
+              'DataManagementDriver create() method A result of getModelIdByOneTimeInsertionKey invoked by create method has arrived and in the debug mode it seems it successfully done and it looks like this:');
           debugPrint(id.toString());
-          completerModelIdByOneTimeInsertionKey.complete(id);
+
+          // we need to set up server_id == id for the global server, then local server
+          // will update it to, but local server won\'t synchronize it with the
+          // global server because it will has benn set up set up here (that would be twice).
+
+          // global request is checked on more precisely earlier. Now null checking is enough
+          if (globalServerRequestKey == null) {
+            completerModelIdByOneTimeInsertionKey.complete(id);
+          } else {
+            // didn't won't to bother myself of using the update() method, rather, chose
+            // to make a query based on what is in that method and execute it similarly like there.
+
+            debugPrint(
+                'DataManagementDriver create() method global request success but now need to update server_id based on the returned id of an inserted row model == ${model.runtimeType} : the model is supposed to use not the global server id but local_id and app_id instead (just after that typical updates of the model from client app will use the quick server_id number they have, and the data manager of course will automatically will use the server_id to seek in id column) query to be performed looks like this:');
+            var query =
+                ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon(
+                    model,
+                    columnNames: {'server_id'},
+                    overwriteModelProperties: {'server_id': id},
+                    isGlobalRequest:
+                        null != globalServerRequestKey ? true : false);
+            debugPrint(query.queryPart);
+            //throw Exception('UPDATE The just promised Exception thrown');
+
+            dynamic result;
+            try {
+              result = _db.execute(query.queryPart);
+              debugPrint(
+                  'DataManagementDriver create() method (global server/aspect table row) no exception thrown - there is server_id in the db table row involved. By the way the returned result of the db operation is: $result');
+              // no exception thrown - there is server_id in the db table row involved.
+              completerModelIdByOneTimeInsertionKey.complete(id);
+            } catch (e) {
+              completerModelIdByOneTimeInsertionKey.completeError(false);
+              debugPrint(
+                  'DataManagementDriver create() method (global server/aspect table row) An exception during third party library operation occured: ${e.toString()}');
+            }
+
+            debugPrint(
+                'DataManagementDriver create() method (global server/aspect table row) A result of update method has arrived and in the debug mode it seems it successfully done and it looks like this:');
+            debugPrint(result.toString());
+          }
         }).catchError((error) {
           debugPrint(
-              'An !error! result of getModelIdByOneTimeInsertionKey invoked by create method has arrived and in the debug mode it seems it successfully done and it looks like this:');
+              'DataManagementDriver create() methodAn !error! result of getModelIdByOneTimeInsertionKey invoked by create method has arrived and in the debug mode it seems it successfully done and it looks like this:');
           debugPrint(error.toString());
           completerModelIdByOneTimeInsertionKey.completeError(
-              'Getting id by getModelIdByOneTimeInsertionKey() method has failed, raw db driver error: ${error.toString()}');
+              'DataManagementDriver create() method ABC1 Getting id by getModelIdByOneTimeInsertionKey() method has failed, raw db driver error: ${error.toString()}');
         });
       } else {
         debugPrint(
-            'A model is not of ConditionModelIdAndOneTimeInsertionKeyModel class so a completer of create method is completed with null ');
+            'DataManagementDriver create() method A model is not of ConditionModelIdAndOneTimeInsertionKeyModel class so a completer of create method is completed with null ');
         completerModelIdByOneTimeInsertionKey.completeError(
-            'It\'s almost not even an exception, so if you use catchError of the Future object or async programming you can handle it. The message you see is to made you aware of a problem and to be aware you need to conciously approach it not to flood your db with potential garbage. The point: A row in the database has been created, however there is no way to obtain the id of the inserted row, because you hadn\'t used a model compatible with classess [ConditionModelIdAndOneTimeInsertionKeyModel] (read description) or [ConditionModelOneDbEntryModel] where id always = 1. Do you created the model class in a way that allows to find it\'s entry in the db? A method like readAll (maybe renamed to readRaw of somehting allows you to find what you seek in the db in a more flexible, customized way.)');
+            'DataManagementDriver create() methodIt\'s almost not even an exception, so if you use catchError of the Future object or async programming you can handle it. The message you see is to made you aware of a problem and to be aware you need to conciously approach it not to flood your db with potential garbage. The point: A row in the database has been created, however there is no way to obtain the id of the inserted row, because you hadn\'t used a model compatible with classess [ConditionModelIdAndOneTimeInsertionKeyModel] (read description) or [ConditionModelOneDbEntryModel] where id always = 1. Do you created the model class in a way that allows to find it\'s entry in the db? A method like readAll (maybe renamed to readRaw of somehting allows you to find what you seek in the db in a more flexible, customized way.)');
       }
     });
 
@@ -861,7 +984,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
   @protected
   Future<bool> update(ConditionModel model,
       {Set<String>? columnNames,
-      String? globalServerRequestKey = null,
+      String? globalServerRequestKey,
       ConditionModelUser? userForGlobalRequest,
       Map? userLoginDataForGlobalRequest}) {
     //return Future.value();
@@ -907,12 +1030,12 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
       var query =
           ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon(
-              model,
-              columnNames: columnNames,
-              overwriteModelProperties: overwriteModelProperties,
-              // earlier more thorough key checking or exception up there
-              isGlobalServerAspectUpdate:
-                  null != globalServerRequestKey ? true : false);
+        model,
+        columnNames: columnNames,
+        overwriteModelProperties: overwriteModelProperties,
+        // earlier more thorough key checking or exception up there
+        isGlobalRequest: null != globalServerRequestKey ? true : false,
+      );
       debugPrint(
           'UPDATE model == ${model.runtimeType} we are now in the ConditionDataManagement object invoking UPDATE method. let\' see how the query looks like and then throw exception until it is ok:');
       debugPrint(query.queryPart);
@@ -1063,8 +1186,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
               model,
               overwriteModelProperties: overwriteModelProperties,
               // earlier more thorough key checking or exception up there
-              isGlobalServerAspectUpdate:
-                  null != globalServerRequestKey ? true : false);
+              isGlobalRequest: null != globalServerRequestKey ? true : false);
 
       debugPrint(
           'delete(): Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
@@ -1179,8 +1301,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
               columnNames: columnNames,
               overwriteModelProperties: overwriteModelProperties,
               // earlier more thorough key checking or exception up there
-              isGlobalServerAspectUpdate:
-                  null != globalServerRequestKey ? true : false);
+              isGlobalRequest: null != globalServerRequestKey ? true : false);
 
       debugPrint(
           'read() Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
@@ -1225,13 +1346,26 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       throw const ConditionDataManagementDriverNotinitedException();
     }
 
+    if (globalServerRequestKey != null && globalServerRequestKey.isEmpty) {
+      throw Exception(
+          'DataManagementDriver readAll() method calling exception: method cannot start processing the read all request on the global aspect of the server, because while (or if you prefer although, or because interchangebly) the globalServerRequestKey is not null, however it\'s empty.');
+    }
+
+    if (globalServerRequestKey != null) {
+      debugPrint(
+          'readAll() we are at the beginning of the method with globalServerRequestKey != null');
+    } else {
+      debugPrint(
+          'readAll() we are at the beginning of the method with globalServerRequestKey == null');
+    }
+
     Completer<List<Map>?> completer = Completer<List<Map>?>();
     //storageOperationsQueue.add(completer);
     //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
 
     if (dbTableName != null) {
       debugPrint(
-          'readAll() We are going to iterate enums ConditionModelClasses.values, there is going to be stuff seen here that it iterates or it went a bit wrong.');
+          'globalServerRequestKey == $globalServerRequestKey, readAll()  We are going to iterate enums ConditionModelClasses.values, there is going to be stuff seen here that it iterates or it went a bit wrong.');
       var i = 0;
       for (var enumValue in ConditionModelClasses.values) {
         i++;
@@ -1239,7 +1373,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             enumValue.toString().replaceFirst('ConditionModelClasses.', '');
         if (className == modelClassName) {
           debugPrint(
-              'readAll() enum ConditionModelClasses value before:${enumValue.toString()} and the className after: $className');
+              'globalServerRequestKey == $globalServerRequestKey, readAll() enum ConditionModelClasses value before:${enumValue.toString()} and the className after: $className');
           whereClause?.add(
               'model_type_id',
               i,
@@ -1250,31 +1384,72 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         }
       }
     }
-    var query =
-        ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon
-            .dbTableNameQuery(
-                (tableNamePrefix ?? this.tableNamePrefix) +
-                    (dbTableName ?? modelClassName),
-                whereClause,
-                columnNames: columnNames,
-                maxNumberOfReturnedResults: limit);
 
-    debugPrint(
-        'K] readAll() Not to get lost and to understand where we are we are going to see the development query:');
+    // globalServerRequestKey is checked better above with an exception possible,
+    //  now is used null checking:
+    if (null != globalServerRequestKey)
+      debugPrint(
+          'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 1');
+    bool isGlobalRequest = null == globalServerRequestKey ? false : true;
+    if (null != globalServerRequestKey)
+      debugPrint(
+          'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 2 this.driverGlobal == ${this.driverGlobal}, but this.tableNamePrefix == ${this.tableNamePrefix}, but ConditionConfiguration.isClientApp == ${ConditionConfiguration.isClientApp}');
+
+    //+ (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}
+
+    ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon query;
+    try {
+      query = ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon
+          .dbTableNameQuery(
+              (tableNamePrefix ?? this.tableNamePrefix) +
+                  //older solutions, but this condition is for crud operations
+                  //using models like read (not readAll), delete (not deleteRawer), etc.
+                  //(!isGlobalRequest
+                  //        ? this
+                  //        : ConditionConfiguration.isClientApp
+                  //            ? driverGlobal
+                  //                as ConditionDataManagementDriver
+                  //            : this)
+                  //    .tableNamePrefix) +
+                  (dbTableName ?? modelClassName),
+              whereClause,
+              columnNames: columnNames,
+              maxNumberOfReturnedResults: limit);
+    } catch (e) {
+      if (null != globalServerRequestKey)
+        debugPrint(
+            'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 2!A! ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon exception: $e');
+      rethrow;
+    }
+
+    if (null != globalServerRequestKey)
+      debugPrint(
+          'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 3');
+
+    if (null != globalServerRequestKey)
+      debugPrint(
+          'K] globalServerRequestKey == $globalServerRequestKey, readAll() Not to get lost and to understand where we are we are going to see the development query: query.queryPart == ${query.queryPart}');
+
     debugPrint(query.queryPart);
     //throw Exception('And here we have the promised exception :)');
 
     scheduleMicrotask(() {
       dynamic result;
       try {
+        if (null != globalServerRequestKey)
+          debugPrint(
+              'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 4');
         result = _db.select(query.queryPart);
+        if (null != globalServerRequestKey)
+          debugPrint(
+              'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 5');
       } catch (e) {
         completer.completeError(false);
         debugPrint(
-            'K] readAll() An exception during third party library operation occured: ${e.toString()}');
+            'K] globalServerRequestKey == $globalServerRequestKey, readAll() An exception during third party library operation occured: ${e.toString()}');
       }
       debugPrint(
-          'K] readAll() A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:');
+          'K] globalServerRequestKey == $globalServerRequestKey, readAll() A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:');
       debugPrint(result.toString());
       if (result == null) {
         debugPrint(
@@ -1290,6 +1465,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
       // And if exception wasn\'t thrown
       if (!completer.isCompleted) {
+        debugPrint(
+            'K] COMPLETEING WITH THE RESULT readAll() : result == ${result} ');
         completer.complete(result);
       }
     });
