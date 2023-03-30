@@ -967,13 +967,19 @@ class ConditionDataManagementDriverNotinitedException implements Exception {
 
 /// ??? This class uses constructor only for adding all neccessary Future objects in the right order to enforce proper working
 class CreateModelOnServerFutureGroup<V> extends FutureGroup<V> {
-  Future<V> completerCreateFuture;
-  Future<V> completerModelIdByOneTimeInsertionKeyFuture;
+  final Future<V> completerCreateFuture;
+  final Future<V> completerModelIdByOneTimeInsertionKeyFuture;
+  final Future<V>? completerServerCreationDateTimestampGlobalServerFuture;
+
   CreateModelOnServerFutureGroup(this.completerCreateFuture,
-      this.completerModelIdByOneTimeInsertionKeyFuture)
+      this.completerModelIdByOneTimeInsertionKeyFuture,
+      [this.completerServerCreationDateTimestampGlobalServerFuture])
       : super() {
     super.add(completerCreateFuture);
     super.add(completerModelIdByOneTimeInsertionKeyFuture);
+    if (this.completerServerCreationDateTimestampGlobalServerFuture != null)
+      super.add(
+          completerServerCreationDateTimestampGlobalServerFuture as Future<V>);
     super.close();
   }
 }
@@ -1105,6 +1111,9 @@ abstract class ConditionDataManagementDriver {
       this.initCompleterGlobal!.completeError(false);
     });
   }
+
+  int createCreationOrUpdateDateTimestamp() =>
+      DateTime.now().millisecondsSinceEpoch;
 
   Future<ConditionDataManagementDriver> getDriverOnDriverInited() {
     return initCompleter.future;
@@ -1288,11 +1297,11 @@ abstract class ConditionDataManagementDriver {
   /// Update a data model or just some fields of it not to strain network or processor by sending all model to a server (if a class extending this one uses some server)
   @MustBeImplemented()
   @EducationalImplementation()
-  Future<bool> update(ConditionModel model,
+  Future<int?> update(ConditionModel model,
       {Set<String>? columnNames, String? globalServerRequestKey = null}) {
     if (!inited) throw const ConditionDataManagementDriverNotinitedException();
     //return Future.value();
-    Completer<bool> completer = new Completer<bool>();
+    Completer<int?> completer = new Completer<int?>();
     storageOperationsQueue[storageOperationsQueue.length] = completer;
 
     return completer.future;
@@ -2561,11 +2570,11 @@ abstract class ConditionModel extends ConditionMap {
   }
 
   // Used by (non private now with no uderscore? : ) [_triggerLocalAndGlobalServerUpdatingProcess]
-  Future<bool> _performTheModelUpdateUsingDriverGlobalServer(
+  Future<int?> _performTheModelUpdateUsingDriverGlobalServer(
       ConditionModelApp conditionModelApp) {
     debugPrint(
         'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() inside _fieldsNowBeingInTheProcessOfUpdateGlobalServer == ${_fieldsNowBeingInTheProcessOfUpdateGlobalServer.toString()}');
-    var completer = Completer<bool>();
+    var completer = Completer<int?>();
     if (_fieldsNowBeingInTheProcessOfUpdateGlobalServer.isEmpty) {
       completer.completeError(
           'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() inside _fieldsNowBeingInTheProcessOfUpdateGlobalServer async completer.completeError because _fieldsNowBeingInTheProcessOfUpdate.isEmpty');
@@ -2575,7 +2584,7 @@ abstract class ConditionModel extends ConditionMap {
           .update(this,
               columnNames: _fieldsNowBeingInTheProcessOfUpdateGlobalServer,
               globalServerRequestKey: conditionModelApp.server_key)
-          .then((bool result) {
+          .then((int? result) {
         debugPrint(
             'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() a Timer invoked the update(), updated SUCCESSFULLY, result: ${result.toString()}');
         completer.complete(result);
@@ -2633,7 +2642,6 @@ abstract class ConditionModel extends ConditionMap {
 
     debugPrint(
         'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): model _modelIsBeingUpdatedGlobalServer == $_modelIsBeingUpdatedGlobalServer and _fieldsToBeUpdatedGlobalServer.toString() == ${_fieldsToBeUpdatedGlobalServer.toString()}');
-
     scheduleMicrotask(() {
       if ((_triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer &&
               _fieldsToBeUpdatedGlobalServer.isEmpty) ||
@@ -2702,7 +2710,14 @@ abstract class ConditionModel extends ConditionMap {
           // this should be set up now in the event loop asynchronous method:
           _fieldsToBeUpdatedGlobalServer.clear();
           _performTheModelUpdateUsingDriverGlobalServer(conditionModelApp)
-              .catchError((error) {
+              .then((int? result) {
+            //result won't be null for global server request - always int
+            //this will update on local server only what was returned from global server
+            debugPrint(
+                'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() we did a successful update on global server and we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_update_date_timestamp\'] = $result');
+            columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                'server_update_date_timestamp']!(result, true, true, true);
+          }).catchError((error) {
             debugPrint(
                 'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() a Timer invoked the performTheModelUpdateUsingDriver() which invoked update() and returned error, NOT updated, result error, depending on the type of error (two processess accessed the same db file (if sqlite3) at the same time, internet connection lost, etc) !!!we now are trying to update the model doing it once per some longer time!!!: ${error.toString()}');
             // For the local server there is no attemptsLimitCountDownCounter localServer is supposed to work always in all circumstances, but for global server you can loose the internet connection, the server bandwitdh may be too much congested, etc.
@@ -2715,6 +2730,12 @@ abstract class ConditionModel extends ConditionMap {
                 // result must be always true or throw error (catch error of future)
                 // you dont need to do anything special here _performTheModelUpdateUsingDriver() does the job.
                 timer.cancel();
+                //result won't be null for global server request - always int
+                //this will update on local server only what was returned from global server
+                debugPrint(
+                    'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer, we did a successful update on global server and we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_update_date_timestamp\'] = $result');
+                columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                    'server_update_date_timestamp']!(result, true, true, true);
               }).catchError((error) {
                 debugPrint(
                     'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update attempt _fieldsNowBeingInTheProcessOfUpdateGlobalServer == $_fieldsNowBeingInTheProcessOfUpdateGlobalServer , _fieldsToBeUpdatedGlobalServer == $_fieldsToBeUpdatedGlobalServer : error: ${error.toString()}');
@@ -2758,10 +2779,10 @@ abstract class ConditionModel extends ConditionMap {
         columnNames:
             _fieldsNowBeingInTheProcessOfUpdate, /*globalServerRequestKey: null*/
       )
-          .then((bool result) {
+          .then((int? result) {
         debugPrint(
             'C] Inside triggerLocalAndGlobalServerUpdatingProcess(), inside _performTheModelUpdateUsingDriver() a Timer invoked the update(), updated SUCCESSFULLY, result: ${result.toString()}');
-        completer.complete(result);
+        completer.complete(true);
         _fieldsNowBeingInTheProcessOfUpdate.clear();
         _triggerServerUpdatingProcessRetrigerAfterFinish = true;
         triggerLocalAndGlobalServerUpdatingProcess(null);
@@ -2793,8 +2814,23 @@ abstract class ConditionModel extends ConditionMap {
     scheduleMicrotask(() {
       if (columnName != null) {
         _fieldsToBeUpdated.add(columnName);
+        // we set-up the property only - no need to invoke triggerLocalAndGlobalServerUpdatingProcess()
+        // as we are just in it and can make kinda manual setting stuff up
+        // avoding possible asynchronous delays and not just one but possibly one or two request
+        // !!! IMPORTANT READ as you see update_date_timestamp on local server may differ from that on global server (OK!)
+        // !!! IMPORTANT READ but after synchronizing the rest of timestamps must be the same on both servers
+        // !!! IMPORTANT READ So if you want to implement searching elsewhere for id of something
+        // !!! IMPORTANT READ on the global server based on timestamp (not recommended) don't use update_date_timestamp
+        columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                'update_date_timestamp']!(
+            driver.createCreationOrUpdateDateTimestamp(), true, false);
+        // and we are adding the field to list of fields to be updated which in case the global
+        // server is defined it will send the local server update date to the global server
+        _fieldsToBeUpdated.add('update_date_timestamp');
+
         if (!isToBeSynchronizedLocallyOnly) {
           _fieldsToBeUpdatedGlobalServer.add(columnName);
+          _fieldsToBeUpdatedGlobalServer.add('update_date_timestamp');
         }
       }
 
@@ -2921,6 +2957,12 @@ abstract class ConditionModel extends ConditionMap {
               '2:2:initModel() in _doDirectCreateOnGlobalServer() setting up server_id with no to global server update result[0] = ${result[0]}');
           columnNamesAndFullyFeaturedValidateAndSetValueMethods['server_id']!(
               result[0], true, true, true);
+
+          debugPrint(
+              '2:2:initModel() in _doDirectCreateOnGlobalServer() we did a successful create on global server and we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_creation_date_timestamp\'] = ${result[2]}');
+          columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+              'server_creation_date_timestamp']!(result[2], true, true, true);
+
           nullifyTheKey = true;
         } else if (result[1] != null && result[1]! > 0) {
           debugPrint(
@@ -2928,6 +2970,10 @@ abstract class ConditionModel extends ConditionMap {
           //this['id'] = result[1];
           columnNamesAndFullyFeaturedValidateAndSetValueMethods['server_id']!(
               result[1], true, true, true);
+          debugPrint(
+              '2:2:initModel() in _doDirectCreateOnGlobalServer() we did a successful create on global server and we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_creation_date_timestamp\'] = ${result[2]}');
+          columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+              'server_creation_date_timestamp']!(result[2], true, true, true);
           nullifyTheKey = true;
         } else {
           _completerInitModelGlobalServer.completeError(

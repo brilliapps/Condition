@@ -638,11 +638,21 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     Completer<int?> completerCreate = Completer<int?>();
     // notice it is int not int? below:
-    Completer<int> completerModelIdByOneTimeInsertionKey = Completer<int>();
-    CreateModelOnServerFutureGroup<int?> createModelOnServerFutureGroup =
-        CreateModelOnServerFutureGroup<int?>(completerCreate.future,
-            completerModelIdByOneTimeInsertionKey.future);
+    Completer<int?> completerModelIdByOneTimeInsertionKey = Completer<int?>();
+    Completer<int?>? completerServerCreationDateTimestampGlobalServer;
+    CreateModelOnServerFutureGroup<int?> createModelOnServerFutureGroup;
+    if (null != globalServerRequestKey) {
+      completerServerCreationDateTimestampGlobalServer = Completer<int?>();
 
+      createModelOnServerFutureGroup = CreateModelOnServerFutureGroup<int?>(
+          completerCreate.future,
+          completerModelIdByOneTimeInsertionKey.future,
+          completerServerCreationDateTimestampGlobalServer.future);
+    } else {
+      completerServerCreationDateTimestampGlobalServer = null;
+      createModelOnServerFutureGroup = CreateModelOnServerFutureGroup<int?>(
+          completerCreate.future, completerModelIdByOneTimeInsertionKey.future);
+    }
     //storageOperationsQueue.add(completerCreate);
     //storageOperationsQueue.add(completerModelIdByOneTimeInsertionKey);
     // scheduleMicrotask is to run the function asynchronously so that it the later created [CreateModelFutureGroup] can be returned now and the db operations can be done later
@@ -657,8 +667,18 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           debugPrint(
               'DataManagementDriver create() method we have app_id == $app_id and columnNames = $columnNames');
 
-          if (null != columnNames) columnNames.add('app_id');
-          overwriteModelProperties = {'app_id': app_id};
+          if (null != columnNames) {
+            columnNames.add('app_id');
+            columnNames.add('server_creation_date_timestamp');
+          }
+
+          overwriteModelProperties = {
+            'app_id': app_id,
+            'server_creation_date_timestamp':
+                createCreationOrUpdateDateTimestamp()
+          };
+          completerServerCreationDateTimestampGlobalServer!.complete(
+              overwriteModelProperties['server_creation_date_timestamp']);
         } catch (e) {
           debugPrint(
               'DataManagementDriver create() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e');
@@ -769,8 +789,9 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
                     model,
                     columnNames: {'server_id'},
                     overwriteModelProperties: {'server_id': id},
-                    isGlobalRequest:
-                        null != globalServerRequestKey ? true : false);
+                    isGlobalRequest: true
+                    //null != globalServerRequestKey ? true : false
+                    );
             debugPrint(query.queryPart);
             //throw Exception('UPDATE The just promised Exception thrown');
 
@@ -982,13 +1003,13 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
   @override
   @protected
-  Future<bool> update(ConditionModel model,
+  Future<int?> update(ConditionModel model,
       {Set<String>? columnNames,
       String? globalServerRequestKey,
       ConditionModelUser? userForGlobalRequest,
       Map? userLoginDataForGlobalRequest}) {
     //return Future.value();
-    Completer<bool> completer = Completer<bool>();
+    Completer<int?> completer = Completer<int?>();
     //storageOperationsQueue.add(completer);
 
     scheduleMicrotask(() async {
@@ -1010,14 +1031,26 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           // Remidner if you use just server id you must check out if a client making
           // the update request has right to make the changes see all the method body with
           // comments
+          if (null != columnNames) {
+            columnNames.add('server_update_date_timestamp');
+          }
+          overwriteModelProperties = {
+            'server_update_date_timestamp':
+                createCreationOrUpdateDateTimestamp()
+          };
         } else {
           try {
             int app_id =
                 await _getAppIdByAGivenGlobalServerKey(globalServerRequestKey);
             if (null != columnNames) {
               columnNames.add('app_id');
+              columnNames.add('server_update_date_timestamp');
             }
-            overwriteModelProperties = {'app_id': app_id};
+            overwriteModelProperties = {
+              'app_id': app_id,
+              'server_update_date_timestamp':
+                  createCreationOrUpdateDateTimestamp()
+            };
           } catch (e) {
             debugPrint(
                 'DataManagementDriver update() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e');
@@ -1045,7 +1078,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       try {
         result = _db.execute(query.queryPart);
       } catch (e) {
-        completer.completeError(false);
+        completer.completeError(
+            'DataManagementDriver update() method An exception during third party library operation occured: ${e.toString()}');
         debugPrint(
             'DataManagementDriver update() method An exception during third party library operation occured: ${e.toString()}');
       }
@@ -1055,7 +1089,9 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       debugPrint(result.toString());
 
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
-      completer.complete(true);
+      completer.complete(null != overwriteModelProperties
+          ? overwriteModelProperties['server_update_date_timestamp']
+          : null);
     });
 
     return completer.future;
