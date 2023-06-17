@@ -42,6 +42,13 @@ class ConditionConfiguration {
       debugMode; // set up later - in the frontend in main() function
   static const bool isWeb = kIsWeb;
 
+  /// Caution! Because ConditionModelContact may have implemeneted data channels or something they would have to be always rendered fully. This tells you how deeply it will restore model/widget tree after the app restart. So this is what you see/have on the screen without requiring user to click buttons like unfold and after that lazily another level/branch of models/widgets is loaded (models means level, widgets: for a one particular model a subtree of widgets may be involved)
+  static const int maxNotLazyModelTreeRestorationLevel = 3;
+
+  /// Used with [maxNotLazyModelTreeRestorationLevel], see the description of the property
+  static const int maxNotLazyModelTreeRestorationLevelForStandaloneModels =
+      2; // it should rather be 1 but in the development mode we need greater value for testing
+
   /// Speaking in SQL terms it is LIMIT 10 part of SQL query. It may be with regard to select query only.
   static const int maxNumberOfReturnedResultsFromDb = 10;
 

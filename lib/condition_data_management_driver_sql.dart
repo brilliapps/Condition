@@ -152,6 +152,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             inited = true;
             initCompleter.complete(this);
           }).catchError((error) {
+            debugPrint('catchError flag #prg1');
+
             initCompleter.completeError(false);
           });
         } else {
@@ -431,6 +433,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         }
       }
     }).catchError((e) {
+      debugPrint('catchError flag #prg2');
       //here RangeError ???
       //Predefined error message, rather throw Excepthion custom class, There was a db_error : e == RangeError (index): Invalid value: Valid value range is empty: 0
       // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
@@ -618,10 +621,96 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     return completer.future;
   }
 
+  /// null means not error - only the user hasn\'t been found
+  Future<int?> _getGlobalServerUserId(
+      Map<String, dynamic>? globalServerUserCredentials,
+      [bool usePassword = true]) async {
+    Completer<int?> completer = Completer<int?>();
+
+    if (globalServerUserCredentials == null ||
+        globalServerUserCredentials.isEmpty ||
+        ((globalServerUserCredentials['e_mail'] == null ||
+                globalServerUserCredentials['e_mail'].isEmpty) &&
+            (globalServerUserCredentials['phone_number'] == null ||
+                globalServerUserCredentials['phone_number'].isEmpty)) ||
+        (usePassword &&
+            (globalServerUserCredentials['password'] == null ||
+                globalServerUserCredentials['password'].isEmpty))) {
+      // async syntax so
+      debugPrint(
+          'DataManagementDriver create() _getGlobalServerUserId() method error (1) method global request user credentials failed because one or more necessary params are null. usePassword == $usePassword , globalServerUserCredentials[\'e_mail\'] == ${globalServerUserCredentials?['e_mail']} || globalServerUserCredentials[\'phone_number\']==${globalServerUserCredentials?['phone_number']}');
+      throw Exception(
+          'DataManagementDriver create() _getGlobalServerUserId() method error (1) method global request user credentials failed because one or more necessary params are null usePassword == $usePassword , See more data in a very similar debugPrint message preceding this (seen only in the debug mode).');
+      //throw Exception('DataManagementDriver create() (1) method global request user credentials failed one or more necessary params are null _getGlobalServerUserId() method error');
+    }
+
+    var queryObject =
+        ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
+          ..addQueryPart(
+              ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon(
+                  isGroup: true)
+                ..add('e_mail', globalServerUserCredentials['e_mail'])
+                ..add('phone_number',
+                    globalServerUserCredentials['phone_number']));
+
+    if (usePassword) {
+      queryObject.add('password', globalServerUserCredentials['password'],
+          ConditionDBOperator.equal, false);
+    }
+    //..add('app_id', globalServerUserCredentials['password'], ConditionDBOperator.equal, false)
+
+    readAll(
+      'ConditionModelUser', //model.runtimeType.toString(),
+      queryObject,
+      limit: 1,
+      columnNames: {'id'},
+      //dbTableName: model.appCoreModelClassesCommonDbTableName,
+      //globalServerRequestKey: globalServerRequestKey
+    ).then((List<Map>? conditionMapList) {
+      debugPrint(
+          ' _getGlobalServerUserId(), A result has arrived. Here how it looks like:');
+
+      if (conditionMapList == null) {
+        debugPrint(
+            'It is null yet in this case it is not a db engine error - the record in the db just doesn\'t exist :(');
+        completer.complete(null);
+      } else {
+        debugPrint(
+            '_getGlobalServerUserId(), It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0]['id'].toString())}');
+
+        dynamic id = int.tryParse(conditionMapList[0]['id'].toString());
+        if (null != id && id is int && id > 0) {
+          debugPrint(
+              '_getGlobalServerUserId(), id result SUCCESS: it is correnct integer value');
+          completer.complete(id);
+        } else {
+          completer.completeError(
+              '_getGlobalServerUserId(), result exception: is not valid operation and result is: int.tryParse(conditionMapList.toString()) == $conditionMapList');
+        }
+      }
+    }).catchError((e) {
+      debugPrint('catchError flag #prg3');
+
+      //here RangeError ???
+      //Predefined error message, rather throw Excepthion custom class, There was a db_error : e == RangeError (index): Invalid value: Valid value range is empty: 0
+      // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
+      String message =
+          '\nparam: query looks like:: ${queryObject.queryPart}\nparam: dbTableName: ConditionModelUser,';
+
+      completer.completeError(
+          '_getGlobalServerUserId(), Predefined error message, rather throw Excepthion custom class, There was a db_error : e == $e  ## But Additionally: $message');
+    });
+
+    return completer.future;
+  }
+
   @override
   @protected
   CreateModelOnServerFutureGroup<int?> create(ConditionModel model,
-      {Set<String>? columnNames, String? globalServerRequestKey = null}) {
+      {Set<String>? columnNames,
+      String? globalServerRequestKey = null,
+      // it would be perfect to use ConditionModelUser object, but the development is dragging on and on, so for now something simpler :)
+      Map<String, String>? globalServerUserCredentials}) {
     // ------------------------------------------------------------
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // READ THIS YOU MUST TAKE CARE IF A MODEL
@@ -630,34 +719,85 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     if (!inited) {
       throw const ConditionDataManagementDriverNotinitedException();
-    } else if (null != globalServerRequestKey &&
-        globalServerRequestKey.isEmpty) {
-      throw Exception(
-          'DataManagementDriver create() method: exception: the mode cannot be updated on the global aspect of the server, because while the globalServerRequestKey is not null, however it\'s empty.');
+    } else if (null != globalServerRequestKey) {
+      if (globalServerRequestKey.isEmpty) {
+        throw Exception(
+            'DataManagementDriver create() method: exception: the mode cannot be updated on the global aspect of the server, because while the globalServerRequestKey is not null, however it\'s empty.');
+      }
+      // contact also is ConditionModelBelongingToContact but logically it shouldn't it one day may change
+      else if (model is! ConditionModelContact &&
+          model is ConditionModelBelongingToContact) {
+        if (model.server_owner_contact_id == null ||
+            model.server_owner_contact_id! < 1 ||
+            // below owner_contact_id not necessary, but to make it more difficult to hack :)
+            model.owner_contact_id == null ||
+            model.owner_contact_id! < 1) {
+          throw Exception(
+              'DataManagementDriver create() method: exception:  Invalid value of model.server_owner_contact_id (or possibly model.owner_contact_id)');
+        }
+      } else if (model is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
+        if ((model['parent_id'] != null && model['server_parent_id'] == null) ||
+            (model['parent_id'] == null && model['server_parent_id'] != null)) {
+          throw Exception(
+              'DataManagementDriver create() method: exception: condition == true so exception is thrown : model[\'parent_id\']!=null&&model[\'server_parent_id\']==null || model[\'parent_id\']==null&&model[\'server_parent_id\']!=null');
+        }
+      }
     }
 
     Completer<int?> completerCreate = Completer<int?>();
     // notice it is int not int? below:
     Completer<int?> completerModelIdByOneTimeInsertionKey = Completer<int?>();
+    //implemented
     Completer<int?>? completerServerCreationDateTimestampGlobalServer;
+    // not implemented
+    Completer<int?>? completerServerUserIdFuture;
+    // not implemented
+    // !!!!! we can find must already have it locally, no need for global
+    //Completer<int?>? completerServerParentIdFuture;
+    // not implemented
+    Completer<int?>? completerServerContactUserIdFuture;
+    // not implemented
+    // !!!!! we can find must already have it locally, no need for global
+    //Completer<int?>? completerServerOwnerContactIdFuture;
+    // not implemented
+    Completer<int?>? completerServerLinkIdFuture;
+
     CreateModelOnServerFutureGroup<int?> createModelOnServerFutureGroup;
     if (null != globalServerRequestKey) {
       completerServerCreationDateTimestampGlobalServer = Completer<int?>();
 
+      completerServerUserIdFuture = Completer<int?>();
+      //read earlier the definition of commented variable:
+      //completerServerParentIdFuture = Completer<int?>();
+      completerServerContactUserIdFuture = Completer<int?>();
+      //read earlier the definition of commented variable:
+      //completerServerOwnerContactIdFuture = Completer<int?>();
+      completerServerLinkIdFuture = Completer<int?>();
+
       createModelOnServerFutureGroup = CreateModelOnServerFutureGroup<int?>(
-          completerCreate.future,
-          completerModelIdByOneTimeInsertionKey.future,
-          completerServerCreationDateTimestampGlobalServer.future);
+        completerCreate.future,
+        completerModelIdByOneTimeInsertionKey.future,
+        completerServerCreationDateTimestampGlobalServer.future,
+        completerServerUserIdFuture.future,
+        //read earlier the definition of commented variable:
+        //completerServerParentIdFuture.future,
+        completerServerContactUserIdFuture.future,
+        //read earlier the definition of commented variable:
+        //completerServerOwnerContactIdFuture.future,
+        completerServerLinkIdFuture.future,
+      );
     } else {
       completerServerCreationDateTimestampGlobalServer = null;
       createModelOnServerFutureGroup = CreateModelOnServerFutureGroup<int?>(
-          completerCreate.future, completerModelIdByOneTimeInsertionKey.future);
+        completerCreate.future,
+        completerModelIdByOneTimeInsertionKey.future,
+      );
     }
     //storageOperationsQueue.add(completerCreate);
     //storageOperationsQueue.add(completerModelIdByOneTimeInsertionKey);
     // scheduleMicrotask is to run the function asynchronously so that it the later created [CreateModelFutureGroup] can be returned now and the db operations can be done later
     scheduleMicrotask(() async {
-      Map<String, dynamic>? overwriteModelProperties;
+      Map<String, dynamic>? overwriteModelProperties = {};
       if (null != globalServerRequestKey) {
         try {
           int app_id =
@@ -672,11 +812,11 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             columnNames.add('server_creation_date_timestamp');
           }
 
-          overwriteModelProperties = {
+          overwriteModelProperties.addAll({
             'app_id': app_id,
             'server_creation_date_timestamp':
                 createCreationOrUpdateDateTimestamp()
-          };
+          });
           completerServerCreationDateTimestampGlobalServer!.complete(
               overwriteModelProperties['server_creation_date_timestamp']);
         } catch (e) {
@@ -690,6 +830,142 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         }
       }
 
+      // we can't do anything without global server user id need to get the global server user_id
+      // for this we need users credentials
+      // As a general rule on global server we find user first having both e-mail and phone number,
+      // if not found first seek e-mail only, then phone.
+      // For creating a user you don't need credentials but for creating message, task you do
+
+      // Let's do it this way - we must gather all needed data
+      // to perform row creation, so that we return errors
+      // !!! but before a new record finds itself in the db because we need
+      // !!! all data, not one element missing so create should be the last thing to do
+      // !!! we finish some completers as late as possible
+      // !!! after we have the row id, creation date also
+
+      // globalServerRequestKey and app_id is ok we can seek what we need
+      if (null != globalServerRequestKey) {
+        if (model is! ConditionModelUser) {
+          try {
+            int? server_user_id =
+                await _getGlobalServerUserId(globalServerUserCredentials);
+            if (server_user_id == null) {
+              throw Exception(
+                  'DataManagementDriver create() server_user_id couldn\'t has been found. So server_user_id cannot be null');
+            }
+
+            if (null != columnNames) {
+              columnNames.add('server_user_id');
+            }
+
+            overwriteModelProperties['server_user_id'] = server_user_id;
+
+            // we will fishish the future later
+            completerServerUserIdFuture!.complete(server_user_id);
+          } catch (e) {
+            // ! This future group fails, no need to complete more futures createModelOnServerFutureGroup
+            completerServerUserIdFuture!.completeError(
+                'DataManagementDriver create() (2.5) method global request user credentials failed one or more necessary params are null or the user not found. Exception thrown: $e');
+            completerCreate.completeError(
+                'DataManagementDriver create() (1) method global request user credentials failed one or more necessary params are null or the user not found. Exception thrown $e');
+            completerModelIdByOneTimeInsertionKey.completeError(
+                'DataManagementDriver create() (2) method global request user credentials failed one or more necessary params are null or the user not found. Exception thrown $e');
+            return;
+          }
+        } else {
+          // it's user model user_id = null but we need to finish the future
+          completerServerUserIdFuture!.complete(null);
+        }
+      }
+
+      // ---------------
+      // Now user is ok - a widget belongs to a parent or is a tree top level widget:
+      // ---------------
+      //!!! read earlier the definition of commented variable:
+      // we can have it locally
+      // the same as with completerServerOwnerContactIdFuture
+      // think over here
+      //completerServerParentIdFuture;
+
+      if (null != globalServerRequestKey) {
+        if (model is ConditionModelContact) {
+          // ---------------
+          // if this IS a ConditionModelContact model_type_id == 1
+          // we need server user id for interaction between users to start to start
+          // to do little later.... contact_accepted_invitation
+          // ---------------
+
+          try {
+            int? server_contact_user_id = await _getGlobalServerUserId({
+              'e_mail': model['contact_e_mail'],
+              'phone_number': model['contact_phone_number']
+            }, false);
+            if (server_contact_user_id == null) {
+              throw Exception(
+                  'DataManagementDriver create() server_contact_user_id couldn\'t has been found. So server_contact_user_id cannot be null');
+            }
+
+            if (null != columnNames) {
+              columnNames.add('server_contact_user_id');
+            }
+
+            overwriteModelProperties['server_contact_user_id'] =
+                server_contact_user_id;
+
+            // we will fishish the future later
+            completerServerContactUserIdFuture!
+                .complete(server_contact_user_id);
+          } catch (e) {
+            // ! This future group fails, no need to complete more futures createModelOnServerFutureGroup
+            completerServerContactUserIdFuture!.completeError(
+                'DataManagementDriver create() (3.5) method global request couldnt find server_contact_user_id which is needed if model is ConditionModelContact. Exception thrown $e');
+            completerCreate.completeError(
+                'DataManagementDriver create() (3) method global request couldnt find server_contact_user_id which is needed if model is ConditionModelContact. Exception thrown $e');
+            completerModelIdByOneTimeInsertionKey.completeError(
+                'DataManagementDriver create() (3) method global request couldnt find server_contact_user_id which is needed if model is ConditionModelContact. Exception thrown $e');
+            return;
+          }
+        } else {
+          // ---------------
+          // if this is NOT a ConditionModelContact, SO model_type_id != 1
+          // message belongs to the server_owner_contact_id
+          // ---------------
+          // not implemented
+          // !!!!!!! Ok for now i see that server_owner_contact_id
+          // can and must be taken from local server because the contact must have it up to this point
+          // the same as with completerServerParentIdFuture
+          // completerServerOwnerContactIdFuture;
+
+          completerServerContactUserIdFuture!.complete(null);
+        }
+      }
+
+      // ---------------
+      // !!! DONT FORGET ABOUT IT !!! not implemented
+      // FINALLY DON'T FORGET ABOUT IT !!! not implemented
+      debugPrint(
+          'DataManagementDriver create() method we are going to miss this piece of code: completerServerLinkIdFuture.');
+      if (null != globalServerRequestKey) {
+        if (model['link_id'] == null) {
+          completerServerLinkIdFuture!.complete(null);
+        } else {
+          // !!! NOT IMPLEMENTED - LINK ID FOR A BIT LATER
+          completerServerLinkIdFuture!.completeError(
+              'DataManagementDriver create() (4) method global request exception: handling of link_id or server_link_id properties not implemented yet, only null for link_id is accepted now:');
+          completerCreate.completeError(
+              'DataManagementDriver create() (4) method global request server_contact_user_id future ignored because:  handling of link_id or server_link_id properties not implemented yet, only null for link_id is accepted now:');
+          completerModelIdByOneTimeInsertionKey.completeError(
+              'DataManagementDriver create() (4)  method global request server_contact_user_id future ignored because:  handling of link_id or server_link_id properties not implemented yet, only null for link_id is accepted now:');
+        }
+      }
+      // ---------------
+
+      //
+      //
+      //
+      //
+      //
+      //
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       // READ THIS YOU MUST TAKE CARE IF A MODEL
       // HAS PROPERTY: appCoreModelClassesCommonDbTableName SET TO 'ConditionModelWidget'
@@ -708,7 +984,9 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon(
               model,
               columnNames: columnNames,
-              overwriteModelProperties: overwriteModelProperties,
+              overwriteModelProperties: overwriteModelProperties.isNotEmpty
+                  ? overwriteModelProperties
+                  : null,
               isGlobalRequest: null != globalServerRequestKey ? true : false);
       // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
       var queryPart = query.queryPart;
@@ -813,6 +1091,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             debugPrint(result.toString());
           }
         }).catchError((error) {
+          debugPrint('catchError flag #prg4');
+
           debugPrint(
               'DataManagementDriver create() methodAn !error! result of getModelIdByOneTimeInsertionKey invoked by create method has arrived and in the debug mode it seems it successfully done and it looks like this:');
           debugPrint(error.toString());
