@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.18.4 <3.0.0"
+  sdk: ">=2.18.4 <3.0.20"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -44,8 +44,8 @@ dependencies:
   #extended_tabs: ^4.0.2 #fluttercandies.com
   #flutter_webrtc: ^0.9.19
   
-  http: ^0.13.5
-  sqlite3: ^1.9.1
+  http: ^1.0.0
+  sqlite3: ^2.0.0
   universal_io: ^2.0.4  
   async: ^2.9.0
   

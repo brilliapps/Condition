@@ -22,8 +22,8 @@ import 'condition_configuration.dart';
 
 //import 'condition_db.dart'
 //    if (dart.library.html) 'condition_db_web.dart'; // especially for web localStorage database _driver_temp (ConditionModelApp) or div tag database storage to be implemented later
-import 'condition_data_management_driver_sql.dart'
-    if (dart.library.html) 'condition_data_management_driver_sql.web.dart'; // especially for web (!now indexedDB) localStorage database _driver_temp (ConditionModelApp) or div tag database storage to be implemented later
+import 'condition_data_management_driver_sql.dart';
+//    if (dart.library.html) 'condition_data_management_driver_sql.web.dart'; // especially for web (!now indexedDB) localStorage database _driver_temp (ConditionModelApp) or div tag database storage to be implemented later
 
 import 'condition_data_management_driver_server.fallback.dart'; // condition_data_management_driver_server.web.dart probably in extended unchanged form uses it but when condition_data_management_driver_server.dart is not working properly this fallback one is to be used
 import 'condition_data_management_driver_server.dart' // only dart or native like windows, android (not web)
@@ -1130,6 +1130,7 @@ abstract class ConditionDataManagementDriver {
                     as Completer<ConditionDataManagementDriver>?) {
     // In the extending class we call initStorage function - see description - the function must be overriden it is left in this class definition for learning purposes only
     // _initStorage(prefix, onInitialised);
+    debugPrint('We are in the constructor of the ConditionModelApp');
 
     if (null != conditionModelApp) {
       this.conditionModelApp = conditionModelApp;

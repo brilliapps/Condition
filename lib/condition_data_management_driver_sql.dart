@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:async/async.dart' show FutureGroup;
-import 'dart:ffi';
+//import 'dart:ffi';
 import 'dart:io';
 import 'condition_data_managging.dart';
 
@@ -9,8 +9,8 @@ import 'condition_custom_annotations.dart';
 import 'condition_configuration.dart';
 import 'condition_data_management_driver_sql_settings.dart';
 
-import 'package:sqlite3/open.dart';
-import 'package:sqlite3/sqlite3.dart';
+import 'condition_data_management_sqlite3_db_object.dart'
+    if (dart.library.html) 'condition_data_management_sqlite3_db_object.web.dart';
 
 /// This class almost should be made abstract, but it is contstructed in a way to work by default out of the box if not extended using sqlite3 engines, settings, and classess, which is for the app (or system) a default option, while it works on a sqlite3 file database not internet connection. Such an option for an easy start for new developers.
 /// Caution! [To do:] More sophisticated db integrity check on initiation, f.e. a ConditionModelClassess table must contain about 10 records (at the time of writing). An work out some rules not to perform integrity check each request or application start or whatever.
@@ -64,6 +64,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             hasGlobalDriver: hasGlobalDriver,
             driverGlobal: driverGlobal,
             initCompleterGlobal: initCompleterGlobal) {
+    debugPrint(
+        'We are in the constructor of the ConditionDataManagementDriverSql');
     _initStorage();
   }
 
@@ -74,7 +76,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     // To not to block the main layout thread more sophisticated
     // implementation based on isolates should be implemented (the best)
     // for now it is achieved in limited scope using asynchronous scheduleMicrotask()
-    scheduleMicrotask(() {
+    scheduleMicrotask(() async {
       try {
         // to do you better make it all const (cannot now)
         // as not confusing any developers pattern for extending the class [settings] property is not of the extending [ConditionDataManagementDriverSqlSettingsSqlite3] class
@@ -100,11 +102,15 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             .toString());
 
         if (Platform.isWindows) {
+          _db = await Sqlite3DB.getDBObject(settings_sqlite3);
+
           // now windows only
-          DynamicLibrary.open(ConditionConfiguration
-              .paths_to_sqlite_core_library[ConditionPlatforms.Windows]);
-          _db = sqlite3.open(settings_sqlite3
-              .native_platform_sqlite3_db_paths[ConditionPlatforms.Windows]!);
+          //DynamicLibrary.open(ConditionConfiguration
+          //    .paths_to_sqlite_core_library[ConditionPlatforms.Windows]);
+          //_db = sqlite3.open(settings_sqlite3
+          //    .native_platform_sqlite3_db_paths[ConditionPlatforms.Windows]!);
+        } else if (ConditionConfiguration.isWeb) {
+          _db = await Sqlite3DB.getDBObject(null);
         } else {
           throw UnimplementedError(
               'Not implemented native platform settings for slite3 db. Only windows supported now');
@@ -171,22 +177,22 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
   }
 
   /// Temporary during development stage, this is to be removed or made private.
-  @Deprecated(
-      'This was (still is?) used only in very early development stages and for testing purposes')
-  static Future /*DatabaseImpl*/ getDbEngine() {
-    return Future/*<DatabaseImpl>*/(() {
-      DynamicLibrary.open('./sqlite3.dll');
-      return sqlite3.open('./condition_data_management_driver_sql.sqlite');
-    });
-
-    // Create a table and insert some data
-    //db.execute('''
-    //CREATE TABLE artists (
-    //  id INTEGER NOT NULL PRIMARY KEY,
-    //  name TEXT NOT NULL
-    //);
-    //''');
-  }
+  //@Deprecated(
+  //    'This was (still is?) used only in very early development stages and for testing purposes')
+  //static Future /*DatabaseImpl*/ getDbEngine() {
+  //  return Future/*<DatabaseImpl>*/(() {
+  //    DynamicLibrary.open('./sqlite3.dll');
+  //    return sqlite3.open('./condition_data_management_driver_sql.sqlite');
+  //  });
+//
+  //  // Create a table and insert some data
+  //  //db.execute('''
+  //  //CREATE TABLE artists (
+  //  //  id INTEGER NOT NULL PRIMARY KEY,
+  //  //  name TEXT NOT NULL
+  //  //);
+  //  //''');
+  //}
 
   @override
   @protected

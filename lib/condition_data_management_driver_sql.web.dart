@@ -56,42 +56,37 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     String? tableNamePrefix,
     bool isGlobalDriver = false,
     bool hasGlobalDriver = false,
-    ConditionDataManagementDriver? global_driver,
+    ConditionDataManagementDriver? driverGlobal,
+    Completer<ConditionDataManagementDriver>? initCompleterGlobal,
     ConditionDataManagementDriverSqlSettings? settings,
+    ConditionModelApp? conditionModelApp,
   })  : settings = settings ??
             ConditionDataManagementDriverSqlSettings.getDefaultSettings(
-                // notice that super class also have this condition it probably won't be needed to change it
-                !isGlobalDriver &&
-                        (hasGlobalDriver == true ||
-                            (hasGlobalDriver == false && global_driver != null))
-                    ? false
-                    : true),
+                // edit it is simpler: old version text: notice that super class also have this condition it probably won't be needed to change it
+                // !(!
+                isGlobalDriver
+                    // &&
+                    //       (hasGlobalDriver == true ||
+                    //           (hasGlobalDriver == false && driverGlobal != null)))
+                    ? true
+                    : false),
         super(
+            conditionModelApp: conditionModelApp,
             initCompleter:
                 initCompleter, // ?? Completer(), // do we need this two tims? the optional assigning is already used in super class, isn't it?
             dbNamePrefix: dbNamePrefix,
             tableNamePrefix: tableNamePrefix,
             hasGlobalDriver: hasGlobalDriver,
-            driverGlobal: global_driver) {
+            driverGlobal: driverGlobal,
+            initCompleterGlobal: initCompleterGlobal) {
     //_initStorage();
   }
-  static Future /*DatabaseImpl*/ getDbEngine() {
-    print('abc');
 
-    // Create a new in-memory database. To use a database backed by a file, you
-    // can replace this with sqlite3.open(yourFilePath).
-    //final db = sqlite3.openInMemory();
-    return Future/*<DatabaseImpl>*/(() {
-      return null;
-      //return sqlite3.open('./condition_data_management_driver_sql.sqlite');
-    });
-
-    // Create a table and insert some data
-    //db.execute('''
-    //CREATE TABLE artists (
-    //  id INTEGER NOT NULL PRIMARY KEY,
-    //  name TEXT NOT NULL
-    //);
-    //''');
-  }
+  // Create a table and insert some data
+  //db.execute('''
+  //CREATE TABLE artists (
+  //  id INTEGER NOT NULL PRIMARY KEY,
+  //  name TEXT NOT NULL
+  //);
+  //''');
 }
