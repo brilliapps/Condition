@@ -25,4 +25,8 @@ class Sqlite3DB {
 
     return db;
   }
+
+  static Future<String>? httpGetFileContents(String path) async {
+    return http.read(Uri.parse(path));
+  }
 }

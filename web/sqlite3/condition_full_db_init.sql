@@ -1,4 +1,4 @@
-condition_sqlite_init=`-- Adminer 4.8.1 SQLite 3 3.15.1 dump
+-- Adminer 4.8.1 SQLite 3 3.15.1 dump
 
 DROP TABLE IF EXISTS "ConditionModelApp";
 CREATE TABLE "ConditionModelApp" (
@@ -118,5 +118,4 @@ CREATE INDEX "ConditionModelWidget_to_be_synchronized" ON "ConditionModelWidget"
 CREATE INDEX "ConditionModelWidget_one_time_insertion_key" ON "ConditionModelWidget" ("one_time_insertion_key");
 
 
---  
-`;
+-- 

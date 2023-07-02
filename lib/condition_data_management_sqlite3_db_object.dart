@@ -25,4 +25,8 @@ class Sqlite3DB {
     });
     return completer.future;
   }
+
+  static Future<String>? httpGetFileContents(String path) {
+    return null;
+  }
 }

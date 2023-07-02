@@ -1311,7 +1311,8 @@ abstract class ConditionDataManagementDriver {
   @MustBeImplemented()
   @EducationalImplementation()
   CreateModelOnServerFutureGroup<int?> create(ConditionModel model,
-      {String? globalServerRequestKey = null}) {
+      {String? globalServerRequestKey = null,
+      Map<String, String?>? globalServerUserCredentials}) {
     if (!inited) throw const ConditionDataManagementDriverNotinitedException();
     Completer<int?> completerCreate = Completer<int?>();
     Completer<int?> completerModelIdByOneTimeInsertionKey = Completer<int?>();
@@ -3608,128 +3609,143 @@ abstract class ConditionModel extends ConditionMap {
         //}
       }
 
-      /// we use this variable to get some convenient properties (futures) and make code clearer
-      CreateModelOnServerFutureGroup<int?> createGlobalServerFutureGroup =
-          working_driver.driverGlobal!.create(this,
-              globalServerRequestKey: conditionModelAppInstance.server_key);
+      if (this is ConditionModelIdAndOneTimeInsertionKeyModel) {
+        final modelsUser = (this as ConditionModelIdAndOneTimeInsertionKeyModel)
+            .conditionModelUser;
+        //thisAsConditionModelIdAndOneTimeInsertionKeyModel
+        /// we use this variable to get some convenient properties (futures) and make code clearer
+        CreateModelOnServerFutureGroup<int?> createGlobalServerFutureGroup =
+            working_driver.driverGlobal!.create(this,
+                globalServerRequestKey: conditionModelAppInstance.server_key,
+                globalServerUserCredentials: {
+              'e_mail': modelsUser!.e_mail,
+              'phone_number': modelsUser.phone_number,
+              'password': modelsUser.password,
+            });
 
-      createGlobalServerFutureGroup.future.then((List<int?> result) async {
-        bool nullifyTheKey = false;
+        try {
+          List<int?> result = await createGlobalServerFutureGroup.future;
+          bool nullifyTheKey = false;
 
-        //hej!
-        //HERESTOPPED // all the rest of the properties yet not set up based on the class of model
-        // contact, nont contact but non user, and global init future finish,
-        // if server_id != null in initModel() (it has the rest of the proerties) global init finish now
-        // REMEMBER ALREADY SOME PLACES RELY ON THE PROPER INIT GLOBAL SERVER FUTURE,
-        // ALSO SEE IF LOCALLY A LOCAL SERVER SENDS CHANGE STREAM EVENT THAT A MODEL IS INITED - THE GLOBAL SHOULD TOO?
+          debugPrint(
+              'result 2:initModel() in _doDirectCreateOnGlobalServer() runtimeType == $runtimeType and result is $result');
 
-        //Now // situation is that the result has the id but
-        // we are to have server_id,
-        // server_owner_contact_id for non contact and non user and non ConditionModelApp
-        // there are similar type checking conditions used for this in this file
-        // WHEN WE HAVE IT (SEE IF SOMETHING ELSE)
-        // WE CAN _initedGlobalServer = true - which is a setter of __initedGlobalServer (double
-        // underscore)
-        // and the setter will finish t he completer "_completerInitModelGlobalServer.complete(this);"
-        // Then in the ConditionModelUser restoreMyChildren you don't need to listen to
-        // events where you have the 'server_id' or 'server_owner_contact_id' if necessary
-        // but you will have it here already checked.
-        // if A result is success and it doesn't have for local server_id always but
-        // also the 'server_owner_contact_id' for non-contact... models
-        // then we throw a fatal error for now because it means an application general error
-        // or there might be later third-party ConditoinModelDriver wrong implementation
-        // or a hacker attack - but for this later no error but exception will be thrown
+          //hej!
+          //HERESTOPPED // all the rest of the properties yet not set up based on the class of model
+          // contact, nont contact but non user, and global init future finish,
+          // if server_id != null in initModel() (it has the rest of the proerties) global init finish now
+          // REMEMBER ALREADY SOME PLACES RELY ON THE PROPER INIT GLOBAL SERVER FUTURE,
+          // ALSO SEE IF LOCALLY A LOCAL SERVER SENDS CHANGE STREAM EVENT THAT A MODEL IS INITED - THE GLOBAL SHOULD TOO?
 
-        // In this comment section the following await createGlobalServerFutureGroup. means the future is already completed, you don't wait for the result you get it immediately. It is of course for you to get the value not the future.
-        // --> "int result[0]" should be the same as "await createGlobalServerFutureGroup.completerCreateFuture"
-        // But "int result[1]" should be the same as "await createGlobalServerFutureGroup.completerModelIdByOneTimeInsertionKey"
-        int? serverId = result[0] != null && result[0]! > 0
-            ? result[0]
-            : result[1] != null && result[1]! > 0
-                ? result[1]
-                : -1;
-        if (serverId == -1) {
-          _completerInitModelGlobalServer.completeError(
-              '2:initModel() in _doDirectCreateOnGlobalServer() working_driver.driverGlobal.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
-        }
+          //Now // situation is that the result has the id but
+          // we are to have server_id,
+          // server_owner_contact_id for non contact and non user and non ConditionModelApp
+          // there are similar type checking conditions used for this in this file
+          // WHEN WE HAVE IT (SEE IF SOMETHING ELSE)
+          // WE CAN _initedGlobalServer = true - which is a setter of __initedGlobalServer (double
+          // underscore)
+          // and the setter will finish t he completer "_completerInitModelGlobalServer.complete(this);"
+          // Then in the ConditionModelUser restoreMyChildren you don't need to listen to
+          // events where you have the 'server_id' or 'server_owner_contact_id' if necessary
+          // but you will have it here already checked.
+          // if A result is success and it doesn't have for local server_id always but
+          // also the 'server_owner_contact_id' for non-contact... models
+          // then we throw a fatal error for now because it means an application general error
+          // or there might be later third-party ConditoinModelDriver wrong implementation
+          // or a hacker attack - but for this later no error but exception will be thrown
 
-        if (serverId != null && serverId > 0) {
-          // contact also is ConditionModelBelongingToContact but logically it shouldn't it one day may change
-          if (this is ConditionModelContact ||
-              this is ConditionModelBelongingToContact) {
-            // required:
-
-            // the future already is finished so it immediately resolves to the returned value
-            columnNamesAndFullyFeaturedValidateAndSetValueMethods[
-                    'server_user_id']!(
-                await createGlobalServerFutureGroup.completerServerUserIdFuture,
-                true,
-                true,
-                true);
+          // In this comment section the following await createGlobalServerFutureGroup. means the future is already completed, you don't wait for the result you get it immediately. It is of course for you to get the value not the future.
+          // --> "int result[0]" should be the same as "await createGlobalServerFutureGroup.completerCreateFuture"
+          // But "int result[1]" should be the same as "await createGlobalServerFutureGroup.completerModelIdByOneTimeInsertionKey"
+          int? serverId = result[0] != null && result[0]! > 0
+              ? result[0]
+              : result[1] != null && result[1]! > 0
+                  ? result[1]
+                  : -1;
+          if (serverId == -1) {
+            _completerInitModelGlobalServer.completeError(
+                '2:initModel() in _doDirectCreateOnGlobalServer() working_driver.driverGlobal.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
           }
-          // if serverId valid is ok we need to validate more for some classess
-          if (this is! ConditionModelContact &&
-              this is ConditionModelBelongingToContact) {
-            // required:
 
-            // the future already is finished so it immediately resolves to the returned value
-            columnNamesAndFullyFeaturedValidateAndSetValueMethods[
-                    'server_contact_user_id']!(
-                await createGlobalServerFutureGroup
-                    .completerServerContactUserIdFuture,
-                true,
-                true,
-                true);
+          if (serverId != null && serverId > 0) {
+            // contact also is ConditionModelBelongingToContact but logically it shouldn't it one day may change
+            if (this is ConditionModelContact ||
+                this is ConditionModelBelongingToContact) {
+              // required:
 
-            //not required ignored if null, the implementation/testing left for later, but the cond should work anyway
-            // the future already is finished so it immediately resolves to the returned value
-            if (createGlobalServerFutureGroup.completerServerLinkIdFuture !=
-                null) {
+              // the future already is finished so it immediately resolves to the returned value
               columnNamesAndFullyFeaturedValidateAndSetValueMethods[
-                      'server_link_id']!(
+                      'server_user_id']!(
                   await createGlobalServerFutureGroup
-                      .completerServerLinkIdFuture,
+                      .completerServerUserIdFuture,
                   true,
                   true,
                   true);
             }
+            // if serverId valid is ok we need to validate more for some classess
+            if (this
+                    is ConditionModelContact // this is ConditionModelBelongingToContact
+                ) {
+              // required:
+
+              // the future already is finished so it immediately resolves to the returned value
+              columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                      'server_contact_user_id']!(
+                  await createGlobalServerFutureGroup
+                      .completerServerContactUserIdFuture,
+                  true,
+                  true,
+                  true);
+
+              //not required ignored if null, the implementation/testing left for later, but the cond should work anyway
+              // the future already is finished so it immediately resolves to the returned value
+              if (createGlobalServerFutureGroup.completerServerLinkIdFuture !=
+                  null) {
+                columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                        'server_link_id']!(
+                    await createGlobalServerFutureGroup
+                        .completerServerLinkIdFuture,
+                    true,
+                    true,
+                    true);
+              }
+            }
+            //if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer/*ConditionModelParentIdModel*/) {
+            // }
+
+            //this['id'] = result[0];
+            //to do NOW
+            //First no server_id set up on the server side (should be set up when record is created)
+            //Second we need to then update the received id (is correct for now)
+            //on local server with no update to the global server this should solve the problems
+            //why there is no server_id both on local and global server
+            debugPrint(
+                '2:2:initModel() in _doDirectCreateOnGlobalServer() setting up server_id with no to global server update serverId = ${serverId}');
+            columnNamesAndFullyFeaturedValidateAndSetValueMethods['server_id']!(
+                serverId, true, true, true);
+
+            debugPrint(
+                '2:2:initModel() in _doDirectCreateOnGlobalServer() we did a successful create on global server and we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_creation_date_timestamp\'] = ${result[2]}');
+            columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                'server_creation_date_timestamp']!(result[2], true, true, true);
+
+            nullifyTheKey = true;
+
+            debugPrint(
+                '2:2:initModel() in _doDirectCreateOnGlobalServer() NOW SUCCESS, THE MODEL IS GOING TO BE INITED GLOBALLY _completerInitModelGlobalServer.complete(this);');
+            _completerInitModelGlobalServer.complete(this);
+          } else {
+            _completerInitModelGlobalServer.completeError(
+                '2:initModel() in _doDirectCreateOnGlobalServer() _completerInitModelGlobalServer.completeError working_driver.driverGlobal.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
           }
-          //if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer/*ConditionModelParentIdModel*/) {
-          // }
 
-          //this['id'] = result[0];
-          //to do NOW
-          //First no server_id set up on the server side (should be set up when record is created)
-          //Second we need to then update the received id (is correct for now)
-          //on local server with no update to the global server this should solve the problems
-          //why there is no server_id both on local and global server
-          debugPrint(
-              '2:2:initModel() in _doDirectCreateOnGlobalServer() setting up server_id with no to global server update serverId = ${serverId}');
-          columnNamesAndFullyFeaturedValidateAndSetValueMethods['server_id']!(
-              serverId, true, true, true);
-
-          debugPrint(
-              '2:2:initModel() in _doDirectCreateOnGlobalServer() we did a successful create on global server and we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_creation_date_timestamp\'] = ${result[2]}');
-          columnNamesAndFullyFeaturedValidateAndSetValueMethods[
-              'server_creation_date_timestamp']!(result[2], true, true, true);
-
-          nullifyTheKey = true;
-
-          debugPrint(
-              '2:2:initModel() in _doDirectCreateOnGlobalServer() NOW SUCCESS, THE MODEL IS GOING TO BE INITED GLOBALLY _completerInitModelGlobalServer.complete(this);');
-          _completerInitModelGlobalServer.complete(this);
-        } else {
-          _completerInitModelGlobalServer.completeError(
-              '2:initModel() in _doDirectCreateOnGlobalServer() _completerInitModelGlobalServer.completeError working_driver.driverGlobal.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
-        }
-
-        // this will trigger nullifying the key on local and the global server
-        // finishing it with any error is not a big deal, it should be later
-        // checked - is it already implemented for both servers?
-        if (nullifyTheKey == true) {
-          this['one_time_insertion_key'] = null;
-        }
-        /*
+          // this will trigger nullifying the key on local and the global server
+          // finishing it with any error is not a big deal, it should be later
+          // checked - is it already implemented for both servers?
+          if (nullifyTheKey == true) {
+            this['one_time_insertion_key'] = null;
+          }
+          /*
                     try {
                       // probably we dont need the method
                       // it should be enough to just set model['one_time_insertion_key'] to null
@@ -3739,14 +3755,16 @@ abstract class ConditionModel extends ConditionMap {
                           '1:initModel() nullifyOneTimeInsertionKey error - at this state it may fail will be done later [to do]: error: e == $e');
                     }
                     */
-      }).catchError((error) {
-        debugPrint('catchError flag #cef9');
-        debugPrint(
-            'Debugprint: 2:initModel() working_driver.driverGlobal.create() error: With a list of one or two possible integers containing no int id a model initiation could\'t has been finished. Exception thrown: error == $error');
-        //Here // exactly this line below is causeing the second excepton all catchError and async try catch need to be checke
-        _completerInitModelGlobalServer.completeError(
-            '2:initModel() working_driver.driverGlobal.create() error: With a list of one or two possible integers containing no int id a model initiation could\'t has been finished. Exception thrown: error == $error');
-      });
+        } catch (error) {
+          debugPrint('catchError flag #cef9');
+          // here the error?
+          debugPrint(
+              'Debugprint: 2:initModel() working_driver.driverGlobal.create() error: With a list of one or two possible integers containing no int id a model initiation could\'t has been finished. Exception thrown: error == $error');
+          //Here // exactly this line below is causeing the second excepton all catchError and async try catch need to be checke
+          _completerInitModelGlobalServer.completeError(
+              '2:initModel() working_driver.driverGlobal.create() error: With a list of one or two possible integers containing no int id a model initiation could\'t has been finished. Exception thrown: error == $error');
+        }
+      }
     }
   }
 
@@ -3772,10 +3790,17 @@ abstract class ConditionModel extends ConditionMap {
     // this is to be removed when it is listened somewhere else and options for listening are added.
     // not that initModel returns just _completerInitModel.future
     // but nothing like that for the global server model initModelGlobal server or something
-    _completerInitModelGlobalServer.future.catchError((error) {
-      debugPrint('catchError flag #cef10');
-      debugPrint(
-          'initModel() _completerInitModelGlobalServer.future exception catched see code of initModel seek the debugPrint, and the async exception thrown is: $error');
+    scheduleMicrotask(() async {
+      try {
+        await _completerInitModelGlobalServer.future;
+      } catch (error) {
+        debugPrint('catchError flag #cef10');
+        debugPrint(
+            'initModel() _completerInitModelGlobalServer.future exception catched see code of initModel seek the debugPrint, and the async exception thrown is: $error');
+
+        /// !!! Rethrow?
+        rethrow;
+      }
     });
 
 // coulnd\t use conditionModelApp property, it may be that it would be overlapping
@@ -4583,6 +4608,148 @@ abstract class ConditionModelParentIdModel
   final bool hangOnWithServerCreateUntilParentAllows;
   final Completer<void>? _hangOnWithServerCreateUntilParentAllowsCompleter;
 
+  final bool autoRestoreMyChildren;
+
+  /// This is most probably called at first in initCompleteModel() body of any class habing it. It can be called also when a model is cleared from it's children (lazy loading, dynamic updates, etc.) but then they are back again.To remind first: The general rule and architecture is that each model in a sense cares for itself. So you basically cannot or at least should add _children of a your child model, you can add children of you your self. If you ignore the rule of quite an independence of a model in "all" aspects there maybe damage to the data integrity or so - simplified rule may not be that sometimes obvious looking at the code, but it is the rule applied wherever possible. This method recreates from the db children of the current model and the children are added to the _children property and should be rendered at the proper moment, especially if the currentTreeLevel property allows for that, how? The currentTreeLevel param tells you what level it is in the tree, and is respected at the start of the app. Each model class implements it's own version of the method. F.e. if grandfather currentTreeLevel == 1 ([ConditionModelApp]) then father currentTreeLevel == 2, child == 3, and so on. If in the global or maybe other settings the max current level is 3 the standard version of the app will restore its models from the db in such a way that [ConditionModelApp] (grandfather currentTreeLevel == 1) object will be restored and rendered also father [ConditionModelUser] and finally all first level [ConditionModelContact] users/groups, subcontacts and subgroups won't be rendered. Good to remember f.e. [ConditionModelMessage] messages may not be rendered, because of the nature of displaying such stuff. So this is the rule and also an example that like messages there maybe some different implementation of the rule related to currentTreeLevel param. So why is the ignoreCurrentTreeLevel param? When you want to lazy loading the next level of models this will enable you doing so.
+  @protected
+  restoreMyChildren(
+      //int currentTreeLevel, [bool ignoreCurrentTreeLevel = false]
+      ) {
+    //MOdels // implement class mixin with this method - no need to define the method here?
+    /// Any time you impelment the method check out for this:
+
+    if (!this._children.isEmpty) {
+      throw Exception(
+          'ConditionModelParentIdModel, restoreMyChildren() method: To restore this model\'s children models the _children property must be empty - must be this._children.isEmpty == true');
+    }
+    // READ IT FIRST:
+    // AS FAR AS I REMEMBE MUCH OF HERE BELOW IS BASED ON THE SAME METHOD OF ConditionModelUser class achievements
+    // There, there may still be some educational code left
+
+    // to avoid endless loop for now in this debug stage
+    if (this is ConditionModelContact) {
+      //ConditoinModelBelongingToContact
+      var subcontact = ConditionModelContact(
+          conditionModelApp,
+          conditionModelUser,
+          <String, dynamic>{
+            'contact_e_mail': 'adfafaasdfasfafaasfasfsf2@gmail.com.debug',
+            //'user_id': //id, is it// allowed when hangOnWithServerCreateUntilParentAllows: true see addChild?
+          },
+          hangOnWithServerCreateUntilParentAllows: true,
+          autoRestoreMyChildren:
+              false // to avoid infinite child adding in this debug not proper conditions
+
+          );
+
+      addChild(subcontact);
+
+      //ConditoinModelBelongingToContact
+      var message = ConditionModelMessage(
+          conditionModelApp, conditionModelUser, this, <String, dynamic>{},
+          hangOnWithServerCreateUntilParentAllows: true,
+          autoRestoreMyChildren:
+              false // to avoid infinite child adding in this debug not proper conditions
+          );
+
+      var message2 = ConditionModelMessage(
+          conditionModelApp, conditionModelUser, this, <String, dynamic>{},
+          hangOnWithServerCreateUntilParentAllows: true,
+          autoRestoreMyChildren:
+              false // to avoid infinite child adding in this debug not proper conditions
+          );
+
+      message.addChild(
+          message2); // message2 will be correctly added in stages only after this.addChild finishes all complicated stuff
+
+      addChild(message);
+
+      message.getModelOnModelInitComplete().then((model) {
+        debugPrint(
+            'B] We are in [ConditionModelParentIdModel]\'s restoreTreeTopLevelModelsOrMostRecentMessagesModels() in then() of getModelOnModelInitComplete() method of a ConditionModelParentIdModel model. the model just has been inited and is ready to use. Let\'s debug-update a field/property of the model. Each time the value will be different - timestamp');
+        message.description = DateTime.now().millisecondsSinceEpoch.toString();
+        debugPrint(
+            'B] And the value now is message.description == ${message.description}');
+      }).catchError((error) {
+        debugPrint('catchError flag #cef14');
+
+        debugPrint(
+            'B] Error of: We are in [ConditionModelParentIdModel]\'s restoreTreeTopLevelModelsOrMostRecentMessagesModels() in then() of getModelOnModelInitComplete() method of a ConditionModelParentIdModel model, the error message ${error.toString()}');
+      });
+
+      debugPrint(
+          'P] restoreTreeTopLevelModelsOrMostRecentMessagesModels(): let\'s get into a loop creating top lever models for later rendering widgets.');
+      debugPrint(
+          'P]restoreTreeTopLevelModelsOrMostRecentMessagesModels() conditionModelApp.currently_active_user_id ${conditionModelApp.currently_active_user_id} and currently processed user id is $id');
+      if (conditionModelApp.currently_active_user_id == id) {
+        debugPrint(
+            'P]the currently processed user IS active and some of it\'s models are going to be restored now. Some other stuff yet may be done.');
+      } else {
+        debugPrint(
+            'P]the currently processed user is NOT active and it\'s models are not going to be restored now. Some other stuff yet may be done.');
+      }
+    }
+  }
+
+  /// You can call the method any time you want. If you use models customarily then after the future is complete you can set any remaining pointer to it to null. If however a model is in the model tree. The retire method will not work and will throw an asynchronous exception (completeError). May be in Readme more desc. This must be somehow implemented however difficult it might be. Not going here into details here but there may be model removed from the model tree, there may be no other reference active to the model except for a special List of models in the ConditionModelApp class. When a model is nowhere else except for this list it must be removed. It could be implemented with some delay - if it is not in the tree and no property change induced by app user has taken place, the model can be detached and send some locking if accidentally it is suprisingly linked somewhere, and in the development process such places will be gradually corrected, some log messages, errors (no exceptions - wrongly constructed piece of code). No unused link to the model can be left
+  @protected
+  Future<ConditionModelParentIdModel> retire() {
+    try {
+      throw Exception('retire()');
+    } catch (e) {
+      debugPrint(
+          'ConditionModelParentIdModel retire() method, an always catched exception: not implemented in reality, add late final _retired property as described in the method retire();');
+    }
+
+    //????!!!!!!!!!!!!!!!!!! not//implemented yet
+    Completer<ConditionModelParentIdModel> completer =
+        Completer<ConditionModelParentIdModel>();
+    if (conditionModelApp._isModelInTheTreeOrInsideAParentLinkModel(this)) {
+      //we // lock the model so it cannot be used at all, throw exceptions if any property
+      // was to be set, because it is considered programmers mistake to leave any pointer
+      // to the model and still use it
+      //implement // better, f.e. synchronous locking model, waiting or not until some
+      // synchronizaton or fetching data modelisintheprocesofbeingupdated, or maybe more.
+      // If so you will finally know what to do and after that you complete the completer.
+      // if you set a standalone (retireModelWhenWhenRemovedFromTheModelTree == false) pointer
+      // to null too early it may bring some damage. In this method you focus on this model only
+      completer.complete(this);
+    } else {
+      completer.completeError(
+          'ConditionModelParentIdModel retire() method asynchronous exception (completer.completeError()): A model is still in the model tree and cannot go retired and take pensions until it is still in the model tree.');
+    }
+    return completer.future;
+  }
+
+  @override
+  initCompleteModel() async {
+    debugPrint(
+        '!!We\'ve entered the initCompleteModel() of ConditionModelParentIdModel ');
+    bool restoreSomeUsersWidgetModels = false;
+    //The // exception should never occur (local server is assumed to always work) so any
+    // exception maybe shouldn't be catched - redesign it better
+    try {
+      await initModel(); // it is always ok and returns the "this" model itself. It probably never throws error - checkit out.
+      //pretty // much not sure if isInited or similar stuff is done in ConditionModel
+      // so no need to use this. Model must be inited locally it could be fatal error
+      // not a catched exception. To redesign?
+      bool isInited = true;
+      debugPrint(
+          'initCompleteModel() of ConditionModelParentIdModel Custom implementation of initCompleteModel(): Model of [ConditionModelParentIdModel] has been inited. Now we can restore all tree tree top-level widget models belonging to the currently logged AND FRONT SCREEN ACTIVE user models like contacts, messages, probably not rendering anything yet. Possibly some other users related stuff is going to be performed');
+      restoreSomeUsersWidgetModels = true;
+    } catch (e) {
+      debugPrint(
+          'Custom implementation of initCompleteModel(): Model of [ConditionModelParentIdModel] hasn\'t been inited. The error of a Future (future.completeError()) thrown is ${e.toString()}');
+      // ARE WE GOING TO USE NOT ENDLESSLY INVOKED TIMER TO invoke initModel() again with some addons if necessary? Some properties might has been set already.
+    }
+
+    if (restoreSomeUsersWidgetModels) {
+      if (autoRestoreMyChildren) {
+        restoreMyChildren();
+      }
+    }
+  }
+
   _performValidatingSettingUnlockingSendingEvent(
       ConditionModelParentIdModel childModel) {
     debugPrint(
@@ -4640,8 +4807,8 @@ abstract class ConditionModelParentIdModel
           false);
     }
 
-    childModel.a_parent_id
-        ._fullyFeaturedValidateAndSetValue(this['id'], true, false);
+    childModel.a_parent_id._fullyFeaturedValidateAndSetValue(
+        this is ConditionModelUser ? 0 : this['id'], true, false);
     if (childModel.hangOnWithServerCreateUntilParentAllows) {
       debugPrint(
           'ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B4');
@@ -4931,49 +5098,6 @@ abstract class ConditionModelParentIdModel
             this, childModel));
   }
 
-  /// This is most probably called at first in initCompleteModel() body of any class habing it. It can be called also when a model is cleared from it's children (lazy loading, dynamic updates, etc.) but then they are back again.To remind first: The general rule and architecture is that each model in a sense cares for itself. So you basically cannot or at least should add _children of a your child model, you can add children of you your self. If you ignore the rule of quite an independence of a model in "all" aspects there maybe damage to the data integrity or so - simplified rule may not be that sometimes obvious looking at the code, but it is the rule applied wherever possible. This method recreates from the db children of the current model and the children are added to the _children property and should be rendered at the proper moment, especially if the currentTreeLevel property allows for that, how? The currentTreeLevel param tells you what level it is in the tree, and is respected at the start of the app. Each model class implements it's own version of the method. F.e. if grandfather currentTreeLevel == 1 ([ConditionModelApp]) then father currentTreeLevel == 2, child == 3, and so on. If in the global or maybe other settings the max current level is 3 the standard version of the app will restore its models from the db in such a way that [ConditionModelApp] (grandfather currentTreeLevel == 1) object will be restored and rendered also father [ConditionModelUser] and finally all first level [ConditionModelContact] users/groups, subcontacts and subgroups won't be rendered. Good to remember f.e. [ConditionModelMessage] messages may not be rendered, because of the nature of displaying such stuff. So this is the rule and also an example that like messages there maybe some different implementation of the rule related to currentTreeLevel param. So why is the ignoreCurrentTreeLevel param? When you want to lazy loading the next level of models this will enable you doing so.
-  @protected
-  restoreMyChildren(
-      //int currentTreeLevel, [bool ignoreCurrentTreeLevel = false]
-      ) {
-    //MOdels // implement class mixin with this method - no need to define the method here?
-    /// Any time you impelment the method check out for this:
-    if (!this._children.isEmpty) {
-      throw Exception(
-          'ConditionModelParentIdModel, restoreMyChildren() method: To restore this model\'s children models the _children property must be empty - must be this._children.isEmpty == true');
-    }
-  }
-
-  /// You can call the method any time you want. If you use models customarily then after the future is complete you can set any remaining pointer to it to null. If however a model is in the model tree. The retire method will not work and will throw an asynchronous exception (completeError). May be in Readme more desc. This must be somehow implemented however difficult it might be. Not going here into details here but there may be model removed from the model tree, there may be no other reference active to the model except for a special List of models in the ConditionModelApp class. When a model is nowhere else except for this list it must be removed. It could be implemented with some delay - if it is not in the tree and no property change induced by app user has taken place, the model can be detached and send some locking if accidentally it is suprisingly linked somewhere, and in the development process such places will be gradually corrected, some log messages, errors (no exceptions - wrongly constructed piece of code). No unused link to the model can be left
-  @protected
-  Future<ConditionModelParentIdModel> retire() {
-    try {
-      throw Exception('retire()');
-    } catch (e) {
-      debugPrint(
-          'ConditionModelParentIdModel retire() method, an always catched exception: not implemented in reality, add late final _retired property as described in the method retire();');
-    }
-
-    //????!!!!!!!!!!!!!!!!!! not//implemented yet
-    Completer<ConditionModelParentIdModel> completer =
-        Completer<ConditionModelParentIdModel>();
-    if (conditionModelApp._isModelInTheTreeOrInsideAParentLinkModel(this)) {
-      //we // lock the model so it cannot be used at all, throw exceptions if any property
-      // was to be set, because it is considered programmers mistake to leave any pointer
-      // to the model and still use it
-      //implement // better, f.e. synchronous locking model, waiting or not until some
-      // synchronizaton or fetching data modelisintheprocesofbeingupdated, or maybe more.
-      // If so you will finally know what to do and after that you complete the completer.
-      // if you set a standalone (retireModelWhenWhenRemovedFromTheModelTree == false) pointer
-      // to null too early it may bring some damage. In this method you focus on this model only
-      completer.complete(this);
-    } else {
-      completer.completeError(
-          'ConditionModelParentIdModel retire() method asynchronous exception (completer.completeError()): A model is still in the model tree and cannot go retired and take pensions until it is still in the model tree.');
-    }
-    return completer.future;
-  }
-
   //for informational purpose: earlier here was the _parentModel property but read the a_parent_id description and the _parentModel property desc in the [ConditionModel] class
   //ConditionModelParentIdModel? _parentModel;
 
@@ -4995,12 +5119,13 @@ abstract class ConditionModelParentIdModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     this.hangOnWithServerCreateUntilParentAllows = false,
+    this.autoRestoreMyChildren = true,
   }) : _hangOnWithServerCreateUntilParentAllowsCompleter =
             hangOnWithServerCreateUntilParentAllows == false
                 ? null
                 : Completer<void>() {
     if (hangOnWithServerCreateUntilParentAllows) {
-      if (defValue['id'] is int) {
+      if (temporaryInitialData['id'] is int) {
         // no need to check for null or < 1
         throw Exception(
             'A completely new model of descendant class of ConditionModelParentIdModel, that is new with no "id" set up must have no initial thid["id"]. it must be null. Improve the exception message :) ');
@@ -5116,6 +5241,7 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) {
     debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1');
     if (null == temporaryInitialData['id']) {
@@ -5148,9 +5274,9 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
     if (this is! ConditionModelContact &&
         this is ConditionModelBelongingToContact &&
         hangOnWithServerCreateUntilParentAllows == true &&
-        defValue['id'] != null) {
+        temporaryInitialData['id'] != null) {
       throw Exception(
-          'ConditionModelBelongingToContact constructor exception: To my humble knowledge condition if (hangOnWithServerCreateUntilParentAllows==true&&defValue[\'id\']!=null cannot be true');
+          'ConditionModelBelongingToContact constructor exception: To my humble knowledge condition if (hangOnWithServerCreateUntilParentAllows==true&&temporaryInitialData[\'id\']!=null cannot be true');
     }
     debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B3');
 
@@ -5187,7 +5313,9 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
           await event.parentModel!.getModelOnModelInitCompleteGlobalServer();
           debugPrint(
               'ConditionModelBelongingToContact constructor : A parentModel has been inited as previous debugPrint was saying so now we can assign the server_id value this[\'server_parent_id\'] == ${this['server_parent_id']} , event.parentModel![\'server_id\'] == ${event.parentModel!['server_id']};');
-          this['server_parent_id'] = event.parentModel!['server_id'];
+          this['server_parent_id'] = event.parentModel is ConditionModelUser
+              ? 0
+              : event.parentModel!['server_id'];
           // server_user_id - you cannot take from parent - new widget may have different user
           // server_contact_user_id cannot take from parent - tricky stuff for later
           // to remind you contact logically shouldn't be ConditionModelBelongingToContact but it is for now
@@ -5391,6 +5519,7 @@ abstract class ConditionModelCreationDateModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) {
     if (null == temporaryInitialData['id']) {
       temporaryInitialData['creation_date_timestamp'] =
@@ -5468,6 +5597,7 @@ abstract class ConditionModelWidget extends ConditionModelCreationDateModel {
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) {
     if (false && null == temporaryInitialData['id']) {
       throw Exception(
@@ -5545,6 +5675,7 @@ abstract class ConditionModelBelongingToContact extends ConditionModelWidget {
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, defValue,
             appCoreModelClassesCommonDbTableName: 'ConditionModelWidget') {
     a_owner_contact_id.init();
@@ -5747,6 +5878,7 @@ abstract class ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     if (null == temporaryInitialData['id']) {
@@ -6004,13 +6136,13 @@ class ConditionModelContact extends ConditionModelEachWidgetModel
   ConditionModelContact(
     conditionModelApp,
     conditionModelUser,
-    conditionModelContact,
+//    conditionModelContact,
     defValue, {
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
-  }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
-            defValue) {
+    super.autoRestoreMyChildren,
+  }) : super(conditionModelApp, conditionModelUser, null, defValue) {
     a_contact_user_id.init();
     a_server_contact_user_id.init();
     a_contact_accepted_invitation.init();
@@ -6023,7 +6155,9 @@ class ConditionModelContact extends ConditionModelEachWidgetModel
 
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 
   @override
@@ -6098,6 +6232,7 @@ class ConditionModelMessage extends ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     // dont forget of doing validation of [ConditionModelField]... fields like this:
@@ -6106,7 +6241,9 @@ class ConditionModelMessage extends ConditionModelEachWidgetModel
   }
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 }
 
@@ -6123,6 +6260,7 @@ class ConditionModelVideoConference extends ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     // dont forget of doing validation of [ConditionModelField]... fields like this:
@@ -6131,7 +6269,9 @@ class ConditionModelVideoConference extends ConditionModelEachWidgetModel
   }
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 }
 
@@ -6148,6 +6288,7 @@ class ConditionModelTask extends ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     // dont forget of doing validation of [ConditionModelField]... fields like this:
@@ -6156,7 +6297,9 @@ class ConditionModelTask extends ConditionModelEachWidgetModel
   }
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 }
 
@@ -6173,6 +6316,7 @@ class ConditionTripAndFitness extends ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     // dont forget of doing validation of [ConditionModelField]... fields like this:
@@ -6181,7 +6325,9 @@ class ConditionTripAndFitness extends ConditionModelEachWidgetModel
   }
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 }
 
@@ -6198,6 +6344,7 @@ class ConditionModelURLTicker extends ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     // dont forget of doing validation of [ConditionModelField]... fields like this:
@@ -6206,7 +6353,9 @@ class ConditionModelURLTicker extends ConditionModelEachWidgetModel
   }
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 }
 
@@ -6223,6 +6372,7 @@ class ConditionModelReadingRoom extends ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     // dont forget of doing validation of [ConditionModelField]... fields like this:
@@ -6231,7 +6381,9 @@ class ConditionModelReadingRoom extends ConditionModelEachWidgetModel
   }
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 }
 
@@ -6248,6 +6400,7 @@ class ConditionModelWebPage extends ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     // dont forget of doing validation of [ConditionModelField]... fields like this:
@@ -6256,7 +6409,9 @@ class ConditionModelWebPage extends ConditionModelEachWidgetModel
   }
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 }
 
@@ -6273,6 +6428,7 @@ class ConditionModelShop extends ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     // dont forget of doing validation of [ConditionModelField]... fields like this:
@@ -6281,7 +6437,9 @@ class ConditionModelShop extends ConditionModelEachWidgetModel
   }
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 }
 
@@ -6298,6 +6456,7 @@ class ConditionModelProgramming extends ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     // dont forget of doing validation of [ConditionModelField]... fields like this:
@@ -6306,7 +6465,9 @@ class ConditionModelProgramming extends ConditionModelEachWidgetModel
   }
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 }
 
@@ -6323,6 +6484,7 @@ class ConditionModelPodcasting extends ConditionModelEachWidgetModel
     super.changesStreamController,
     super.retireModelWhenWhenRemovedFromTheModelTree,
     super.hangOnWithServerCreateUntilParentAllows,
+    super.autoRestoreMyChildren,
   }) : super(conditionModelApp, conditionModelUser, conditionModelContact,
             defValue) {
     // dont forget of doing validation of [ConditionModelField]... fields like this:
@@ -6331,7 +6493,9 @@ class ConditionModelPodcasting extends ConditionModelEachWidgetModel
   }
   @override
   initCompleteModel() {
-    initModel();
+    //initModel();
+    super
+        .initCompleteModel(); // which in turn will trigger the initModel method
   }
 }
 
@@ -7208,9 +7372,8 @@ class ConditionModelUser extends ConditionModelWidget
     contactdebug = ConditionModelContact(
         conditionModelApp,
         this,
-        null,
         <String, dynamic>{
-          'contact_e_mail': 'abcabcabcabc@gmail.com.debugging',
+          'contact_e_mail': 'adfafaasdfasfafaasfasfsf3@gmail.com.debug',
           //'user_id': //id, is it// allowed when hangOnWithServerCreateUntilParentAllows: true see addChild?
         },
         changesStreamController: contactChangesStreamController,

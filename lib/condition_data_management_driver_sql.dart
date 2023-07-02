@@ -101,7 +101,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             .native_platform_sqlite3_db_paths[ConditionPlatforms.Windows]
             .toString());
 
-        if (Platform.isWindows) {
+        if (!ConditionConfiguration.isWeb && Platform.isWindows) {
           _db = await Sqlite3DB.getDBObject(settings_sqlite3);
 
           // now windows only
@@ -139,16 +139,29 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           //ConditionDataManagementDriverSqlite3RegexPatterns patterns
           //ConditionDataManagementDriverSqlite3RegexMatchesReplacementMethods replacementMethods
 
-          final file = File(ConditionConfiguration.fullSQLDbInitPath)
-              .readAsString()
-              .then((String contents) {
+          try {
+            String contents = '';
+            if (!ConditionConfiguration.isWeb && Platform.isWindows) {
+              contents = await File(ConditionConfiguration.fullSQLDbInitPath)
+                  .readAsString();
+            } else if (ConditionConfiguration.isWeb) {
+              contents = await Sqlite3DB.httpGetFileContents(
+                  'sqlite3/condition_full_db_init.sql') as String;
+              debugPrint('Sqlite db init contents are: $contents');
+            } // !! no need for else and throw Exception - it is done earlier in this method
             // ?? commented unused variable declaration: this shouldn't be used for native, indexes are to be created, this line was probably for test and preparation for sqlweb github web plugin:  const String create_index_regex_string =   r'CREATE[\r\n\t\s]*INDEX[^;]*[;]*';
+
+            if (contents == '') {
+              throw Exception(
+                  'ConditionDataManagementDriverSql class _initStorage method exception: No init sql string data');
+            }
 
             //indexes are to be created, this line was probably for test and preparation for sqlweb github web plugin .replaceAll( RegExp(create_index_regex_string, caseSensitive: false), '')
             contents = replacementMethods.replaceAllDropTable(contents);
             contents = replacementMethods.replaceAllCreateTable(contents);
             contents = replacementMethods.replaceAllCreateIndex(contents);
             contents = replacementMethods.replaceAllInsertInto(contents);
+
             debugPrint(contents);
 
             dynamic resultdbe = _db.execute(contents);
@@ -157,11 +170,11 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
             inited = true;
             initCompleter.complete(this);
-          }).catchError((error) {
-            debugPrint('catchError flag #prg1');
+          } catch (error) {
+            debugPrint('catchError flag #prg1: ${error}');
 
             initCompleter.completeError(false);
-          });
+          }
         } else {
           debugPrint(
               'Why i have no access to inited property - prefix ${tableNamePrefix}');
@@ -716,7 +729,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       {Set<String>? columnNames,
       String? globalServerRequestKey = null,
       // it would be perfect to use ConditionModelUser object, but the development is dragging on and on, so for now something simpler :)
-      Map<String, String>? globalServerUserCredentials}) {
+      Map<String, String?>? globalServerUserCredentials}) {
     // ------------------------------------------------------------
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // READ THIS YOU MUST TAKE CARE IF A MODEL
@@ -924,7 +937,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           } catch (e) {
             // ! This future group fails, no need to complete more futures createModelOnServerFutureGroup
             completerServerContactUserIdFuture!.completeError(
-                'DataManagementDriver create() (3.5) method global request couldnt find server_contact_user_id which is needed if model is ConditionModelContact. Exception thrown $e');
+                'DataManagementDriver create() (3.5) method global request couldnt find server_contact_user_id which is needed if model is ConditionModelContact. Exception thrown $e model credentials $model');
             completerCreate.completeError(
                 'DataManagementDriver create() (3) method global request couldnt find server_contact_user_id which is needed if model is ConditionModelContact. Exception thrown $e');
             completerModelIdByOneTimeInsertionKey.completeError(
@@ -1645,9 +1658,12 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       if (result != null && !result.isEmpty) {
         debugPrint(
             "read() Result is not null nor empty ant it looks like this:${result.first.toString()}");
+      } else {
+        debugPrint('read() Result is null or empty which is technically fine.');
       }
 
-      completer.complete(result.first);
+      completer
+          .complete(result != null && !result.isEmpty ? result.first : null);
     });
     return completer.future;
   }
