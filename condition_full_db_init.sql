@@ -104,7 +104,7 @@ CREATE TABLE "ConditionModelWidget" (
   "link_id" integer NULL,
   "server_link_id" integer NULL,
   "title" text NULL,
-  "description" integer NULL,
+  "description" text NULL,
   "configuration" text NULL,
   "one_time_insertion_key" text NULL
 );

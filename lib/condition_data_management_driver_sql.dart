@@ -320,7 +320,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     try {
       debugPrint(
           'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper() we are to check if the key == $key is valid using readAll method');
-      List<Map>? conditionMapList = await readAll(
+      List<Map<String, dynamic>>? conditionMapList = await readAll(
           'ConditionModelApps',
           ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
             ..add('key', key),
@@ -1670,7 +1670,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
   @override
   @protected
-  Future<List<Map>?> readAll(
+  Future<List<Map<String, dynamic>>?> readAll(
       String
           modelClassName, //the table name and model id (some models like ConditionModelMessage only) is taken from this or for name not model id dbTableName property is used
       ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon?
@@ -1697,7 +1697,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           'readAll() we are at the beginning of the method with globalServerRequestKey == null');
     }
 
-    Completer<List<Map>?> completer = Completer<List<Map>?>();
+    Completer<List<Map<String, dynamic>>?> completer =
+        Completer<List<Map<String, dynamic>>?>();
     //storageOperationsQueue.add(completer);
     //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
 
