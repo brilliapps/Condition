@@ -1,4 +1,26 @@
- condition
+condition
+[Fun Fact, and it's good] An interface class can be extended in the library it was defined, which probably means in the file it was defined, but outside the file it can be implemented which is flexible approach and great.
+Oh, joy, another fun fact. If you have interface "B" that extend an abstract "A" class, then in the "class C extends B" you have to implement also stuff from the "A" class. But you can do it very simple. "class C extends A implements B" - no compile time error A is abstract not an interface you can simple extend it if no-syntactical circumstances ofcourse allow for it.
+[To do: #dlkj2fhpeg8nqxwpiu]
+[To do : #WpEmwxpQm346q$u] some thougts there may be important
+[To do:] After those with the "ids" Use also conclusion from the discord.com discussion for the following: Make an auto-close action on last-pointer-to-object-lost stream classes for controller class and subscription, and auto-remove pointer for such closed objects. Extending a class may be too-much-time-consuming. https://pub.dev/documentation/async/latest/async/CancelableCompleter-class.html
+may be useful which could possibly allow for not unlocking some operations on a retired model and allow for garbage collecting.
+I needed this at leas once and must have done some workaround: ResultFuture<T> class, 
+
+implement like now // [TO DO: #AP9EWHP98HQ748TGPF] throw exception if model is in the conditionModelApp, think over what to do if a model is scheduled for unlinking but not retired
+// we make sure if one part of code is made synchronously in the event loop, not parallel synchronous action is performed to avoid changing state like we start checking model is not being retired but after half of a method body the situation change we think not and get a model that will be retired and removed in a while
+// conditionModelApp method must return synchronically such an object if exists but
+// but if it is scheduled for unlinking we make sure retire method is not being executed now and won't be if the model will be returned
+// at the same time we move the model from scheduled for unlinking to the normal list 
+// For this we need to define a method in conditionModelApp maybe also with information sort of "it is scheduled for retirement"
+// can you 100% stop retiring such a model and return it? We want to do it synchronously if possible but
+// IMPLEMTING IT IS ABOUT AN EXISTING ID NOT A NEW MODEL - THIS IS NOT AN ISSUE WITH A NEW MODEL
+// test it by creating two such objects, etc. that in now way something is missed and delayed and two objects are added at once or in time period apart
+
+[HIGH PRIORITY TO DO:] As pointed in the retire() method. If a model has getter isRetired == true it is to immediately to be unlinked (any existing pointers to object model = null) conditionModelApp objects also removes a pointer to the model as soon as it can (it waits for the model to retire first so no read write operation is interrupted incorrectly or important model data and changes are mishandled or lost). If a model is created as new and was not properly unlinked from conditionModelApp an exception must be thrown so there must be a way to check this out first. 
+for that situation now cannot accept any changes to itself, no properties can be set/get, methods used or start any local or global server stuff.
+[HIGH PRIORITY TO DO:] Do not shift it lower, so that not to forget: in app settings we have new useMysqlForDartCommandlineGlobalServer, dartCommandlineGlobalServerMySQLDBDefaultSettings which are related to stub class ConditionRawSQLDBDriverWrapperMySQL in condition_data_management_mysql_db_object.dart file. Probably the entire class will get the similar custom settings object like ConditionRawSQLDBDriverWrapperMySQL gets (OR NOT! READ ALL), that could be used in multiple app objects. However if time is limited only one scenario as the real "command-line" backend "global server" - local data is stored on 'local server'. Yeah, for global server you use only one mysql server, no need to complicate it this time. But local smartphone app can define couple of app objects and use different settings for local server and the "proxy http" global servers, the proxy servers may be more sophisticated then.
+[TO DO]: Is there any room to simply compile the common and shared server-side part of the project to nodejs/npm with remote mysql? There is a github package node_interop for that but... If successful it would be possibly huge because php hosting sometimes is offered with nodejs running (don't know of limitations). Dreamt of php implementation for server but this would simplify the stuff and would run "everywhere" in the backend.
 
 At the moment of writing of this paragraph, there is some example dbs with initial debug data so all you need is to run
 "flutter run -d windows --debug -a debugging" with allowed chrome device that is maybe starting but lagging behind. The -a debugging should activate code that is run when condition if (ConditionConfiguration.debugMode) is met. This let's you see in the two sqlite files how some debug records are added. Most interesting test stuff should be seen in the lib\condition_data_managging.dart file in restoreMyChildren() methods, when
@@ -13,10 +35,12 @@ Welcome to a messy, draft documentation, not-consistent, reflecting changing dec
 
 [Overal To do] in the order of future implementing:
 1. In conditonmodeluser restoremychildren() there are some scenarious of adding contacts Probably we need to test all the scenarious from there adding non-contact nested widgets in non-blocking mode. F.e. like hangonwithuntileparentallows or sth, all data passsed to the constructor or just id.
-2. Handling the situations where model is removed from the tree, is it to be retired or no, or prevent retirement is a constructor property is or was, prevent removing from the special conditionmodelapp list and many more. model cannot be retired if a db operation is in place. Quite a few scenarios.
-3. Remembering the previous point 2. : Syncing from local server to the global. For this you need to recreate a standalone model and have in mind using the solutions here to creating standalone server-side models. - in another point
+2. Handling the situations where model is removed from the tree, added when it is on the all-models conditionmodelapp list, is it to be retired or no, or prevent retirement is a constructor property is or was, prevent removing from the special conditionmodelapp list and many more. model cannot be retired if a db operation is in place. Quite a few scenarios.
+3. Remembering the previous point 2. : Syncing from local server to the global. For this you need to recreate a standalone model and have in mind using the solutions here to creating standalone server-side models. - in another point. First you find first row in the local db where to_be_synchronized == 1 when you seek if there is model with id on conditionmodelapp list. if it is the model will update itself when it can. But if no you create a standalone model which is added to the conditoinmodelapp list, updates itself globally then retires and is removed from the conditionmodelapplist. In brief ofcourse :) .
 4. Now we seek for all updates from the global server and update on the local server - tons to do.
-5. Now we can go to the UI.
+5. Now we can implement ConditionModelDriver for global server that performs the actual remote connection to a global server. Make it simple and 100%. send error text in answer when there is completeError or any throw exception.
+--------------
+6. Now we can go to the UI. Which is a different topic. Not embraced by this list or to do. Apart from UI, more backend like stuff was planned to be done, but this list focuses on bear minimum.
 
 
 

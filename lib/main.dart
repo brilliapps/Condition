@@ -8,10 +8,10 @@
 //    }
 
 import 'dart:async';
-import 'dart:isolate';
+//import 'dart:isolate';
 // somehow it imported for the web so i guess dart:html i can import in some special separate file for _driver (ConditionModelApp)
 
-import 'dart:convert';
+//import 'dart:convert';
 //import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'condition_app_base.dart'; //empty informational and later etended class used by server and frontend/native/web
@@ -189,7 +189,12 @@ void main(List<String> args) async {
 
   ///debugPrint('checkitout8');
   ///debugPrint(args.toString());
+  /////
+  /////
+  /// Some stuff is using below settings but better testing approach is needed.
   ConditionConfiguration.debugMode = args.contains('debugging') ? true : false;
+  ConditionConfiguration.debugCreateModelsTemporarySettings =
+      ConditionConfiguration.debugMode;
   ConditionConfiguration.isClientApp = true;
   //inspect(args);
   //debugPrint(jsonEncode(new ABCD()));

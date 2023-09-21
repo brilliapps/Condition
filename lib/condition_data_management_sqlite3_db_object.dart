@@ -1,32 +1,47 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show protected;
+import 'package:collection/collection.dart';
+
 import 'dart:ffi';
 import 'package:sqlite3/sqlite3.dart';
 import 'condition_configuration.dart';
-import 'condition_data_management_driver_sql_settings.dart';
+//import 'condition_data_management_driver_sql_settings.dart';
+//import 'condition_data_management_driver_sql.dart';
+import 'condition_data_managging.dart';
 
-class Sqlite3DB {
-  Sqlite3DB() {
+//import 'condition_data_management_driver_SQLDBCommonRawDriverSqlite3CompatibilityInterface.dart';
+
+/// [To do: at the time of writing only windows sqlite3 library could be loaded and windows tested db file name] This class is an implementation of native version of the [ConditionRawSQLDBDriverWrapperCommon] interface.
+class ConditionRawSQLDBDriverWrapperSqlite3
+    extends ConditionRawSQLDBDriverWrapperSqlite3Base {
+  ConditionRawSQLDBDriverWrapperSqlite3(
+    super.dbSettings,
+  ) {
     // now windows only
-  }
+    //if (dbSettings == null ||
+    //    dbSettings is! ConditionDataManagementDriverSqlSettingsSqlite3?) {
+    //  throw Exception(
+    //      '[Sqlite3DB] native platform version class exception: settings_sqlite3 is! ConditionDataManagementDriverSqlSettingsSqlite3?');
+    //}
 
-  static Future<dynamic> getDBObject(dynamic settings_sqlite3) {
-    if (settings_sqlite3 == null ||
-        settings_sqlite3 is! ConditionDataManagementDriverSqlSettingsSqlite3?) {
-      throw Exception(
-          '[Sqlite3DB] native platform version class exception: settings_sqlite3 is! ConditionDataManagementDriverSqlSettingsSqlite3?');
-    }
-    Completer<dynamic> completer = Completer<dynamic>();
     scheduleMicrotask(() {
       DynamicLibrary.open(ConditionConfiguration
           .paths_to_sqlite_core_library[ConditionPlatforms.Windows]);
-      dynamic db = sqlite3.open(settings_sqlite3!
-          .native_platform_sqlite3_db_paths[ConditionPlatforms.Windows]!);
-      completer.complete(db);
+      db = sqlite3.open(
+          (dbSettings as ConditionDataManagementDriverSqlSettingsSqlite3)
+              .dbPath);
+      initCompleter.complete(this);
     });
-    return completer.future;
   }
 
-  static Future<String>? httpGetFileContents(String path) {
+  @override
+  Future<String>? httpGetFileContents(String path) {
     return null;
   }
+
+  @override
+  bool operator ==(Object other) => super == other;
+
+  @override
+  int get hashCode => super.hashCode;
 }

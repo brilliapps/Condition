@@ -46,7 +46,7 @@ DROP TABLE IF EXISTS "ConditionModelUser";
 CREATE TABLE "ConditionModelUser" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "app_id" integer NULL,
-  "local_id" integer NOT NULL,
+  "local_id" integer NULL,
   "to_be_synchronized" integer NOT NULL,
   "e_mail" text NULL,
   "phone_number" integer NULL,
@@ -79,7 +79,7 @@ DROP TABLE IF EXISTS "ConditionModelWidget";
 CREATE TABLE "ConditionModelWidget" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "app_id" integer NULL,
-  "local_id" integer NOT NULL,
+  "local_id" integer NULL,
   "to_be_synchronized" integer NOT NULL,
   "user_id" integer NOT NULL,
   "model_type_id" integer NOT NULL,

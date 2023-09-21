@@ -652,6 +652,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   /// initially initState was used the function below is called after initState, but when you change theme this method is called
   @override
   didChangeDependencies() {
+    super.didChangeDependencies();
     tabBarClassObject = AnimatedPadding(
         padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
         duration: const Duration(seconds: 2),
