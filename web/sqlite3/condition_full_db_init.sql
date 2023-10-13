@@ -16,8 +16,11 @@ DROP TABLE IF EXISTS "ConditionModelApps";
 CREATE TABLE "ConditionModelApps" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "key" text NOT NULL,
-  "creation_date_timestamp" integer NOT NULL
+  "last_successful_checkout_timestamp" integer NULL,
+  "creation_date_timestamp" integer NULL
 , "one_time_insertion_key" integer NULL);
+
+CREATE INDEX "ConditionModelApps_last_successful_checkout_timestamp" ON "ConditionModelApps" ("last_successful_checkout_timestamp");
 
 CREATE INDEX "ConditionModelApps_one_time_insertion_key" ON "ConditionModelApps" ("one_time_insertion_key");
 
@@ -46,7 +49,7 @@ DROP TABLE IF EXISTS "ConditionModelUser";
 CREATE TABLE "ConditionModelUser" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "app_id" integer NULL,
-  "local_id" integer NOT NULL,
+  "local_id" integer NULL,
   "to_be_synchronized" integer NOT NULL,
   "e_mail" text NULL,
   "phone_number" integer NULL,
@@ -79,9 +82,10 @@ DROP TABLE IF EXISTS "ConditionModelWidget";
 CREATE TABLE "ConditionModelWidget" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "app_id" integer NULL,
-  "local_id" integer NOT NULL,
+  "local_id" integer NULL,
   "to_be_synchronized" integer NOT NULL,
   "user_id" integer NOT NULL,
+  "server_user_id" integer NULL,
   "model_type_id" integer NOT NULL,
   "server_id" integer NULL,
   "parent_id" integer NULL,
@@ -104,7 +108,7 @@ CREATE TABLE "ConditionModelWidget" (
   "link_id" integer NULL,
   "server_link_id" integer NULL,
   "title" text NULL,
-  "description" integer NULL,
+  "description" text NULL,
   "configuration" text NULL,
   "one_time_insertion_key" text NULL
 );

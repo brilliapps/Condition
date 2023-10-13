@@ -1,4 +1,32 @@
 condition
+Welcome to a messy, draft documentation, not-consistent, reflecting changing decisions during the development process. This is still early work-in-progress. All however unimaginable it may seem this app/library/whatever is going to work on all platforms including web with possible http backend server (global driver) simulation or proxy.
+This may be fully tree like messenger (with deep tree of groups of contact), might be something like the "ultimate" fourth layer next and somewhat thinking-compatible to the flutter three layers 1. widget, 2. element, 3. render object, remembering ofcourse that more and much better concepts for the so called "ultimate" layer can be implemented. The model layer ofcourse also is to separate logic and data from the view. On the backend side the 4th layer is going to run independently from flutter (obviously no graphics) reusing the same model stuff and model-data validation code. In a model like message you might run a fully independent app. These are example goals, not scratching even the surface of possible usage cases (if the library is ever "finished"). Each tree of models is stored immediately on the local server of the app compatible with SQL thinking and typically each local server tree of models is synchronized on the local server. There is permanent storage and f.e. for app in model may be in memory, etc. 
+FIXME: #oqx^oq8347x6q874t, maybe ok in production, to be remembered in chrome debug need 0 or 2 hot reloads to work properly.
+Debug mode commands by stages with desc. The app/library automatically creates what's needed for backend and frontend from scratch. Example commands in debug mode. CUSTOM PARAMS LIKE -a debugging doesn't work for web/chrome, only native. However the same effect for web (tested sucessfully at the time of writing) you can achieve in the main file setting up f.e. ConditionConfiguration.debugMode = true;  ConditionConfiguration.initDbStage = 3; somewhere after the code block setting these variables. At least try to find the place for the code  
+Tested on windows (focus on this one) platform maybe web/chrome too
+Also these commands are expected to work in default settings, like using default both local and global driver, where both of them are enabled. So if not modified, this library should be able to perform the tests on all platforms.
+WARNING!!!: params like -a initDbStage=3 are one time commands. After successful init of the db with data you should restart the app with no initDbStage param. If you want start with empty db you need to remove the db files (or remove tables manually) which are condition_data_management_driver_sql_local.sqlite and condition_data_management_driver_sql_global.sqlite in the main app directory (not the lib directory but the one higher). For web each time you close your quit the app the dbs are cleared so you don't need to perform anything else but to start the app with the new command flutter run ...
+Also as localServer is normally expected to be sqlite3 local device storage, but for these debug commands to work properly (native/web) also globalServer is to be local device storage. By being non-proxy drivers these allow for direct accessing sql commands, f.e. driver._db.db.execut('some sql here');
+Good to remember that some debug code (not only) uses some "educational" (for you and with my dementia for me too :) ) alternatives of doing stuff, doing sometimes the same thing like creating models but in different ways, with educational descriptions.
+If not mentioned. for the local server and global server only users are created by using direct sql insert, but the rest of models like contacts/contactgroups/messages are created new with no id using model constructors. They are created on the local server and then synchronized to the local server. The next part possibly soon will be reading messages from another user directed to my user saing simply.
+0. The app is completely auto configuring by default. SQL db is created if not exists or/and tables are created if not exist.
+flutter run -d windows --debug -a debugging
+flutter run -d windows --debug
+-----
+Insert some initial data bypassing otherwise some windows/pages/stages requesting you some initial data:
+-----
+1. NATIVE ONLY, NOT WEB, UPDATE !!!!! see intro - for web use ConditionConfiguration.debugMode = true;  ConditionConfiguration.initDbStage = 1 in the main.dart file;. Pass to the main [ConditionModelApp] model object some predefined properties value, and the library should get the app instance ConditionModelApp.server_key/ConditionModelApp['server_key']
+flutter run -d windows --debug -a debugging -a initDbStage=1
+This stage is lacking f.e. example users in the db
+2. NATIVE ONLY, NOT WEB (see 1. and intro). Not implemented ? 
+Create correct testing users (or not correct to?, the library must deal with it if wanted), insert into the local db (it must be synchronized with the global db automatically by the library)
+flutter run -d windows --debug -a debugging -a initDbStage=2
+This stage is lacking f.e. example contacts and/or models like messages, tasks, etc.
+3. NATIVE ONLY, NOT WEB (see 1. and intro). Not implemented ? 
+Now let's insert f.e. some correct (?) example contacts/messages of these contacts.
+flutter run -d windows --debug -a debugging -a initDbStage=3
+With initDbStage=4 you have the same level with even more data.
+---------------
 [Fun Fact, and it's good] An interface class can be extended in the library it was defined, which probably means in the file it was defined, but outside the file it can be implemented which is flexible approach and great.
 Oh, joy, another fun fact. If you have interface "B" that extend an abstract "A" class, then in the "class C extends B" you have to implement also stuff from the "A" class. But you can do it very simple. "class C extends A implements B" - no compile time error A is abstract not an interface you can simple extend it if no-syntactical circumstances ofcourse allow for it.
 [To do: #dlkj2fhpeg8nqxwpiu]

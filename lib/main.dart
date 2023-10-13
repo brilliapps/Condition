@@ -192,10 +192,32 @@ void main(List<String> args) async {
   /////
   /////
   /// Some stuff is using below settings but better testing approach is needed.
+  debugPrint('the args are: $args test: ${['wer', 'wrwrwe']}');
   ConditionConfiguration.debugMode = args.contains('debugging') ? true : false;
-  ConditionConfiguration.debugCreateModelsTemporarySettings =
-      ConditionConfiguration.debugMode;
   ConditionConfiguration.isClientApp = true;
+  if (ConditionConfiguration.debugMode) {
+    debugPrint('we are here');
+    late final RegExp inidDbStage =
+        RegExp(r'''^initDbStage=(.*)$''', caseSensitive: false);
+    for (String arg in args) {
+      if (arg.contains(inidDbStage)) {
+        ConditionConfiguration.initDbStage =
+            int.tryParse(arg.replaceAllMapped(inidDbStage, (Match m) => m[1]!));
+      }
+    }
+  }
+
+  try {
+    ConditionConfiguration
+        .initDbStage; // if not set up earlier it will throw and be catched and set to null;
+  } catch (e) {
+    debugPrint(
+        'ConditionConfiguration.initDbStage was not in the params so we set it to null');
+    ConditionConfiguration.initDbStage = null;
+  }
+  debugPrint(
+      'ConditionConfiguration.initDbStage is ${ConditionConfiguration.initDbStage}');
+
   //inspect(args);
   //debugPrint(jsonEncode(new ABCD()));
 

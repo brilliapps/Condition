@@ -1003,24 +1003,26 @@ interface class ConditionRawSQLDBDriverWrapperCommon {
   Future<String>? httpGetFileContents(String path) => null;
 
   /// As of now for db wraper objects due to different low level sql connection implementations execute does all the stuff including update (returned updated int or List<int> ids are implemented by [ConditionDataManagementDriver] object corresponging update, updateAll methods) except for select method which does SELECT column FROM table. Only this.[select] can return something. But this method throws exception on failure or completes completer with error which is async exception. Older description: If success this future just finishes or an exception is thrown, no need for bool return. Be ready for handling exceptions (no internet connection, etc).
-  Future<void> execute(String query) {
-    Completer<dynamic> completer = Completer<dynamic>();
-    scheduleMicrotask(() {
-      completer.complete(db.execute(query));
-    });
-    return completer.future;
-  }
+  Future<void> execute(String query) => Future(() => db.execute(query));
 
   /// The return for wrapper needs to be standarized. This is not counter-intuitive expected result. Be ready for handling exceptions (no internet connection, etc).
-  Future<List<Map<String, dynamic>>?> select(String query) {
-    Completer<List<Map<String, dynamic>>?> completer =
-        Completer<List<Map<String, dynamic>>?>();
-    scheduleMicrotask(() {
-      // in this case db.select returns value synchronously, if not await should be before db.select and this code block {...}, nor this entire method itself, should be async {}
-      completer.complete(db.select(query));
-    });
-    return completer.future;
-  }
+  Future<List<Map<String, dynamic>>?> select(String query) =>
+      Future(() => db.select(query));
+
+  //Future<List<Map<String, dynamic>>?> select(String query) {
+  //  Completer<List<Map<String, dynamic>>?> completer =
+  //      Completer<List<Map<String, dynamic>>?>();
+  //  scheduleMicrotask(() {
+  //    // in this case db.select returns value synchronously, if not await should be before db.select and this code block {...}, nor this entire method itself, should be async {}
+  //    debugPrint(
+  //        'wrapper select method() 1: here we are, the query is $query the possible result in a while');
+  //    var result = db.select(query);
+  //    debugPrint(
+  //        'wrapper select method() 2: here we are, the result is: $result');
+  //    completer.complete(db.select(query));
+  //  });
+  //  return completer.future;
+  //}
 
   /// Warning! Don't use it, not required to be implemented! But it is for you to have such an option... And use the async [execute] method instead. the method is always success or exception is thrown like with the [execute]. Most probably only for sqlite3 here it could throw exception. Be ready for handling exceptions (no internet connection, etc).
   executeSynchronous(String query) => db.execute(
@@ -1058,75 +1060,10 @@ interface class ConditionRawSQLDBDriverWrapperCommon {
 
 /// Shared part for the Sqlite3 implementation, sqlite3 is sort of core and default. Descrption taken from windows version of the class [To do: at the time of writing only windows sqlite3 library could be loaded and windows tested db file name] This class is an implementation of native version of the [ConditionRawSQLDBDriverWrapperCommon] interface.
 abstract class ConditionRawSQLDBDriverWrapperSqlite3Base
-    implements ConditionRawSQLDBDriverWrapperCommon {
-  /// This is helping in creating a unique [hashcode], may be used in autodetecting SQL syntax in some cases, and ofcoursee this fullfills informative role because there might be two completely separate SQL-like engine implementations (sqlite3 f.e.). It is used for counting the [hashcode]
-  @override
-  final ConditionAppDataManagementEnginesEnum type =
-      ConditionAppDataManagementEnginesEnum.sqlite3;
-
-  @override
-  final ConditionDataManagementDriverSqlSettings dbSettings;
-
-  @override
-  late dynamic db;
-
-  @override
-  late final bool inited;
-
-  @override
-  bool get isInited {
-    try {
-      return inited;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// This stores information whether or not the triver has already been inited and ready to work with, returns [this] object itself
-  @protected
-  final Completer<ConditionRawSQLDBDriverWrapperCommon> initCompleter =
-      Completer<ConditionRawSQLDBDriverWrapperCommon>();
-
+    extends ConditionRawSQLDBDriverWrapperCommon {
   ConditionRawSQLDBDriverWrapperSqlite3Base(
-    ConditionDataManagementDriverSqlSettingsSqlite3 this.dbSettings,
-  );
-
-  @override
-  Future<ConditionRawSQLDBDriverWrapperCommon> getDriverWhenInited() =>
-      initCompleter.future;
-
-  @override
-  Future<void> execute(String query) {
-    Completer<dynamic> completer = Completer<dynamic>();
-    scheduleMicrotask(() {
-      completer.complete(db.execute(query));
-    });
-    return completer.future;
-  }
-
-  @override
-  Future<List<Map<String, dynamic>>?> select(String query) {
-    Completer<List<Map<String, dynamic>>?> completer =
-        Completer<List<Map<String, dynamic>>?>();
-    debugPrint('db wrapper select method 1 we are here. query is $query');
-    scheduleMicrotask(() {
-      debugPrint('db wrapper select method 2');
-      completer.complete(db.select(query));
-      debugPrint('db wrapper select method 3');
-    });
-    return completer.future;
-  }
-
-  @override
-  executeSynchronous(String query) => db.execute(query);
-
-  @override
-  List<Map<String, dynamic>>? selectSynchronous(String query) =>
-      db.select(query);
-
-  @override
-  List<dynamic> equalityComparisonProperties() =>
-      <dynamic>[type] + dbSettings.equalityComparisonProperties();
+    ConditionDataManagementDriverSqlSettingsSqlite3 dbSettings,
+  ) : super(dbSettings, ConditionAppDataManagementEnginesEnum.sqlite3);
 
   /// You must override this method exactly this way: bool operator ==(Object other) => super == other;
   /// Read description this about this operator in the interface which has to do with @mustCallSuper annotation
@@ -1411,6 +1348,7 @@ interface class ConditionDataManagementDriver {
 
   // using normal constructor you get the ConditionDataManagementDriver object and when the driver asynchronously gets ready (f.e. connects to a remote database) it completes the completer with the driver which you already have because you used the regular constructor. Why the same driver not just to pass true? Because a static method createDriver uses the contstuctor, before that the method creates a [Completer]<[ConditionDataManagementDriver]> internaly, the method returnes the completers future ([Future]<[ConditionDataManagementDriver]>), and finishes the Future using the completer.complete() method. So the static method createDriver is more prefable and convinient that the regular constructor
   final Completer<ConditionDataManagementDriver> initCompleter;
+  // i assume this is used only in by the local driver, global driver cares only for it's [initCompleter]
   final Completer<ConditionDataManagementDriver>? initCompleterGlobal;
 
   @protected
@@ -1464,8 +1402,7 @@ interface class ConditionDataManagementDriver {
                     (hasGlobalDriver == false && driverGlobal != null)))
             ? null
             : initCompleterGlobal ??
-                Completer<ConditionDataManagementDriver>()
-                    as Completer<ConditionDataManagementDriver>?) {
+                Completer<ConditionDataManagementDriver>()) {
     // In the extending class we call initStorage function - see description - the function must be overriden it is left in this class definition for learning purposes only
     // _initStorage(prefix, onInitialised);
     debugPrint('We are in the constructor of the ConditionModelApp');
@@ -1474,7 +1411,7 @@ interface class ConditionDataManagementDriver {
     //  this.conditionModelApp = conditionModelApp;
     //}
 
-    driverGlobal?.getDriverOnDriverInited().then((driver) {
+    this.driverGlobal?.getDriverOnDriverInited().then((driver) {
       this.initCompleterGlobal!.complete(driver);
     }).catchError((error) {
       debugPrint('catchError flag #cef1');
@@ -1873,7 +1810,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         // so that it is fully available it must be [settings] must be cast into the [ConditionDataManagementDriverSqlSettingsSqlite3]
         //ConditionDataManagementDriverSqlSettingsSqlite3 settings_sqlite3 =
         //    (settings as ConditionDataManagementDriverSqlSettingsSqlite3);
-//
+        //
         //dbNamePrefix use for opening an sqlite3, i think db the file name stands for db name here
         //again you will need some regex string replace for that ./*/*/file.sqlite or .sqlite3 - whatever
         //the outcome would be '.../${dbNamePrefixfile}.sqlite'
@@ -1895,7 +1832,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           // In this case We can only fully rely on exception thrown when a table doesn't exist
           var select_is_debinited = await _db.select('''
           SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;
-        ''');
+          ''');
           // when table exists this one will always return result of type int from 0 to more than 0
           debugPrint(
               'SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses; ${select_is_debinited?[0]['count(*)']}');
@@ -1937,6 +1874,26 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
             await _db.execute(contents);
 
+            try {
+              debugPrint(
+                  '### ! So now the tables should be ready. so let\'s check if it\'s true. For now repeat of that simple command again.');
+              debugPrint(
+                  'SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;');
+              // In this case We can only fully rely on exception thrown when a table doesn't exist
+              var select_is_debinited = await _db.select('''
+              SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;
+              ''');
+              // when table exists this one will always return result of type int from 0 to more than 0
+              debugPrint(
+                  '### ! Whith no exception thrown the app is ready, some debug info again:');
+              debugPrint(
+                  'SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses; ${select_is_debinited?[0]['count(*)']}');
+            } catch (e) {
+              debugPrint(
+                  'table doesn\'t exist while this time it should be ready!, the app won t work. $e');
+              rethrow;
+            }
+
             debugPrint(
                 'db_init result: no result is expected, only exception on problems');
 
@@ -1969,7 +1926,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
   //    DynamicLibrary.open('./sqlite3.dll');
   //    return sqlite3.open('./condition_data_management_driver_sql.sqlite');
   //  });
-//
+  //
   //  // Create a table and insert some data
   //  //db.execute('''
   //  //CREATE TABLE artists (
@@ -1991,31 +1948,31 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             'ConditionModelApps', //the table name and model id (some models like ConditionModelMessage only) is taken from this or for name not model id dbTableName property is used
             {'key': key});
         completer.complete(key);
-/*
-  List<Map>? conditionMapList = await readAll(
-            '${tableNamePrefix}ConditionModelApps',
-            ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
-              ..add('key', key),
-            limit: 1,
-            columnNames: {'id'});
+        /*
+          List<Map>? conditionMapList = await readAll(
+                    '${tableNamePrefix}ConditionModelApps',
+                    ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
+                      ..add('key', key),
+                    limit: 1,
+                    columnNames: {'id'});
 
-      debugPrint(
-          'A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like:');
+              debugPrint(
+                  'A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like:');
 
-      if (conditionMapList == null) {
-        debugPrint('It is null :(');
-        completer.completeError(
-            'error: requestGlobalServerAppKeyActualDBRequestHelper(key) The id value couldn\'t has been obtained. It normally means a record hasn\'t been inserted during a preceding create()/insert into operation. It requires to insert the model again into the db.');
-      } else {
-        debugPrint(
-            'requestGlobalServerAppKeyActualDBRequestHelper(key) result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0].toString())}');
-        // !!!!!! RIDICULOUS RETURN :)
-        //return completer.complete(int.tryParse(conditionMapList[0].toString()));
-        //completer.complete(int.tryParse(conditionMapList[0].toString()));
-        completer.complete(conditionMapList[0]['id']);
-      }
+              if (conditionMapList == null) {
+                debugPrint('It is null :(');
+                completer.completeError(
+                    'error: requestGlobalServerAppKeyActualDBRequestHelper(key) The id value couldn\'t has been obtained. It normally means a record hasn\'t been inserted during a preceding create()/insert into operation. It requires to insert the model again into the db.');
+              } else {
+                debugPrint(
+                    'requestGlobalServerAppKeyActualDBRequestHelper(key) result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0].toString())}');
+                // !!!!!! RIDICULOUS RETURN :)
+                //return completer.complete(int.tryParse(conditionMapList[0].toString()));
+                //completer.complete(int.tryParse(conditionMapList[0].toString()));
+                completer.complete(conditionMapList[0]['id']);
+              }
 
-*/
+        */
       } catch (e) {
         // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
         completer.completeError(
@@ -2341,7 +2298,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     scheduleMicrotask(() async {
       List<Map<String, dynamic>>? result;
       try {
-        result = await _db.select(query.queryPart);
+        await _db.execute(query.queryPart);
       } catch (e) {
         completer.completeError(false);
         debugPrint(
@@ -4835,10 +4792,11 @@ class ConditionModelCompleteModelException implements Exception {
 /// If a [ConditionModel] class mixes with this mixin it informes [ConditionModel] class, which is at the root of any model class, that a model is dynamic, there is need to create automatically a corresponding db table. The rule is that all extendable classes leading to a complete model classes that allow creating real-life model is ready to use, like [ConditionModelContact], [ConditionModelMessage], [ConditionModelApp] - so each one of the mentioned classess in between are ready to be extended to be a complete ready-to-use model classess from which can be created working models (such complete model classes implement [ConditionModelCompleteModel] interface). So again if you mix any such non-standard class with this here [ConditionModelDynamic] interface, [ConditionModel] class has tools to automatically handle the class depending on what class it extended (those classess in between)  (standard class example again ConditionModelMessage)
 mixin ConditionModelDynamic {}
 
-/// If a [ConditionModel] class mixes with this mixin it informes [ConditionModel] class, which is at the root of any model class, that a model have one entry in the database, it has always id =] 1, no id == 2 or 3 or null can be. This is useful for example when you store the entire app setting in one place which is the case with ConditionModelApp model object corresponding to entire right now working app.
+/// TODO: some classes are probably now one entry - if accidentally mixed with this one, should be exception thrown. If a [ConditionModel] class mixes with this mixin it informes [ConditionModel] class, which is at the root of any model class, that a model have one entry in the database, it has always id =] 1, no id == 2 or 3 or null can be. This is useful for example when you store the entire app setting in one place which is the case with ConditionModelApp model object corresponding to entire right now working app.
 mixin ConditionModelOneDbEntryModel {}
 
 /// Really see [ConditionModelDynamic] class too. [!READ and see for "[To do]""] Important rules: all tables must have id column, if a newly created model object has only 'id' (so with .id) property set-up, the data is fetched and only the validated and the all model's properties are set up. If a newly created model has some or all properties set up except for id property - the model completely new, it doesn't have it's row in the sql db (speaking in sql language terms), so the models properties except for id are validated and send into db, if all is successful, the db returns inserted id. Then updates of single or more properties are done automatically when they are changed. Seek for more properties related to automatic or less automatic changes. You could even do the id stuff automatically even if a model doesn't have the id column defined - rethink it well.
+/// Important. if f.e. this.id throws exception then this['id'] == null. This is because id hasn't been initialized yet (the "late" keyword before the corresponding a_id property) and hasn't gotten it's value from the db. The same rule for all the rest of properties of model classes. this['id'] cannot throw any exception because a the map specs requires that. It includes a not defined 'nonidsomefield' key of using a a_nonidsomefield field that hasn't been defined too for a given [ConditionModel] extending class.
 abstract class ConditionModel extends ConditionMap {
   // it is always set up in the constructor body properly or exception is thrown that something went wrong
   late final ConditionModelApp conditionModelApp;
@@ -5115,7 +5073,7 @@ abstract class ConditionModel extends ConditionMap {
     }
   }
 
-  /// If the getter is to be compatible with map it must return null on a not found value of key
+  /// If the getter is to be compatible with map it MUST return null on a not found value of key, so it is the case if a helper property used to return the value is not initialised (marked with the "late" keyword for a late initialization)
   @override
   operator [](key) {
     try {
@@ -5123,6 +5081,7 @@ abstract class ConditionModel extends ConditionMap {
     } catch (e) {
       debugPrint(
           'ConditionModel [] getter CATCHED exception: key == $key, error: $e');
+      return null;
     }
   }
 
@@ -5354,9 +5313,11 @@ abstract class ConditionModel extends ConditionMap {
             //result won't be null for global server request - always int
             //this will update on local server only what was returned from global server
             debugPrint(
-                'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() we did a successful update on global server and we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_update_date_timestamp\'] = $result');
-            columnNamesAndFullyFeaturedValidateAndSetValueMethods[
-                'server_update_date_timestamp']!(result, true, true, true);
+                'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() we did a successful update on global server and if this is ConditionModelCreationDateModel then we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_update_date_timestamp\'] = $result');
+            if (this is ConditionModelCreationDateModel) {
+              columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                  'server_update_date_timestamp']!(result, true, true, true);
+            }
           }).catchError((error) {
             debugPrint('catchError flag #cef4');
 
@@ -5394,9 +5355,12 @@ abstract class ConditionModel extends ConditionMap {
                 //result won't be null for global server request - always int
                 //this will update on local server only what was returned from global server
                 debugPrint(
-                    'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer, we did a successful update on global server and we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_update_date_timestamp\'] = $result');
-                columnNamesAndFullyFeaturedValidateAndSetValueMethods[
-                    'server_update_date_timestamp']!(result, true, true, true);
+                    'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer, we did a successful update on global server and if this is ConditionModelCreationDateModel then we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_update_date_timestamp\'] = $result');
+                if (this is ConditionModelCreationDateModel) {
+                  columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                          'server_update_date_timestamp']!(
+                      result, true, true, true);
+                }
               }).catchError((error) {
                 debugPrint('catchError flag #cef5');
 
@@ -5490,16 +5454,19 @@ abstract class ConditionModel extends ConditionMap {
       // !!! IMPORTANT READ but after synchronizing the rest of timestamps must be the same on both servers
       // !!! IMPORTANT READ So if you want to implement searching elsewhere for id of something
       // !!! IMPORTANT READ on the global server based on timestamp (not recommended) don't use update_date_timestamp
-      columnNamesAndFullyFeaturedValidateAndSetValueMethods[
-              'update_date_timestamp']!(
-          driver.createCreationOrUpdateDateTimestamp().time, true, false);
-      // and we are adding the field to list of fields to be updated which in case the global
-      // server is defined it will send the local server update date to the global server
-      _fieldsToBeUpdated.add('update_date_timestamp');
+      if (this is ConditionModelCreationDateModel) {
+        columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                'update_date_timestamp']!(
+            driver.createCreationOrUpdateDateTimestamp().time, true, false);
+        // and we are adding the field to list of fields to be updated which in case the global
+        // server is defined it will send the local server update date to the global server
+        _fieldsToBeUpdated.add('update_date_timestamp');
 
-      if (!isToBeSynchronizedLocallyOnly) {
-        _fieldsToBeUpdatedGlobalServer.add(columnName);
-        _fieldsToBeUpdatedGlobalServer.add('update_date_timestamp');
+        if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer &&
+            !isToBeSynchronizedLocallyOnly) {
+          _fieldsToBeUpdatedGlobalServer.add(columnName);
+          _fieldsToBeUpdatedGlobalServer.add('update_date_timestamp');
+        }
       }
     }
 
@@ -5515,7 +5482,8 @@ abstract class ConditionModel extends ConditionMap {
       _modelIsBeingUpdated = false;
       _changesStreamController.add(
           ConditionModelInfoEventPropertyChangeModelToLocalServerSuccess());
-      if (!isToBeSynchronizedLocallyOnly) {
+      if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer &&
+          !isToBeSynchronizedLocallyOnly) {
         _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(true);
       }
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -6110,35 +6078,60 @@ abstract class ConditionModel extends ConditionMap {
                 working_driver.create(this).future.then((result) async {
                   debugPrint(
                       '2:initModel() working_driver.create() success result: $result');
+                  debugPrint(
+                      '2:initModel() rrggttrrrr#1 working_driver.create() error: ');
 
-                  if (result[0] != null && result[0]! > 0) {
-                    //this['id'] = result[0];
-                    columnNamesAndFullyFeaturedValidateAndSetValueMethods[
-                        'id']!(result[0], true, false);
-                  } else if (result[1] != null && result[1]! > 0) {
-                    //this['id'] = result[1];
-                    columnNamesAndFullyFeaturedValidateAndSetValueMethods[
-                        'id']!(result[1], true, false);
-                  } else {
-                    _completerInitModel.completeError(
-                        '2:initModel() working_driver.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
-                    return;
-                  }
+                  if (this is! ConditionModelApp) {
+                    if (result[0] != null && result[0]! > 0) {
+                      debugPrint(
+                          '2:initModel() rrggttrrrr#2 working_driver.create() error: ${columnNamesAndFullyFeaturedValidateAndSetValueMethods['id']}');
+                      //this['id'] = result[0];
+                      columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                          'id']!(result[0], true, false);
+                      debugPrint(
+                          '2:initModel() rrggttrrrr#2B working_driver.create() error: ');
+                    } else if (result[1] != null && result[1]! > 0) {
+                      //this['id'] = result[1];
+                      debugPrint(
+                          '2:initModel() rrggttrrrr#3 working_driver.create() error: ');
+                      columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                          'id']!(result[1], true, false);
+                      debugPrint(
+                          '2:initModel() rrggttrrrr#3B working_driver.create() error: ');
+                    } else {
+                      _completerInitModel.completeError(
+                          '2:initModel() working_driver.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
+                      return;
+                    }
 
-                  if (this is ConditionModelIdAndOneTimeInsertionKeyModel) {
-                    // this one must work, even with timers to try again
-                    columnNamesAndFullyFeaturedValidateAndSetValueMethods[
-                        'local_id']!(this['id'], true, false);
+                    debugPrint(
+                        '2:initModel() afewrt#1 working_driver.create() error: ');
+                    if (this is ConditionModelIdAndOneTimeInsertionKeyModel) {
+                      debugPrint(
+                          '2:initModel() afewrt#2 working_driver.create() error: ');
+                      // this one must work, even with timers to try again
+                      columnNamesAndFullyFeaturedValidateAndSetValueMethods[
+                          'local_id']!(this['id'], true, false);
 
-                    // this will local_id on a local - if fails it will do it until it will success that the conde will execute further
-                    await _updateLocalId(working_driver);
+                      debugPrint(
+                          '2:initModel() afewrt#3 working_driver.create() error: ');
+                      // this will local_id on a local - if fails it will do it until it will success that the conde will execute further
+                      await _updateLocalId(working_driver);
+                      debugPrint(
+                          '2:initModel() afewrt#4 working_driver.create() error: ');
 
-                    if (this
-                        is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
-                      _doDirectCreateOnGlobalServer(working_driver,
-                          conditionModelAppInstance as ConditionModelApp);
+                      if (this
+                          is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
+                        debugPrint(
+                            '2:initModel() afewrt#5 working_driver.create() error: ');
+                        _doDirectCreateOnGlobalServer(working_driver,
+                            conditionModelAppInstance as ConditionModelApp);
+                        debugPrint(
+                            '2:initModel() afewrt#6 working_driver.create() error: ');
+                      }
                     }
                   }
+
                   // setter for _inited in the right order does
                   // temporaryInitialData = {};
                   // _completerInitModel.complete(this);
@@ -6152,9 +6145,9 @@ abstract class ConditionModel extends ConditionMap {
                   debugPrint('catchError flag #cef11');
 
                   debugPrint(
-                      '2:initModel() working_driver.create() error result: ${error.toString()}');
+                      '2:initModel() working_driver.create() error result: $error');
                   _completerInitModel.completeError(
-                      'The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure creating a db record');
+                      'T1 The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure creating a db record: $error');
                 });
               });
             } else {
@@ -6271,20 +6264,21 @@ abstract class ConditionModel extends ConditionMap {
               debugPrint(
                   '1:initModel() working_driver.create() success result: ${result.toString()}');
 
-              if (result[0] != null && result[0]! > 0) {
-                //this['id'] = result[0];
-                columnNamesAndFullyFeaturedValidateAndSetValueMethods['id']!(
-                    result[0], true, false);
-              } else if (result[1] != null && result[1]! > 0) {
-                //this['id'] = result[1];
-                columnNamesAndFullyFeaturedValidateAndSetValueMethods['id']!(
-                    result[1], true, false);
-              } else {
-                _completerInitModel.completeError(
-                    '1:initModel() working_driver.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
-                return;
+              if (this is! ConditionModelApp) {
+                if (result[0] != null && result[0]! > 0) {
+                  //this['id'] = result[0];
+                  columnNamesAndFullyFeaturedValidateAndSetValueMethods['id']!(
+                      result[0], true, false);
+                } else if (result[1] != null && result[1]! > 0) {
+                  //this['id'] = result[1];
+                  columnNamesAndFullyFeaturedValidateAndSetValueMethods['id']!(
+                      result[1], true, false);
+                } else {
+                  _completerInitModel.completeError(
+                      '1:initModel() working_driver.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
+                  return;
+                }
               }
-
               if (this is ConditionModelIdAndOneTimeInsertionKeyModel) {
                 // this one must work, even with timers to try again
                 columnNamesAndFullyFeaturedValidateAndSetValueMethods[
@@ -6318,7 +6312,7 @@ abstract class ConditionModel extends ConditionMap {
               debugPrint(
                   '1:initModel() working_driver.create() error result: ${error.toString()}');
               _completerInitModel.completeError(
-                  'The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure creating a db record. The error result: ${error.toString()}');
+                  'T2 The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure creating a db record. The error result: ${error.toString()}');
             });
           });
         }
@@ -6841,7 +6835,8 @@ abstract class ConditionModelParentIdModel
     // AS FAR AS I REMEMBE MUCH OF HERE BELOW IS BASED ON THE SAME METHOD OF ConditionModelUser class achievements
     // There, there may still be some educational code left
 
-    if (ConditionConfiguration.debugCreateModelsTemporarySettings &&
+    if (ConditionConfiguration.initDbStage != null &&
+        ConditionConfiguration.initDbStage! >= 3 &&
         ConditionConfiguration.debugMode) {
       // to avoid endless loop for now in this debug stage
       if (this is ConditionModelContact) {
@@ -10103,6 +10098,7 @@ class ConditionModelApps {
 /// App Configuration (also see [_driver] property). Among others it tells what users are logged preserving their ids in the app (not in the server). Tells what id can be assigned to a new user
 @Stub()
 class ConditionModelApp extends ConditionModel
+    with ConditionModelOneDbEntryModel
     implements ConditionModelCompleteModel, ConditionModelOneDbEntryModel {
   late final ConditionWidgetBase /*ConditionAppBase*/ widget;
 
@@ -10160,7 +10156,7 @@ class ConditionModelApp extends ConditionModel
   */
   // data fields:
 
-  /// Se also helper property [_serverKeyHelperContainer] desc. each app has it's id on the global server, each user belongs to this id - this helps to synchronize data between app installations of the same user, between different users. Difficult to explain see especially README.me file for overall up-to-date architecture. Each app that uses your app (with it's local server always running) as a it's global server has the key which is stored in [ConditionModelApp]s (Apps not App) db table, and the first mentioned app has it's own id all data is stored mainly this way app_id -> user id -> contact id -> anything else.
+  /// Se also helper property [_serverKeyHelperContainer] +(setter/getter) desc. each app has it's id on the global server, each user belongs to this id - this helps to synchronize data between app installations of the same user, between different users. Difficult to explain see especially README.me file for overall up-to-date architecture. Each app that uses your app (with it's local server always running) as a it's global server has the key which is stored in [ConditionModelApp]s (Apps not App) db table, and the first mentioned app has it's own id all data is stored mainly this way app_id -> user id -> contact id -> anything else.
   @AppicationSideModelProperty()
   @protected
   late final ConditionModelFieldStringOrNull a_server_key =
@@ -10171,13 +10167,30 @@ class ConditionModelApp extends ConditionModel
 
   Completer<bool> serverKeyReadyCompleter = Completer<bool>();
 
-  /// This variable stores the key from local server, checks if it is still valid, if not
+  /// Use setter/getter (allowing return null while not throwing exception when this property yet not-initialized) This variable stores the key from local server, checks if it is still valid, if not
   /// the app will get a new one and all old synchronized data will be lost, new synchronizing
   /// should begin, FOR WHATEVER REASON - YOU CHANGED GLOBAL SERVER SETTINGS - not now such an option or in development mode you clean a db of global server
   /// it would be awfully configurable, it\'s probably going unnecessaryly far.
   /// But developers might have more flexible approaches - the main approach is STABILITY!!!
+  /// FIXME: I will temporary make it final, probably changing key is server has had an accident and the app should be reinstalled or reset. probably - this will be tricky.
+  /// FIXME: when changing the key will ever be implemented what will change ? Trace it out
   @protected
-  late String? _serverKeyHelperContainer;
+  late final String _serverKeyHelperContainer;
+  set serverKeyHelperContainer(value) {
+    _serverKeyHelperContainer = value;
+    // educationally no! we cannot complete it here only when a_server_key.value has just been validated and set
+    // serverKeyReadyCompleter.complete(true);
+  }
+
+  String? get serverKeyHelperContainer {
+    try {
+      return _serverKeyHelperContainer;
+    } catch (e) {
+      debugPrint(
+          'catched error ConditionModelApp serverKeyHelperContainer getter _serverKeyHelperContainer not initialized original exception message: $e');
+      return null;
+    }
+  }
 
   /// If you add a new user to the app this var tells you what id to assign to it
   @AppicationSideModelProperty()
@@ -10265,8 +10278,19 @@ class ConditionModelApp extends ConditionModel
               'users_ids': '4,3,1',
               'users_counter': 5,
             },*/
-
-            map ?? {},
+            // FIXME: Regarding app model not the rest of one row models it may be solved because even when you won't pass id = 1 it will be assigned automatically and the ConditionModel class will try to find the id=1 row anyway and if it won't find any it will try to create a new row for this model with id = 1. Trace the process out see if it works as expected and update some docs on that in the best one or more places.
+            // FIXME: maybe it is solved or not: in non-debug app should never have initial data, and there is possibly general problem with [ConditionModelOneDbEntryModel] one-sql-table-row models which [ConditionModelApp] model also is in that a new model that has no row in the table will get id = 1 but normally multi-row model classes won't get the id which means they will be created not updated;
+            map ??
+                    ConditionConfiguration.debugMode &&
+                        ConditionConfiguration.initDbStage != null &&
+                        ConditionConfiguration.initDbStage! >= 1
+                ? <String, dynamic>{
+                    'currently_logged_users_ids': '1,3',
+                    'currently_active_user_id': 1,
+                    'users_counter': 5,
+                    'users_ids': '4,3,1',
+                  }
+                : {},
             driver ??
                 ConditionDataManagementDriver.getNewDefaultDriver(
                   //initCompleter: driver_init_completer, added in the constructor body
@@ -10922,13 +10946,14 @@ class ConditionModelApp extends ConditionModel
   @override
   @protected
   restoreMyChildren() {
+    // British restoreMeChildren?
     // NOw it is level "1" because this is ConditionModelApp object, user = 2 - also renders all
     // so no need to use or implement parentMode.parenMode... checking
     // and by this we must render children
     // TODO: levels of restoring children solved a bit different via property restoremychildren or something, right?
     const int level = 1; // we use it or no let it be here not to get confused
 
-    //Here // It is also in Readme.md We have a problem to solve a model may be in the tree or not.
+    // Here // It is also in Readme.md We have a problem to solve a model may be in the tree or not.
     // [retiremodel... event is issued and handled:] which is determined by a constructor property retireModelWhenWhenRemovedFromTheModelTree
     // One scenario: a model was just properly added by addChild() method
     // related to ConditionConfiguration.maxNotLazyModelTreeRestorationLevel = 3 (?)
@@ -10947,15 +10972,67 @@ class ConditionModelApp extends ConditionModel
 
     if (!this._children.isEmpty) {
       throw Exception(
-          'ConditionModelParentIdModel, restoreMyChildren() override method: To restore this model\'s children models the _children property must be empty - must be this._children.isEmpty == true');
+          'restoreMyChildren() of ConditionModelApp override method: To restore this model\'s children models the _children property must be empty - must be this._children.isEmpty == true');
     }
 
     debugPrint(
-        'reloginAllLoggedUsers(): let\'s get into a loop creating last logged-in users.');
-    //_children (users);
-    //activeUser;
-    if (currently_logged_users_ids != null &&
+        'restoreMyChildren() of ConditionModelApp: let\'s get into a loop creating last logged-in users.');
+    // _children (users);
+    // activeUser;
+
+    // educationally this['this['currently_logged_users_ids'] will never throw exception, it will return null instead but currently_logged_users_ids property may throw it if the property.value (getter) hasn't gotten any value yet (late initialisation error)
+    if (this['currently_logged_users_ids'] != null &&
         currently_logged_users_ids!.isNotEmpty) {
+      debugPrint(
+          'restoreMyChildren() of ConditionModelApp is not empty and not null: currently_logged_users_ids!.isNotEmpty');
+
+      if (ConditionConfiguration.debugMode &&
+          ConditionConfiguration.initDbStage != null &&
+          ConditionConfiguration.initDbStage! >= 2) {
+        scheduleMicrotask(() async {
+          try {
+            String localServerUsersCommand = '''
+              INSERT INTO "t8QjKjA_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "password", "server_id", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (1,	123,	1,	1,	'adfafaasdfasfafaasfasfsf1@gmail.com.debug',	NULL,	'r!igPn94#95',	3,	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);
+              INSERT INTO "t8QjKjA_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "password", "server_id", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (2,	123,	2,	1,	'adfafaasdfasfafaasfasfsf2@gmail.com.debug',	NULL,	'r!igPn94#95',	2,	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);
+              INSERT INTO "t8QjKjA_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "password", "server_id", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (3,	123,	3,	1,	'adfafaasdfasfafaasfasfsf3@gmail.com.debug',	NULL,	'r!igPn94#95',	1,	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);
+            ''';
+            String globalServerUsersCommand = '''
+              INSERT INTO "Rzi3a7d_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "server_id", "password", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (1,	123,	3,	1,	'adfafaasdfasfafaasfasfsf3@gmail.com.debug',	NULL,	1,	'r!igPn94#95',	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);
+              INSERT INTO "Rzi3a7d_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "server_id", "password", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (2,	123,	2,	1,	'adfafaasdfasfafaasfasfsf2@gmail.com.debug',	NULL,	2,	'r!igPn94#95',	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);
+              INSERT INTO "Rzi3a7d_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "server_id", "password", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (3,	123,	1,	1,	'adfafaasdfasfafaasfasfsf1@gmail.com.debug',	NULL,	3,	'r!igPn94#95',	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);            
+            ''';
+
+            debugPrint(
+                'restoreMyChildren() of ConditionModelApp we want to directly insert into some example default users to the global and local server the commands for the local and global server are like this correspondingly:');
+
+            debugPrint(localServerUsersCommand);
+            debugPrint(globalServerUsersCommand);
+            // for debug tests we want have driverGlobal ready now, local driver is ready already.
+            // default settings should have global server != null:
+            ConditionDataManagementDriverSql debugDriverGlobal = await driver
+                .driverGlobal!
+                .initCompleter
+                .future as ConditionDataManagementDriverSql;
+            debugPrint(
+                'restoreMyChildren() of ConditionModelApp #etrwpoiejw#^%#^q3: 1');
+            // !!! for sqlite3 plugin these operations are synchronous
+            (driver as ConditionDataManagementDriverSql)
+                ._db
+                .db
+                .execute(localServerUsersCommand);
+            debugPrint(
+                'restoreMyChildren() of ConditionModelApp #etrwpoiejw#^%#^q3: 2');
+            debugDriverGlobal._db.db.execute(globalServerUsersCommand);
+            debugPrint(
+                'restoreMyChildren() of ConditionModelApp direct insert users success !!!');
+          } catch (e) {
+            debugPrint(
+                'ConditionModelApp class, restoreMyChildren() method exception during inserting debug data, at this stage number 2 (verify if up-to-date info) users for both local and global server are to be created. The exception will be rethrown with it\' message that you are going to see after this message. Example command flutter run -d windows --debug -a debugging -a initDbStage=3 but this is stage 2');
+            rethrow;
+          }
+        });
+      }
+
       for (String loggedId
           in (currently_logged_users_ids as String).split(',')) {
         debugPrint(
@@ -10966,6 +11043,15 @@ class ConditionModelApp extends ConditionModel
         // we may need to create all logged users and all the tree of ConditionModelContact of those
         // users - but all contacts only if the concept of data channels would be implemented.
         scheduleMicrotask(() async {
+          // se earlier above command - this is to make sure that in debug mode and initing db with some data
+          // this code was not performed before the above code where we insert to the db some test users
+          // by using direct sql commands - so the users are in the db now and we restore them from the db
+          if (ConditionConfiguration.debugMode &&
+              ConditionConfiguration.initDbStage != null &&
+              ConditionConfiguration.initDbStage! >= 2) {
+            await driver.initCompleterGlobal!.future
+                as ConditionDataManagementDriverSql;
+          }
           final loggedIdInt = int.parse(loggedId);
           addChild(
               // BTW: this syntax dart language provides is just brilliant:
@@ -11118,11 +11204,29 @@ class ConditionModelApp extends ConditionModel
           .timeout(const Duration(
               seconds:
                   12)); // leave 12 seconds for global server operations worst but successful case scenarion, f.e. sqlite3 db file was blocked by heavy trafic, three attempts of internal server operations to obtain the key for the app which are going to be performed in about 6 seconds for three internal method invokations + 6 seconds for internal db operations themselves
+
       debugPrint(
-          'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key - just now should has been set up server_key = $server_key');
+          'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key - just now it is about to be set up server_key = $serverKeyTemp');
       a_server_key._fullyFeaturedValidateAndSetValue(
-          serverKeyTemp, true, false, true);
+          serverKeyTemp, true, true, true);
       serverKeyReadyCompleter.complete(true);
+
+      // FIXME: #oqx^oq8347x6q874t,
+      // First, this happend only on FIRST SHIFT R HOT RELOAD, AND MAY NOT HAPPEN IN PRODUCTION IN REAL LIFE.
+      // But before the first shift r reload the table exists.
+      // SO JUST TO REMEMBER.
+      // look like this error shouldn't ever happen and the cause of that is difficult to find.
+      // run chrome --debug FIRST shift R/hot reload and local server only - all tables are created if not exist from scratch because t8QjKjA_ConditionModelClasses couldn't has been found
+      // but the second shift R/hot reload is ok, no tables are "created" so the key of id = 2 is used every next hot reload
+      // original command flutter run -d chrome --debug -a debugging -a initDbStage=3
+      // from console:
+      // SELECT count(*) FROM t8QjKjA_ConditionModelClasses;
+      // table doesn't exist, so no relevant table with initial data exists, db wrapper exception thrown: SqliteException(1):
+      // while preparing statement, no such table: t8QjKjA_ConditionModelClasses, SQL logic error (code 1)
+      //   Causing statement:           SELECT count(*) FROM t8QjKjA_ConditionModelClasses;
+
+      debugPrint(
+          'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key - just now should has been set up and is this[\'server_key\'] = ${this['server_key']}');
     } catch (e) {
       debugPrint(
           'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically(), method initCompleteModel() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed (now setting up cyclical checking out using Timer.periodic), and data synchronized. Exception thrown: $e');
@@ -11137,7 +11241,7 @@ class ConditionModelApp extends ConditionModel
               .timeout(const Duration(seconds: 12));
           // it probably might be that the method will be called one time too much
           a_server_key._fullyFeaturedValidateAndSetValue(
-              serverKeyTemp, true, false, true);
+              serverKeyTemp, true, true, true);
           serverKeyReadyCompleter.complete(true);
           debugPrint(
               'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() PERIODIC to set up the server_key - just now should has been set up server_key = $server_key');
@@ -11169,7 +11273,7 @@ class ConditionModelApp extends ConditionModel
     bool allowForUsersRelogin = false;
     try {
       // if the model is read successfuly from local server the server_key
-      // want be set up normaly it will go to _serverKeyHelperContainer
+      // want be set up normaly it will go to serverKeyHelperContainer setter
       // then if the global server still hadles it and considers valid
       // it will be set up as server_key
 
@@ -11233,15 +11337,15 @@ class ConditionModelApp extends ConditionModel
         // otherwise the data to be updated will be read from the database in less efficient way
         // one change per some period, probably more dg table columns than only one changed for example
         // yet to be designed :)
-        if (null != _serverKeyHelperContainer) {
-          if (_serverKeyHelperContainer!.isEmpty) {
+        if (null != serverKeyHelperContainer) {
+          if (serverKeyHelperContainer!.isEmpty) {
             debugPrint(
                 'initCompleteModel(): [ConditionModelApp] class we are throwing error because canTheKeyBeUsed == false, no db operation caused this error. This particular exception is not a problem, it is an option to avoid more sophisticated approach');
             // must be error here because at the moment of writing this comment an exception would allow for generation new key, but first MUST the temporary key be check out properly
             throw Error();
           }
           // it means that read() from the local server has been engaged to restore the model
-          // and _serverKeyHelperContainer has been set up
+          // and serverKeyHelperContainer setter/getter has been set up
           // if we can use it we will set up the final server_key if
           // we cannot use it because it is invalid we create a new one
 
@@ -11250,7 +11354,7 @@ class ConditionModelApp extends ConditionModel
                 'class [ConditionModelApp], method initCompleteModel() We are now going to check out if we can use the locally (in the local server) stored server_key canTheKeyBeUsed waiting for success or exception');
             bool canTheKeyBeUsed = await driver.driverGlobal!
                 .checkOutIfGlobalServerAppKeyIsValid(
-                    (_serverKeyHelperContainer as String))
+                    (serverKeyHelperContainer as String))
                 .timeout(const Duration(seconds: 12));
             debugPrint(
                 'class [ConditionModelApp], method initCompleteModel() can we use server_key? : canTheKeyBeUsed == $canTheKeyBeUsed ');
@@ -11269,19 +11373,19 @@ class ConditionModelApp extends ConditionModel
               // and we have to set the !!! server_key value using different way
               // not to trigger any synchronization with global server but just validating beforehand
               a_server_key._fullyFeaturedValidateAndSetValue(
-                  _serverKeyHelperContainer, true, false, true);
+                  serverKeyHelperContainer as String, true, false, true);
               serverKeyReadyCompleter.complete(true);
             }
           } catch (e) {
             debugPrint(
-                'initCompleteModel(): [ConditionModelApp] class exception during checking out if we can use _serverKeyHelperContainer key read using read() model data method. Another attempts to set up the server_key later will be made. The error was: $e');
+                'initCompleteModel(): [ConditionModelApp] class exception during checking out if we can use serverKeyHelperContainer setter/getter key read using read() model data method. Another attempts to set up the server_key later will be made. The error was: $e');
           }
         } else {
           await _requestGlobalServerAppKeyOnceAndThenPeriodically();
         }
       } catch (e) {
         debugPrint(
-            'initCompleteModel(): [ConditionModelApp] class, driver.driverGlobal!.getDriverOnDriverInited() not able to init global driver, error: $e only local serve can be used');
+            'initCompleteModel(): [ConditionModelApp] class, driver.driverGlobal!.getDriverOnDriverInited() not able to init global driver, error: $e only local server can be used');
       }
     }
   }
@@ -11511,7 +11615,8 @@ class ConditionModelUser extends ConditionModelWidget
       });
 
       if (ConditionConfiguration.debugMode &&
-          ConditionConfiguration.debugCreateModelsTemporarySettings) {
+          ConditionConfiguration.initDbStage != null &&
+          ConditionConfiguration.initDbStage! >= 3) {
         contactdebug = ConditionModelContact(
           conditionModelApp,
           this,
@@ -11583,9 +11688,9 @@ class ConditionModelUser extends ConditionModelWidget
         addChild(contactdebug);
       }
 
-      if (false &&
-          ConditionConfiguration.debugMode &&
-          ConditionConfiguration.debugCreateModelsTemporarySettings) {
+      if (ConditionConfiguration.debugMode &&
+          ConditionConfiguration.initDbStage != null &&
+          ConditionConfiguration.initDbStage! >= 4) {
         // the previous contact was added synchronously, now in the debug settings we know we have (once had?) user_id
         // but we have to pass the parent_id but also wait for its id first asynchronously, this time with no autorestore children.
         var contactdebug2 = ConditionModelContact(

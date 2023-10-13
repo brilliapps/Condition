@@ -53,6 +53,7 @@ dependencies:
   #!!!!!!!!!! drop_cap_text: image float left right first-letter: big AND IT PARSES MARKDOWN
   drop_cap_text: ^1.1.3  
   meta: ^1.9.1
+  mask_text_input_formatter: ^2.5.0
 
 # editors https://asjqkkkk.github.io/markdown_widget/#/
 # This is great markdown_editable_textinput  all except for for web and is js wrapper "... Summernote JavaScript wrapper" everywhere

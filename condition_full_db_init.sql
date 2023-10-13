@@ -16,8 +16,11 @@ DROP TABLE IF EXISTS "ConditionModelApps";
 CREATE TABLE "ConditionModelApps" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "key" text NOT NULL,
-  "creation_date_timestamp" integer NOT NULL
+  "last_successful_checkout_timestamp" integer NULL,
+  "creation_date_timestamp" integer NULL
 , "one_time_insertion_key" integer NULL);
+
+CREATE INDEX "ConditionModelApps_last_successful_checkout_timestamp" ON "ConditionModelApps" ("last_successful_checkout_timestamp");
 
 CREATE INDEX "ConditionModelApps_one_time_insertion_key" ON "ConditionModelApps" ("one_time_insertion_key");
 
@@ -82,6 +85,7 @@ CREATE TABLE "ConditionModelWidget" (
   "local_id" integer NULL,
   "to_be_synchronized" integer NOT NULL,
   "user_id" integer NOT NULL,
+  "server_user_id" integer NULL,
   "model_type_id" integer NOT NULL,
   "server_id" integer NULL,
   "parent_id" integer NULL,

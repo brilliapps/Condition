@@ -44,8 +44,8 @@ class ConditionConfiguration {
       isClientApp; // set up later - in the frontend in main() function
   static late final bool
       debugMode; // set up later - in the frontend in main() function
-  static late final bool
-      debugCreateModelsTemporarySettings; // set up later - in the frontend in main() function
+  static late final int?
+      initDbStage; // set up later - in the frontend in main() function
   static const bool isWeb = kIsWeb;
 
   /// Caution! Because ConditionModelContact may have implemeneted data channels or something they would have to be always rendered fully. This tells you how deeply it will restore model/widget tree after the app restart. So this is what you see/have on the screen without requiring user to click buttons like unfold and after that lazily another level/branch of models/widgets is loaded (models means level, widgets: for a one particular model a subtree of widgets may be involved)
