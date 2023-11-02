@@ -1358,6 +1358,10 @@ interface class ConditionDataManagementDriver {
   List<Completer> _storageOperationsQueue = [];
   List<ConditionModelListenerFunction> _changesListeners = [];
 
+  /// Some ideas of the purpose of this property is in [uniqueId] of [ConditionModel] class and [appUniqueId] of [ConditionModelApp]. Shortly, by having this id you can associate [Finalizer] objects to this driver object when last pointer to it is lost. It is related to global management of [ConditionModelApp] objects existing in the entire application scope. It can be better understood when reading [ConditionModelApps] class description with description of some proerties of it.
+  final int driverUniqueId =
+      ConditionModelApps._increaseByOneDriverUniqueIdCounterAndGetItsValue();
+
   /// !!! Prefix is only in development mode for simulating backend data storage and loading, see the [_prefix] property desc, see method [getNewDefaultDriver] code for backend driver
   ConditionDataManagementDriver({
     Completer<ConditionDataManagementDriver>? initCompleter,
@@ -4798,8 +4802,11 @@ mixin ConditionModelOneDbEntryModel {}
 /// Really see [ConditionModelDynamic] class too. [!READ and see for "[To do]""] Important rules: all tables must have id column, if a newly created model object has only 'id' (so with .id) property set-up, the data is fetched and only the validated and the all model's properties are set up. If a newly created model has some or all properties set up except for id property - the model completely new, it doesn't have it's row in the sql db (speaking in sql language terms), so the models properties except for id are validated and send into db, if all is successful, the db returns inserted id. Then updates of single or more properties are done automatically when they are changed. Seek for more properties related to automatic or less automatic changes. You could even do the id stuff automatically even if a model doesn't have the id column defined - rethink it well.
 /// Important. if f.e. this.id throws exception then this['id'] == null. This is because id hasn't been initialized yet (the "late" keyword before the corresponding a_id property) and hasn't gotten it's value from the db. The same rule for all the rest of properties of model classes. this['id'] cannot throw any exception because a the map specs requires that. It includes a not defined 'nonidsomefield' key of using a a_nonidsomefield field that hasn't been defined too for a given [ConditionModel] extending class.
 abstract class ConditionModel extends ConditionMap {
-  // it is always set up in the constructor body properly or exception is thrown that something went wrong
+  /// it is always set up in the constructor body properly or exception is thrown that something went wrong
   late final ConditionModelApp conditionModelApp;
+
+  /// Assigned immediately in the constructor body. Also necessary to read [_appUniqueId] desc of [ConditionModelApp] class. Each model object has uniqueId in the app object not in the entire application scope. The ids and minId, maxId is described better in [ConditionModelApps] and [ConditionModelApp]. In short it is for [Finazlizer] of this model to start working when last reference to this particular model is lost. When some object of some class can't have a reference to this model instance so that the model's finaliser is able to start working the other object has the model's id to associate some other object with the model and on model's the removal it can remove the related objects based on the id or perform other finishing/finalizing actions.
+  late final int uniqueId;
 
   /// Only for local server. Read the description of [_fieldsToBeUpdated].
   bool _modelIsBeingUpdated = false;
@@ -4873,7 +4880,7 @@ abstract class ConditionModel extends ConditionMap {
 
   //final Completer<ConditionModel> _initedCompleter =
   //    Completer<ConditionModel>();
-//
+  //
   ///// The meaning of the property is the model is not considered inited globally when it doesn\'t have set up proper 'server_id' for all models
   //late final bool __initedGlobalServer;
   //final Completer<ConditionModel> _initedCompleterGlobalServer =
@@ -4885,6 +4892,8 @@ abstract class ConditionModel extends ConditionMap {
   /// When the property [__inited] (See it's description) is set to true using the setter [_inited] (one underscore) the completer completes, the future of the completer you can get using [getModelOnModelInitComplete] method.
   final Completer<ConditionModel> _completerInitModel =
       Completer<ConditionModel>();
+
+  get initModelFuture => _completerInitModel.future;
 
   /// Also see the [_completerInitModelGlobalServer] property description. You don't use it on your own at all use the one underscore [_initedGlobalServer] as setter and the @protected [initedGlobalServer] as getter. The setter and getter do additional neccessary stuff.
   late final bool __initedGlobalServer;
@@ -4930,6 +4939,16 @@ abstract class ConditionModel extends ConditionMap {
             'ConditionModel constructor exception: this is ConditionModelApp and conditionModelApp!=null');
       } else {
         this.conditionModelApp = this as ConditionModelApp;
+        uniqueId = ConditionModelApps.minId;
+      }
+    } else {
+      if (conditionModelApp == null) {
+        throw Exception(
+            'ConditionModel constructor exception: this is! ConditionModelApp && conditionModelApp==null');
+      } else {
+        this.conditionModelApp = conditionModelApp;
+        uniqueId = conditionModelApp
+            ._increaseByOneModelUniqueIdCounterAndGetItsValue();
       }
     }
 
@@ -4941,18 +4960,6 @@ abstract class ConditionModel extends ConditionMap {
             temporaryInitialData.length < 2)) {
       throw Exception(
           'ConditionModel constructor exception: isAllModelDataProvidedViaConstructor == true, id is not null but is not int or is less than 0, or id i ok but only id property is set.');
-    }
-
-    // The next extending class enforce ConditionModelApp not to be null, but in case
-    // there is a second extending class this condition is checked
-    // The condition is almost unnecessary
-    else if (this is! ConditionModelApp) {
-      if (conditionModelApp == null) {
-        throw Exception(
-            'ConditionModel constructor exception: this is! ConditionModelApp && conditionModelApp==null');
-      } else {
-        this.conditionModelApp = conditionModelApp;
-      }
     }
 
     if (this is! ConditionModelCompleteModel) {
@@ -5870,9 +5877,8 @@ abstract class ConditionModel extends ConditionMap {
   /// A funny method.
   giveTheAlreadyRetiredModelPensionerSomePartTimeJobOrLetItSpendTimeWithItsGrandChildrenModel() {}
 
-  /// See [ConditionModelCompleteModel] class desc. This method must be called in a complete model class that is not extended by other classess but is an object that is stored in the db
+  /// FIXME: Is this future always finished? In a ConditionApp widget state initModel had no finished future from this _initedCompleter was used instead. See [ConditionModelCompleteModel] class desc. This method must be called in a complete model class that is not extended by other classess but is an object that is stored in the db
   @nonVirtual
-  @protected
   Future<ConditionModel> initModel() {
     // as far as i remember this method shouldn't be async.
     if (this is! ConditionModelCompleteModel) {
@@ -6394,7 +6400,7 @@ abstract class ConditionModel extends ConditionMap {
 
   @protected
   set _inited(bool value) {
-    //?????Is this still important?: Whenever // model is _inited and probably 'server_id' (the to-non-null-value-change you
+    // ?????Is this still important?: Whenever // model is _inited and probably 'server_id' (the to-non-null-value-change you
     // must listen to already in the constructor of ConditionModel class not to init something
     // too early or too late) OR MAYBE NOT: THINK IT OVER AGAIN
     // then (if for some classes more conditions are not necessary)
@@ -7774,7 +7780,7 @@ abstract class ConditionModelParentIdModel
                         // TODO: ! SnappApps: BUT YOU CAN BYPASS IT BY ADDING TO app constructor option doNotAddToTheGlobalAppList = true (DEFAULT FALSE), by doing this you are ready to pay the price of possible unfinished operations which is fine, databases may be removed after session time out, etc., there may be global/local server apps like this - snap apps, removing any last link to the app would cause cascadingly submodels destructdion with reasonable expectations no data will be left in memory
                         // TODO: !!! Reject duplicate apps (throw the first already existing app in Exception like in parentidmodels and method to checkout like it too) you sniff especially by db/table prefixes, filename for sqlite, host/login/password for mysql, but global server settings can be ignored - we may have many objects connecting to the global server
                         // TODO: !!! For this you need for local driver to add required sort of interface method isDriverDuplicate() or operator == that calls the method mentioned. It is easier just method, less confusing
-
+                        // TODO: EDIT: got to a conslusion no need to care but you make test if a future ends with error when pointer is lost or what else happens ! //some methods may be suspended now so we need to finish them by completing completers! so in retire() we need to complete them with errors and modify the code to react properly. Curious how unlinked futures/completers finish? with an error? They should!
                         _conditionModelAppHangOnModelOperationsCompleters[
                                     ConditionModelClassesTypeOfSucpendableOperation
                                         .globalServerCreate] !=
@@ -10016,6 +10022,24 @@ class ConditionModelApps {
     _uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps.remove(localServerDriver);
   });
 
+  /// See also [maxId]. Try to establish a multiplatform int for IDs of regular models and possibly app models. For now it is based on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER
+  static const int minId = -9007199254740991;
+
+  /// like [minId] but based on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
+  static const int maxId = 9007199254740992;
+
+  /// Each app model object (not the same but similar in [ConditionModelApp] class) in the global scope app area has final unique id (uniqie globally). Some objects are finalized with [Finalizer] class object. So to trigger the finalizer of a removed object you cannot have any reference to them left, but you have to perform some actions on objects related to them, but not having any reference to the finalized object; so you need to find them somehow and this unique id is used for this. Apart from that [ConditionDataManagementDriver]s have it too. See [ConditionModelApps].
+  static int _appModelUniqueIdCounter = ConditionModelApps.minId;
+  static int get appModelUniqueIdCounter => _appModelUniqueIdCounter;
+  static int _increaseByOneAppModelUniqueIdCounterAndGetItsValue() =>
+      ++_appModelUniqueIdCounter;
+
+  /// Similar to [_appModelUniqueIdCounter] and this property also doc-described there too.
+  static int _driverUniqueIdCounter = ConditionModelApps.minId;
+  static int get driverUniqueIdCounter => _driverUniqueIdCounter;
+  static int _increaseByOneDriverUniqueIdCounterAndGetItsValue() =>
+      ++_driverUniqueIdCounter;
+
   /// _addDriver() method was removed not for no reason, [addTheAppLocalServerDriverOnly] = true is not recommended or creating local driver objects not attached to any app may cause possibly instability if you try to save data independently of app main model tree update/save sistem. but the option == true is allowed to give you more freedom - an app may loose unexpectedly it's last pointer to it and the object may dissappear which can be fine if it is an app object read only, also it prevents from existing more than one the same settings local server driver. Uses [isThisAppUniqueAndCanBeUsed] method we want to throw excteption with the duplicate app, found as in some class elsewhere
   static _addApp(ConditionModelApp app,
       [bool addTheAppLocalServerDriverOnly = false]) {
@@ -10254,6 +10278,16 @@ class ConditionModelApp extends ConditionModel
 
   /// If object to not go to the global list it may create problems when the [ConditionModelApp] object looses last pointer to itself causing cascadingly uncontrolled unlinking/destroing other depending model of the app main model tree and other objects, while they may be performing a long operation like when a model updates itself on the global server. If the app object is not on the global app list any apps outside the list will have their local server ConditionDataManagmementDriver objects on another global app list; when any last pointer to an "outsider" app is lost the local driver will be removed thanks to the workings of [Finalizer] class; at the moment of writing it was planned that both the global app list and separately the local drivers belonging to "outsider" apps not attached to the global list would belong to the same class/classes [ConditionModelApps] [ConditionPermanentAppsHolder]. If true, the app can be (doesn't have to) meant to be read-only, short lived, or if false, in the constructor this property uses [ConditionModelApps], [ConditionPermanentAppsHolder] (read interesting points and ideas presented in the classes descriptions, also with throwing exceptions on duplicates) to store the app permantly to ensure data integrity. In custom cases such storing is not necessary. Read more of the just mentioned classes in their correspoding descriptions.
   final bool doNotAddAppToTheGlobalAppList;
+
+  /// Each model object in an app object has final unique id (uniqie not globally but for the app object). Some objects are finalized with [Finalizer] class object. So to trigger the finalizer of a removed object you cannot have any reference to them left, but you have to perform some actions on objects related to them, but not having any reference to the finalized object; so you need to find them somehow and this unique id is used for this. Apart from that [ConditionDataManagementDriver]s have it too. See [ConditionModelApps].
+  int _modelUniqueIdCounter = ConditionModelApps.minId;
+  int get modelUniqueIdCounter => _modelUniqueIdCounter;
+  int _increaseByOneModelUniqueIdCounterAndGetItsValue() =>
+      ++_modelUniqueIdCounter;
+
+  /// Not the same as [uniqueId] of all [ConditionModel] objects. This is a unique id across the entire app and as you can see in the constructor it is obtained from a private static property calling [ConditionModelApps].[_increaseByOneAppModelUniqueIdCounterAndGetItsValue](). [uniqueId] is unique id of a model across an app model object. So having both ids you can associate any finalizer with a concrete model. It shouldn't not impact the performance because any search through any lists/Sets of model objects belonging to an app model object should not take very much time but if any model had a unique id globally some searches might take lot of time because lists could be very long (not descrbed very educationally).  Never there are many app objects in the entire app. Also reading [ConditionModelApps] description may be good for overall understaning of this aspect of the architecture.
+  final int appUniqueId =
+      ConditionModelApps._increaseByOneAppModelUniqueIdCounterAndGetItsValue();
 
   ConditionModelApp({
     // As an exception to the rule this widget must be created immediatelly in setter after this object creation (widget property in ConditionModel) - no asynchronous waiting like Future

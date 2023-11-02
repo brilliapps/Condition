@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:developer'; // for inspect(myVar); like print_r var_dump in php
 import 'package:flutter/material.dart';
 import 'package:drop_cap_text/drop_cap_text.dart';
+import 'package:flutter/services.dart';
 import 'condition_custom_annotations.dart';
 import 'condition_data_managging.dart';
 //import 'package:hive/hive.dart';
@@ -14,15 +15,12 @@ import 'condition_app_base.dart'; //empty informational and later etended class 
     'See ConditionModel addListener(ConditionModelListenerFunction changes_listener',
     '')
 class ConditionWidget extends StatefulWidget implements ConditionWidgetBase {
-  ConditionModel _model;
+  @protected
+  final ConditionModel model;
 
-  ConditionWidget(ConditionModel this._model, {Key? key}) : super(key: key);
+  ConditionWidget(this.model, {Key? key}) : super(key: key);
   @override
   State createState() => _ConditionWidgetState();
-
-  ConditionModel get model {
-    return _model;
-  }
 }
 
 class _ConditionWidgetState extends State<ConditionWidget> {
@@ -250,40 +248,79 @@ class _ConditionDragTargetContainerWidgetState
 // APP WIDGET
 
 class ConditionAppRouteManager {
-  static Route<dynamic> generateRoute(RouteSettings settings) {
-    debugPrint('dwa kompy');
-    print('ala ma kompa 5');
-    return MaterialPageRoute(
-        builder: (context) => MyHomePage(
+  /// We return null if no changes to the UI.
+  /// in flutter run chrome and debug url/#/abc/cde - pushing reload in the browser caused app reload
+  /// however changing manually to url/#/abcdewewrewr dindn't but provided immediately with new information
+  /// whatever you do having /#/abc you have this method called
+  /// but to change the url in the browser permantently and store it in the history you have to call
+  /// SystemNavigator.routeInformationUpdated(uri: Uri.parse('/testowo1'));
+  /// So, this is not being done automatically
+  /// Important i just imagened that one needs to use SystemNavigator.routeInformationUpdated
+  /// so that any "chaotic" attempts in the code to change url and browser history were under your full control.
+  /// I am still ignorant about it because one url change may trigger something in couple of places, yet
+  /// it can be assumed that all the places can be prepared for that and the permanent change to the url is when you want.
+  static Route<dynamic>? generateRoute(RouteSettings settings) {
+    debugPrint('Wir sind trying to set up a new route.');
+    debugPrint(
+        'The route is $settings , ${settings.name} , ${settings.arguments}');
+    SystemNavigator.routeInformationUpdated(
+        uri: Uri.parse(settings.name ?? '/#/'));
+    // When changing manually url in the browser without calling the below SystemNavigator.routeInformationUpdated
+    // will cause the url to return to the previous value and nothing will be remembered in the histor.
+    //return MaterialPageRoute(
+    //    builder: (context) => MyHomePage(
+    //        key: GlobalKey(), //widget testowo bierze x,y,width,height widgeta,
+    //        title:
+    //            'Condition') // You can also use MaterialApp's `home` property instead of '/'
+    //    );
+
+    return PageRouteBuilder(
+      transitionDuration: const Duration(milliseconds: 3800),
+      pageBuilder: (BuildContext context, Animation<double> animation,
+          Animation<double> secondaryAnimation) {
+        return MyHomePage(
             key: GlobalKey(), //widget testowo bierze x,y,width,height widgeta,
             title:
-                'Condition') // You can also use MaterialApp's `home` property instead of '/'
-        );
+                'settings.name, anim value: ${animation.value}'); // You can also use MaterialApp's `home` property instead of '/'
+      },
+      transitionsBuilder: (BuildContext context, Animation<double> animation,
+          Animation<double> secondaryAnimation, Widget child) {
+        return AnimatedBuilder(
+            animation: animation,
+            builder: (context, child) {
+              return FadeTransition(
+                  opacity: ReverseAnimation(secondaryAnimation),
+                  child: Transform.scale(
+                      scale: animation.value * 0.8 + 0.2,
+                      child: Transform.scale(
+                          scale: 1 + secondaryAnimation.value * 2,
+                          child: child)));
+            },
+            child: SlideTransition(
+              position: new Tween<Offset>(
+                begin: const Offset(-1.0, 0.0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: new SlideTransition(
+                position: new Tween<Offset>(
+                  begin: Offset.zero,
+                  end: const Offset(-1.0, 0.0),
+                ).animate(secondaryAnimation),
+                child: child,
+              ),
+            ));
+      },
+    );
   }
 }
 
 /// Main app widget, it handles layout, server gets different widget also implementing [ConditionAppBase] empty informational interface. See more the classess description
 /// Read the classess (it's state class) about importing some touch gestures for desktop mouse as param in Material App
 class ConditionApp extends ConditionWidget implements ConditionAppBase {
-  ConditionModel _model;
-  ThemeMode? _themeMode;
-
   ConditionApp(
-    ConditionModelApp this._model, {
-    Key? key,
-    //https://stackoverflow.com/questions/56304215/how-to-check-if-dark-mode-is-enabled-on-ios-android-using-flutter
-    ThemeMode? themeMode = ThemeMode.system,
-  })  : _themeMode = themeMode,
-        super(_model, key: key) {
-    debugPrint('And the mode is' + _themeMode.toString());
-  }
-
-  ConditionModel get model {
-    return _model;
-  }
-
-  set themeMode(ThemeMode? value) => _themeMode = value;
-  ThemeMode? get themeMode => _themeMode;
+    ConditionModelApp super.model, {
+    super.key, // ? why is it needed?
+  }) {}
 
   @override
   State createState() => _ConditionAppState();
@@ -358,13 +395,28 @@ class _ConditionAppState extends State<ConditionApp> {
     scrim: Color(0xFF000000),
   );
 
-  set themeMode(ThemeMode? value) {
-    setState(() {
-      widget.themeMode = value;
-    });
-  }
+  ThemeMode themeMode;
+  _ConditionAppState()
+      : themeMode = ThemeMode.system,
+        super();
 
-  ThemeMode? get themeMode => widget.themeMode;
+  //@override
+  //initState() {
+  //  super.initState();
+  //  debugPrint('=================================');
+  //  debugPrint('#pfuehmx7m0y83yc 1: Can we Navigator.push when loaded?');
+  //  widget.model.initModelFuture.then((driver) async {
+  //    debugPrint('#pfuehmx7m0y83yc 2: Can we Navigator.push when loaded?');
+  //    try {
+  //      await Navigator.pushNamed(context, '/condition');
+  //      debugPrint('#pfuehmx7m0y83yc 3: Can we Navigator.push when loaded?');
+  //    } catch (e) {
+  //      debugPrint(
+  //          '#pfuehmx7m0y83yc 4: error Can we Navigator.push when loaded? errro:$e');
+  //    }
+  //    debugPrint('#pfuehmx7m0y83yc 5: Can we Navigator.push when loaded?');
+  //  });
+  //}
 
   // This widget is the root of your application.
   @override
@@ -408,9 +460,11 @@ class _ConditionAppState extends State<ConditionApp> {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),*/
-      /*home: MyHomePage(
-          key: GlobalKey(), //widget testowo bierze x,y,width,height widgeta
-          title: 'Flutter Demo Home PageFlutter Demo Home Page0'),*/
+      home: Center(
+          child: Container(
+              width: 100,
+              height: 100,
+              child: FittedBox(child: Text('Loading...')))),
       //initialRoute: '/',
       //routes: /*<String, WidgetBuilder>*/ customRoutingMap
 
@@ -423,7 +477,7 @@ class _ConditionAppState extends State<ConditionApp> {
       //      title: 'Flutter Demo Home PageFlutter Demo Home Page 2'),
 
       routes: {
-        '/qw': (BuildContext context) => MyHomePage(
+        '/condition': (BuildContext context) => MyHomePage(
             key: GlobalKey(), //widget testowo bierze x,y,width,height widgeta,
             title:
                 'Condition 1'), // You can also use MaterialApp's `home` property instead of '/'
@@ -432,6 +486,7 @@ class _ConditionAppState extends State<ConditionApp> {
             title:
                 'Condition 2'), // You can also use MaterialApp's `home` property instead of '/'
       },
+      // important the ConditionAppRouteManager.generateRoute contains some important and practical info.
       onGenerateRoute: ConditionAppRouteManager.generateRoute,
     );
   }
@@ -1135,11 +1190,15 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                   if (conditionAppState.themeMode == null ||
                                       conditionAppState.themeMode ==
                                           ThemeMode.light) {
-                                    conditionAppState.themeMode =
-                                        ThemeMode.dark;
+                                    conditionAppState.setState(() {
+                                      conditionAppState.themeMode =
+                                          ThemeMode.dark;
+                                    });
                                   } else {
-                                    conditionAppState.themeMode =
-                                        ThemeMode.light;
+                                    conditionAppState.setState(() {
+                                      conditionAppState.themeMode =
+                                          ThemeMode.light;
+                                    });
                                   }
                                 },
                               ),
