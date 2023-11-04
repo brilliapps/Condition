@@ -245,8 +245,14 @@ void main(List<String> args) async {
   ///// At the beginning one app is to be but thinking into the future: if more apps, each app has to have a unique namespce prefix like here "cNd1", next app f.e. "cNd2", There can be separated couple of apps managed in some way one day
   var conditionModelApp1 = ConditionModelApp();
 
-  ///
+  // FIXME: ? I guess it is solved already but: Why should it be inited like this? such stuff should be done automatically with an option of passing the ConditionApp object in the ConditionModelApp costructor. Investigate
   conditionModelApp1.init(ConditionApp(conditionModelApp1));
+
+  // TODO: TESTING LOOSING LAST POINTER TO ConditionModelApp USING TIMER TO REMOVE IT AFTER 20 SECS OR SO:
+  // THE WIDGET HAS THE POINTER, ANY NON-APP MODEL HAVE THE POINTER, CONDITIONMODELAPPS HAVE THE POINTER IF CONDITIONMODELAPP HAS DEFAULT SET UP OF SOME PROPERTY.
+  // SO WE PROBABLY NEED TO MAKE SURE WIDGET HAS THE POINTER REMOVED, APP HAS NO IT'S MODELS, CONDITIONMODELAPPS HAS NO THIS APP POINTER
+  // TRY TO SIMULATE THIS WITH A COMMANDLINE DEBUG ARG
+  // HERE WE GO:
 
   ///
   ///// debugging because:

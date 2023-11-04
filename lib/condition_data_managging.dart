@@ -9986,7 +9986,7 @@ class ConditionModelAppExceptionDuplicateSettingsConditionDataManagementDriverLo
   String toString() => msg;
 }
 
-// Used especially in [ConditionModelapp] class' [hangOnModelOperationIfNeeded]() method and with connetion with with model retire() method (and more) which all is related to releasing resources taken by not used models and See comnments in the enum definition body. The most important may be globalServerWrite or more precise ...Create/Update/Delete while these operations may last long and prevent model from being retired while local server or other operations seems kind of immediate even if asynchronous on event loop, Some of the items may never be used this is initial list. See what uses it in [ConditionModelApp] class and relevant descriptions
+/// Used especially in [ConditionModelApp] class' [hangOnModelOperationIfNeeded]() method and with connetion with with model retire() method (and more) which all is related to releasing resources taken by not used models and See comnments in the enum definition body. The most important may be globalServerWrite or more precise ...Create/Update/Delete while these operations may last long and prevent model from being retired while local server or other operations seems kind of immediate even if asynchronous on event loop, Some of the items may never be used this is initial list. See what uses it in [ConditionModelApp] class and relevant descriptions
 enum ConditionModelClassesTypeOfSucpendableOperation {
   any,
   localServer, // informally this would involve reading that were not in the enum list when this comment was written
@@ -10000,6 +10000,19 @@ enum ConditionModelClassesTypeOfSucpendableOperation {
   globalServerUpdate, // see globalServerWrite
   globalServerDelete, // see globalServerWrite
 }
+
+/// Used used by [_addAppCycleMethod], [_removeAppCycleMethod] and [_cyclicalActionsOfAppModelsTimer] of [ConditionModelApps]
+enum ConditionModelCycleCallEvent {
+  slowInternetConnection,
+  globalServerNotResponding,
+  globalServerOverloadedAndSlowResponding,
+}
+
+/// A function Sygnature used by [_addAppCycleMethod] method or [_removeAppCycleMethod] of [CondiitionModelApps], skipThisCycle param (probably cannot be ignored but it is a developing story) is a strong request that the app doesn't perform any new cyclical action, especially that related to the global server operations; cycleCallEvents contain additional information not dependent on skipThisCycle, the information is like a stream event but without stream. The information may be that the internet connection is slow, or the global server not available or is overloaded, etc.
+/// For now it returns future to imply possibly that another call is allowed when the future is completed.
+/// TODO: Make sure the planned future is completed with error when app object looses it's last pointer.
+typedef ConditionModelAppAppCycleFunction = Future<void> Function(
+    bool skipThisCycle, Set<ConditionModelCycleCallEvent>? cycleCallEvents);
 
 // [To do or done:] not part of /// doc warning : doNotAddAppToTheGlobalAppList == true would allow for two separate app objets which is not allowed, alternatively you could register some standard settings table prefixes at the core because you cannot use two separate yet twin apps
 // [To do or done:] not part of /// doc to do: stream never stop existing when it has subscriber, and possibly more so stream = null won't destroy the stream object ant won't release any data. The same is with future you must address this in the retire method SYNCHRONOUSLY.
@@ -10039,6 +10052,93 @@ class ConditionModelApps {
   static int get driverUniqueIdCounter => _driverUniqueIdCounter;
   static int _increaseByOneDriverUniqueIdCounterAndGetItsValue() =>
       ++_driverUniqueIdCounter;
+
+  // ==================================================================================
+  // START TO MANAGEMENT ON SOME CYCLICAL ASPECTS OF APP MODEL OBJECTS THAT MIGHT HAVE IMPACT ON "SECONDARY" MEMORY "LEAKS"
+  // ==================================================================================
+  // TODO: INFO START
+  // 1. we need some global timer to perform cyclical stuff like:
+  //   checking out for updates of models from global server
+  // 2. a: Also we need to create a userProfiles with an example remote user that creates a different user
+  //       on -a debugging -a initDbStage=2 -a userProfile=2, 1 is default
+  //    b: on initDbStage=2 it creates a contact that is automatically read/added by a recipient user in userProfile=1
+  //    c: on stage 3 a message is also sent/read.
+  // All simplified - not implementing now much
+  // For this you have use cyclical checking based on last check for the app id, we may need to check out changes to contact list first probably
+  // And the global timer here is needed because each endless not cancelled timers run endlessely
+  // So many things must be regulated from here, also stuff like low bandwidth, locking new global server actions of a particular app model object.
+  //
+  // More details should be in the following properties/methods
+  // TODO: INFO END
+  // Good to remember: a couple of objectss can be attached to one finalizer can be attached to one object. You can detach finalizer from objects
+  // FIXME: TIMER LEAKS! NOT TO FORGET TO MAKE ALL ENDLESS CYCLICAL TIMERS CANCELABLE - each not finished timer lives even you have no reference to anything related to it so you have to have a property enabling you to cancel the timer when object is retired, disposed, destroyed, or looses the last pointer to it.
+
+  // ==================================================================================
+  // END TO MANAGEMENT ON SOME CYCLICAL ASPECTS OF APP MODEL OBJECTS THAT MIGHT HAVE IMPACT ON "SECONDARY" MEMORY "LEAKS"
+  // ==================================================================================
+
+  // TODO: NOW: I have an idea of having a separate class with "unremovable" properties that exist after the last pointer to the app is removed
+  // The separate class object would perform unleaking actions on it's properties. Still much to think over.
+  // Probably similar for non-ConditionModelApp but those regular ConditionModel objects.
+
+  /// Read the [_addAppCycleMethod] description.
+  static final Set<ConditionModelAppAppCycleFunction> _appCycyleMethods = {};
+
+  /// FIXME: Stupid question and do a thorough research: if an app lost last pointer to it is it's method here [_appCycyleMethods] causing any hidden pointer to be kept? Logically should be: no. The method might be or not in a property of the app - whatever (not means created on spot as anonymous function).
+  static final Finalizer<ConditionModelAppAppCycleFunction>
+      _appCyclicalCallFinishFinalizer =
+      Finalizer((conditionModelAppAppCycleFunction) {
+    debugPrint(
+        'conditionModelAppAppCycleFunction is to be removed from _appCycyleMethods (now ${_appCycyleMethods.length} these methods in total) info from toString:. $conditionModelAppAppCycleFunction');
+    ConditionModelApps._appCycyleMethods
+        .remove(conditionModelAppAppCycleFunction);
+    debugPrint(
+        'conditionModelAppAppCycleFunction has been removed now the number of these methods is:. now ${_appCycyleMethods.length} methods in total');
+  });
+
+  /// Added on [ConditionModelApp] object construction quite independent from [_allAndUniqueApps] Set which is among other things to avoing having two the same settings app instances and similar [Set] for driver objects. This must be removed when app looses it's pointer or other solution is needed to be found to avoid next finalizers
+  static _addAppCycleMethod(
+      ConditionModelApp app, ConditionModelAppAppCycleFunction method) {
+    debugPrint(
+        '_addAppCycleMethod called by app of app.appUniqueId ${app.appUniqueId}');
+    _appCycyleMethods.add(method);
+    _appCyclicalCallFinishFinalizer.attach(app, method);
+  }
+
+  /// Not needed - finalizer [_appCyclicalCallFinishFinalizer] is to remove the method. Read the [_addAppCycleMethod] description.
+  @Deprecated('Left to remember for a while. See the desc of the method.')
+  static _removeAppCycleMethod(ConditionModelAppAppCycleFunction method) {}
+
+  /// Warning! It is set up by this class' static _initConditionModelAppsClass]() see desc - so do not use it - it is done by the library. The timer can be set up here on spot, for some reason it start working only when or after the main() function started running - we don't want to set up the value by placing something in the main file which a programmer would have to remember, but it is set up first when the first [ConditionModelApp] object is created. So this is the global Timer that is to call cyclically [ConditionModelAppAppCycleFunction] (see desc - important) methods belonging to all existing [ConditionModelApp] app models in the global scope of the application event those not in the [_allAndUniqueApps] [Set] which probably as of now involves apps related to [_uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps] [Set]. registered with [_addAppCycleMethod].
+  /// Each call of a registered method can trigger cyclical actions performed by on a global server especially, possibly other actions too as may be implied in [ConditionModelCycleCallEvent] enum function param.
+  /// This timer is to avoid any other timer and secondary/higher-level-programming memory leaks. (higher doesn't mean better)
+  static late final Timer _cyclicalActionsOfAppModelsTimer;
+
+  /// Warning! Managed automatically internally by the library - so do not call it!. This sets up [_cyclicalActionsOfAppModelsTimer] property. This is called once when first [ConditionModelApp] object is created, the reason can be seen in the [_cyclicalActionsOfAppModelsTimer] description. This triggers a timer that will never cease to its method cyclically.
+  static _initConditionModelAppsClass() {
+    Timer.periodic(
+        const Duration(
+            milliseconds: ConditionConfiguration
+                .globalBaseFrequencyForCyclicalStuffInMilliseconds), (timer) {
+      // example implementation - maybe should be more asynchronous.
+      debugPrint(
+          '_cyclicalActionsOfAppModelsTimer timer cyclically calling its method that calls methods registered via _addAppCycleMethod (${_appCycyleMethods.length} methods will be called with the current library design restrictions).');
+
+      for (final ConditionModelAppAppCycleFunction appCycyleMethod
+          in _appCycyleMethods) {
+        appCycyleMethod(false, null);
+      }
+    });
+  }
+
+  /// not implemented, just to signal possible but not immediate future need, it is called somewhere in the [ConditionModelapp] class, not necessary it will be - if return, possibly if many apps are in the app there will be attempts on different levels to decreas frequency of activity of different models, not only on this, but probably it will never be needed.
+  /// FIXME: If deprecated is it used elsewhere?
+  @Deprecated('? _addAppCycleMethod with it\'s cycle engine is gonna do that.')
+  static bool _allowForThisCycleOfOverallCyclicallyPerformedOperationsOnTheApp(
+      ConditionModelApp app) {
+    //
+    return true;
+  }
 
   /// _addDriver() method was removed not for no reason, [addTheAppLocalServerDriverOnly] = true is not recommended or creating local driver objects not attached to any app may cause possibly instability if you try to save data independently of app main model tree update/save sistem. but the option == true is allowed to give you more freedom - an app may loose unexpectedly it's last pointer to it and the object may dissappear which can be fine if it is an app object read only, also it prevents from existing more than one the same settings local server driver. Uses [isThisAppUniqueAndCanBeUsed] method we want to throw excteption with the duplicate app, found as in some class elsewhere
   static _addApp(ConditionModelApp app,
@@ -10109,13 +10209,6 @@ class ConditionModelApps {
     }
 
     return (true, null, null);
-  }
-
-  /// not implemented, just to signal possible but not immediate future need, it is called somewhere in the [ConditionModelapp] class, not necessary it will be - if return, possibly if many apps are in the app there will be attempts on different levels to decreas frequency of activity of different models, not only on this, but probably it will never be needed.
-  static bool _allowForThisCycleOfOverallCyclicallyPerformedOperationsOnTheApp(
-      ConditionModelApp app) {
-    //
-    return true;
   }
 }
 
@@ -10330,6 +10423,20 @@ class ConditionModelApp extends ConditionModel
                   //initCompleter: driver_init_completer, added in the constructor body
                   hasGlobalDriver: true,
                 )) {
+    // [ConditionModelApps] class manages or take passive part in managging app models and/or the rest of the models which actually the rest of non-app models are managed by an app model (this one for example)
+    try {
+      // if not yet initialized an exception will be thrown. It is fine. We will catch it and init the [ConditionModelApps] class
+      debugPrint(
+          'ConditionModelApp constructor: if not yet initialized an exception will be thrown. It is fine. We will catch it and init the [ConditionModelApps] class.');
+      ConditionModelApps._cyclicalActionsOfAppModelsTimer;
+      debugPrint(
+          'ConditionModelApp constructor: it is initialized already so it is the second or more [ConditionModelApp] app model object in the entire application running.');
+    } catch (e) {
+      debugPrint(
+          'ConditionModelApp constructor: Catched exception. it is not initialized yet. Let\'s initialise it, and it is the first or more [ConditionModelApp] app model object in the entire application running.');
+      ConditionModelApps._initConditionModelAppsClass();
+    }
+
     //super.driver.addInitCompleter(this.driver_init_completer);
 
     // See relevant descriptions, an app may be or not destroyed when the last lint to this app model is lost in the app.
@@ -10343,6 +10450,23 @@ class ConditionModelApp extends ConditionModel
     //  // adding app here is considered permanent and never removable, and it should be this way only, but you have an option above.
     //  ConditionModelApps._addApp(this);  // May throw useful exception - seek to read more
     //}
+
+    // Now when nothing was thrown - see the above:
+    ConditionModelApps._addAppCycleMethod(this, (bool skipThisCycle,
+        Set<ConditionModelCycleCallEvent>? cycleCallEvents) {
+      // TODO: IMPLEMENT THIS HERE YOU PERFORM ESPECIALLY GLOBAL SERVER OPERATIONS OF:
+      // 1. READING FROM GLOBAL SERVER
+      // 2. ALSO OF SENDING F.E. NEW MESSAGES THAT HAVE NO EXISTING MODEL OBJECT RIGHT NOW
+      // WARNING !!! if an old operation is not finished no new it to be started. For this you have 2 options:
+      // one is: old returned future is not finished yet, the second you just don't take action and return a finished future.
+
+      // We get a record from the global server, seek for proper model object or create one with changing data and retiring it and removing pointer to it of course if any pointer to it was not "seazed"(used in two or more different places) by the app model in the meantime in an independent way
+
+      debugPrint(
+          'ConditionModelApp constructor: We are in the registered anonymous method that should be unnatached from the finalizer in ConditionModelApps class when this ConditionModelApp object looses the last pointer to it.');
+
+      return Future.value();
+    });
 
     _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents();
 
