@@ -36,20 +36,44 @@ enum ConditioDataManagementDriverBackendEnginesEnum { json, xml }
 
 /// See the many coments and got to a conclusion, that all here should be strings to export the settings to json or anything else
 class ConditionConfiguration {
-  // in seconds - server side languages like php a script may be interrupted after 30 seconds. So if you haven't gotten a response from a server you know that there was an error - you may have gotten an answer from the global server or not. The point of the static property is that you possibly may have a php or other script performing an internal dart server http call from the php script. Just an example scenario. This means that you need to add a couple of seconds to the setting to make another call from the flutter app for example.
+  /// If false all debugPrint() using a [ConditionDebugPrint] extending class will displayPrint expected stuff. If false, they will be displayed selectively based on current and very often changing current static properties settings of the [ConditionDebugPrint] class
+  static const bool useCustomDebugPrints = false;
+
+  /// in seconds - server side languages like php a script may be interrupted after 30 seconds. So if you haven't gotten a response from a server you know that there was an error - you may have gotten an answer from the global server or not. The point of the static property is that you possibly may have a php or other script performing an internal dart server http call from the php script. Just an example scenario. This means that you need to add a couple of seconds to the setting to make another call from the flutter app for example.
   static const int max_global_server_request_time = 30;
 
   /// This is used By [ConditionModelApps] class which will call every single [ConditionModelApp] object special method registered earlier. However during the design process a call might be skipped (memory/procesor/internet overload) or a call call might be ignored by an app object by design - too much pending actions of some type. There is a global Timer timer that is to avoid any possible endlessly working timers that might exist when not cancelled. So this and some other solutions are to avoid secondary/hight-level memeory "leaks".
-  /// When the value is 1000, for example, based on this an app model object may decide check out the global server for new messages with up to 1 time per second
-  static const int globalBaseFrequencyForCyclicalStuffInMilliseconds = 1000;
+  /// When the value is 1000, for example, based on this an app model object may decide (still a developing story, now [gapBetweenLastFullyFinishedCheckingOutTheGlobalServerForChanges] is also taken into account) check out the global server for new messages with up to 1 time per second
+  static const int globalBaseFrequencyForCyclicalStuffInMilliseconds = 5000;
+  static const int
+      gapBetweenLastFullyFinishedCheckingOutTheGlobalServerForChangesMethodAndItsAnotherCall =
+      5000;
+
+  static const int
+      gapBetweenLastFullyFinishedOneCycleOfCyclicalRetiringAndUnlinkingModels =
+      gapBetweenLastFullyFinishedCheckingOutTheGlobalServerForChangesMethodAndItsAnotherCall;
 
   /// there are two entry points for the app main.dart (client app with graphic interface) and condition_server_app.dart which is only server side. Of course each main.dart app has two aspects of data management - local storage and global server storage. condition_server_app.dart is to serve as global server backend (not entirely, implementing some keybord input or in/out pipelines also for local aspect may be even planned). If isClientApp is set to true, it tells the app's ConditionDataManagementDriver class derived classess to choose between  drier or driver._DriverGlobal object for performing data operations which also is important because any driver normally contains different database or table name prefixex to make them distinguished, or allowing to contain couple of apps using one db. You sould be able to understand it better when you analyse the driver classes code.
   static late final bool
       isClientApp; // set up later - in the frontend in main() function
+
+  /// --debug (used in the debug mode, go to main()).
   static late final bool
       debugMode; // set up later - in the frontend in main() function
+
+  /// --debug (used in the debug mode, go to main()).
   static late final int?
       initDbStage; // set up later - in the frontend in main() function
+
+  // no need for this we create them all in the debug momde which is alligned with the [initDbStage] property here
+  ///// --debug (used in the debug mode, go to main()). This is counterpart to [initDbStage] : This is to create one or more users for testing to which the first user (related [initDbStage]) f.e. send messages and vice versa
+  //static late final int?
+  //    inidDbStageContactUser; // set up later - in the frontend in main() function
+
+  /// --debug (used in the debug mode, go to main()). The point of this is start sort of second profile app object and log in as the second user as if independent from the first profile user (in the default first profile there are three users, probably one logged by default and one active, Because of the three users already taken the best option for testing is to use profileUser=4, however < 4 would be good later for custom one user app installations, but not to get confused the 4-th user is independent from the initial three). What we precisely want to achieve is: a ConditionModelApp object is created that may have f.e. the second user logged in and active, but may also have other users registered. To simplify when profileUser == 4 we it means that an app is created and uses a user id == 4 on the global server - why so? because at the time of writing this comment here 3 users were used in the initial --debug mode app instance so id 1,2,3 were already taken. Using profile=2 could result in unexpected situation at this stage of overall development but normally should be possible.
+  static late final int?
+      profileUser; // set up later - in the frontend in main() function
+
   static const bool isWeb = kIsWeb;
 
   /// Caution! Because ConditionModelContact may have implemeneted data channels or something they would have to be always rendered fully. This tells you how deeply it will restore model/widget tree after the app restart. So this is what you see/have on the screen without requiring user to click buttons like unfold and after that lazily another level/branch of models/widgets is loaded (models means level, widgets: for a one particular model a subtree of widgets may be involved)

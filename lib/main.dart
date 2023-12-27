@@ -197,12 +197,20 @@ void main(List<String> args) async {
   ConditionConfiguration.isClientApp = true;
   if (ConditionConfiguration.debugMode) {
     debugPrint('we are here');
-    late final RegExp inidDbStage =
+    final RegExp inidDbStage =
         RegExp(r'''^initDbStage=(.*)$''', caseSensitive: false);
+    final RegExp inidDbStageContactUser =
+        RegExp(r'''^inidDbStageContactUser=(.*)$''', caseSensitive: false);
+    final RegExp profileUser =
+        RegExp(r'''^profileUser=(.*)$''', caseSensitive: false);
+
     for (String arg in args) {
       if (arg.contains(inidDbStage)) {
         ConditionConfiguration.initDbStage =
             int.tryParse(arg.replaceAllMapped(inidDbStage, (Match m) => m[1]!));
+      } else if (arg.contains(profileUser)) {
+        ConditionConfiguration.profileUser =
+            int.tryParse(arg.replaceAllMapped(profileUser, (Match m) => m[1]!));
       }
     }
   }
@@ -215,8 +223,36 @@ void main(List<String> args) async {
         'ConditionConfiguration.initDbStage was not in the params so we set it to null');
     ConditionConfiguration.initDbStage = null;
   }
+  try {
+    ConditionConfiguration
+        .profileUser; // if not set up earlier it will throw and be catched and set to null;
+  } catch (e) {
+    debugPrint(
+        'ConditionConfiguration.profileUser was not in the params so we set it to null');
+    ConditionConfiguration.profileUser = null;
+  }
+
+  if (ConditionConfiguration.profileUser != null &&
+      ConditionConfiguration.profileUser! < 1) {
+    throw 'ConditionConfiguration.profileUser was defined but it\'s value is less than 1';
+  } else if (ConditionConfiguration.initDbStage != null &&
+      ConditionConfiguration.profileUser != null &&
+      ConditionConfiguration.profileUser! <= 3) {
+    throw 'ConditionConfiguration.profileUser !=null and ConditionConfiguration.initDbStage != null so ConditionConfiguration.profileUser must be > 3';
+  }
+
   debugPrint(
-      'ConditionConfiguration.initDbStage is ${ConditionConfiguration.initDbStage}');
+      'ConditionConfiguration.profileUser is ${ConditionConfiguration.profileUser}');
+
+  //debugPrint(ConditionConfiguration.local_http_server_settings['db_settings']
+  //        ['native_platform_sqlite3_db_paths'][ConditionConfiguration.isWeb
+  //            ? ConditionPlatforms.Web
+  //            : ConditionPlatforms.Windows]
+  //    .replaceFirstMapped(
+  //        RegExp(r'(.*)\.(sqlite|sqlite3)$', caseSensitive: false),
+  //        (mapped) =>
+  //            '${mapped[1]}_${ConditionConfiguration.profileUser}.${mapped[2]}'));
+  //return;
 
   //inspect(args);
   //debugPrint(jsonEncode(new ABCD()));
@@ -243,16 +279,44 @@ void main(List<String> args) async {
   ///
   ///// [Edit:] Some old desc stuff here - relevant? !!!!!!!!!!!!!!!!!!!!! this replaces the line var abcd = ConditionModelUser(rwer); because each app can have couple of users and full additional configuration. ConditionModelApp should alsho have all layout widget attached to it.
   ///// At the beginning one app is to be but thinking into the future: if more apps, each app has to have a unique namespce prefix like here "cNd1", next app f.e. "cNd2", There can be separated couple of apps managed in some way one day
-  var conditionModelApp1 = ConditionModelApp();
+  ConditionModelApp? conditionModelApp1 =
+      ConditionModelApp(doNotAddAppToTheGlobalAppList: true);
 
   // FIXME: ? I guess it is solved already but: Why should it be inited like this? such stuff should be done automatically with an option of passing the ConditionApp object in the ConditionModelApp costructor. Investigate
-  conditionModelApp1.init(ConditionApp(conditionModelApp1));
+  //  conditionModelApp1.init(ConditionApp(conditionModelApp1));
 
   // TODO: TESTING LOOSING LAST POINTER TO ConditionModelApp USING TIMER TO REMOVE IT AFTER 20 SECS OR SO:
   // THE WIDGET HAS THE POINTER, ANY NON-APP MODEL HAVE THE POINTER, CONDITIONMODELAPPS HAVE THE POINTER IF CONDITIONMODELAPP HAS DEFAULT SET UP OF SOME PROPERTY.
   // SO WE PROBABLY NEED TO MAKE SURE WIDGET HAS THE POINTER REMOVED, APP HAS NO IT'S MODELS, CONDITIONMODELAPPS HAS NO THIS APP POINTER
   // TRY TO SIMULATE THIS WITH A COMMANDLINE DEBUG ARG
+  // TODO: BEFORE NEXT TO DO, DO READING FROM THE GLOBAL SERVER USING THE CYCLICAL STUFF.
+  // TODO: AFTER THIS WE TRY TO REMOVE MODELS OF THE APPS AND THEN THE APP AND THEN CHECK IF THE APP IS FINALIZED WITH NO POINTER TO IT LEFT
+  // MAKE SURE ALL ENTLESSLY RUNED TIMERS ARE CANCELED ON NON-APP MODEL REMOVAL ESPECIALLY.
   // HERE WE GO:
+  // FIXME: after model is retired it's fields should throw exceptions when properties acessed, especially value like.
+  Timer(const Duration(seconds: 10), () async {
+    debugPrint(
+        'Lets set up conditionModelApp1 = null to loose all pointers to the app object.');
+    debugPrint(
+        'conditionModelApp1!.getModelOnModelInitComplete() is inited? ${conditionModelApp1!.getModelOnModelInitComplete()}. AWAITING FUTURE FOR INITED TO END');
+    await conditionModelApp1!.getModelOnModelInitComplete();
+    debugPrint(
+        'conditionModelApp1!.getModelOnModelInitComplete(), YES, is inited.');
+
+    /// Remember! someone may forget calling the retire method. This is why Finalizer do the same job as retire if they need to.
+    /// About it how exactly it works, GC too, you can find info on [ConditionModelApps] desc where you are directed to a property describing it in simple terms.
+    /// FIXME: docs - now retire changed and must be finished with async if null is not returned
+    await conditionModelApp1!
+        .retire(); // only ConditionModel retire() edition doing it's stuff synchronously, only for important reasons returning future (some compatibility)
+    conditionModelApp1 = null;
+    // FIXME: READ IT ALL REALLY! flutter devtools (web interface), GC works when almost no init for constructor body, so for now i see not handled stream events with model objects which should be this 1 app instance because no children models are loaded from db - why as many as 5 events of the same instance? Confused. Anyway you have to subscribe and unload the events that are awaiting to be handled. After this one forced GC may remove models from events, then another gc app should be removed, then after another reload it would be ConditionDataManagement driver. There may be more places where references are stil kept. This is just example. Even 5 instances.
+    // WHAT WAS FIXED:
+    // 1. Non broadcast and non-listened to stream buffered events with a model each. Changed/forced to broadcast - no events buffered.
+    //    ! // 2. (Edit for now: Found one endless timer with "this"/app in it) FIXME, TRACE IT OUT INCH BY INCH FROM THE PLACE IT WORKED. :(
+
+    debugPrint('conditionModelApp1 = null has just been set');
+    //    timer.cancel();
+  });
 
   ///
   ///// debugging because:
@@ -294,5 +358,5 @@ void main(List<String> args) async {
   /////debugPrint(abcd.email.toString());
   ///debugPrint('testing model 3');
 
-  runApp(conditionModelApp1.widget as ConditionApp);
+//  runApp(conditionModelApp1!.widget as ConditionApp);
 }

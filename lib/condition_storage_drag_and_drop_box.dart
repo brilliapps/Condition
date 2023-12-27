@@ -14,11 +14,15 @@ import 'condition_app_base.dart'; //empty informational and later etended class 
 @ToDo(
     'See ConditionModel addListener(ConditionModelListenerFunction changes_listener',
     '')
-class ConditionWidget extends StatefulWidget implements ConditionWidgetBase {
-  @protected
-  final ConditionModel model;
+class ConditionWidget extends StatefulWidget with ConditionWidgetBase {
+  @override
+  WeakReference<ConditionModel> get modelContainerImplementationNotice =>
+      modelContainer;
 
-  ConditionWidget(this.model, {Key? key}) : super(key: key);
+  ConditionWidget(ConditionModel model, {Key? key}) : super(key: key) {
+    modelContainer = WeakReference<ConditionModel>(model);
+  }
+
   @override
   State createState() => _ConditionWidgetState();
 }
@@ -148,9 +152,10 @@ class _ConditionDragTargetContainerWidgetState
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('Are we in debug mode?');
-    debugPrint(ConditionConfiguration.debugMode.toString());
-    debugPrint('2 Are we in debug mode?');
+    debugPrint('${ConditionDebugPrint('Are we in debug mode?')}');
+    debugPrint(
+        '${ConditionDebugPrint(ConditionConfiguration.debugMode.toString())}');
+    debugPrint('${ConditionDebugPrint('2 Are we in debug mode?')}');
 
     return DragTarget/*<T>*/(
         key: widget
@@ -165,42 +170,50 @@ class _ConditionDragTargetContainerWidgetState
               );
         },
         onAccept: (item) {
-          debugPrint('onAccept: ' + item.toString());
+          debugPrint('${ConditionDebugPrint('onAccept: ' + item.toString())}');
         },
         onAcceptWithDetails: (item) {
-          debugPrint('onAcceptWithDetails data: ' + item.data.toString());
-          debugPrint('onAcceptWithDetails offset: ' + item.offset.toString());
+          debugPrint(
+              '${ConditionDebugPrint('onAcceptWithDetails data: ' + item.data.toString())}');
+          debugPrint(
+              '${ConditionDebugPrint('onAcceptWithDetails offset: ' + item.offset.toString())}');
           inspect(item);
         },
         onMove: (item) {
-          debugPrint('#########');
-          debugPrint('onMove: ' + item.toString());
-          debugPrint('onMove data: ' + item.data.toString());
-          debugPrint('onMove offset: ' + item.offset.toString());
-          debugPrint('------------------------------------');
+          debugPrint('${ConditionDebugPrint('#########')}');
+          debugPrint('${ConditionDebugPrint('onMove: ' + item.toString())}');
+          debugPrint(
+              '${ConditionDebugPrint('onMove data: ' + item.data.toString())}');
+          debugPrint(
+              '${ConditionDebugPrint('onMove offset: ' + item.offset.toString())}');
+          debugPrint(
+              '${ConditionDebugPrint('------------------------------------')}');
 
           debugPrint(
-              'MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów');
+              '${ConditionDebugPrint('MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów')}');
 
-          debugPrint('onMove this to string:' + this.toString());
-          debugPrint('onMove this.widget to string:' + widget.toString());
           debugPrint(
-              'onMove (this[_ConditionDragTargetContainerWidgetState].)context.size to string:' +
-                  context.size.toString());
+              '${ConditionDebugPrint('onMove this to string:' + this.toString())}');
+          debugPrint(
+              '${ConditionDebugPrint('onMove this.widget to string:' + widget.toString())}');
+          debugPrint(
+              '${ConditionDebugPrint('onMove (this[_ConditionDragTargetContainerWidgetState].)context.size to string:' + context.size.toString())}');
           //DragTarget widget key to get width and height
-          debugPrint(widget.DragTargetChildKey.toString());
-          debugPrint(widget.DragTargetChildKey.currentContext.toString());
+          debugPrint(
+              '${ConditionDebugPrint(widget.DragTargetChildKey.toString())}');
+          debugPrint(
+              '${ConditionDebugPrint(widget.DragTargetChildKey.currentContext.toString())}');
 
-          debugPrint('onMove context.size.width to string:' +
-              (context.size?.width).toString());
-          debugPrint('onMove context.size.height to string:' +
-              (context.size?.height).toString());
           debugPrint(
-              'onMove widget.DragTargetChildKey.currentState to string:' +
-                  (widget.DragTargetChildKey.currentState).toString());
-          debugPrint('onMove this to string:' + this.toString());
+              '${ConditionDebugPrint('onMove context.size.width to string:' + (context.size?.width).toString())}');
           debugPrint(
-              'onMove this.context to string:' + this.context.toString());
+              '${ConditionDebugPrint('onMove context.size.height to string:' + (context.size?.height).toString())}');
+          debugPrint(
+              '${ConditionDebugPrint('onMove widget.DragTargetChildKey.currentState to string:' + (widget.DragTargetChildKey.currentState).toString())}');
+          debugPrint(
+              '${ConditionDebugPrint('onMove this to string:' + this.toString())}');
+          debugPrint(
+              '${ConditionDebugPrint('onMove this.context to string:' + this.context.toString())}');
 
           var widgetCursorIsOnWidget = widget.DragTargetChildKey
               .currentContext; // it is to be DragTarget widget which got it's GlobalKey key object from its parent widget ConditionDragTargetContainerWidget
@@ -214,14 +227,14 @@ class _ConditionDragTargetContainerWidgetState
             double y = position.dy; //this is y - I think it's what you want
 
             debugPrint(
-                'onMove: widget.DragTargetChildKey.currentState.size.width:' +
-                    (widgetCursorIsOnWidget.size?.width).toString());
+                '${ConditionDebugPrint('onMove: widget.DragTargetChildKey.currentState.size.width:' + (widgetCursorIsOnWidget.size?.width).toString())}');
             debugPrint(
-                'onMove: widget.DragTargetChildKey.currentState.size.height:' +
-                    (widgetCursorIsOnWidget.size?.height).toString());
+                '${ConditionDebugPrint('onMove: widget.DragTargetChildKey.currentState.size.height:' + (widgetCursorIsOnWidget.size?.height).toString())}');
 
-            debugPrint('onMove: position x:' + x.toString());
-            debugPrint('onMove: position y:' + y.toString());
+            debugPrint(
+                '${ConditionDebugPrint('onMove: position x:' + x.toString())}');
+            debugPrint(
+                '${ConditionDebugPrint('onMove: position y:' + y.toString())}');
           }
 
           // if the cursor/touch pointer  is on the upper half of the DragTarget Widget then simulate a dropping box widget above the DragTarget widget so you would need to rebuild the DragTarget widget using set State of the context.findAncestorWidgetOfExactType<ConditionDragTargetContainerWidget>()  and the half height of the DragTarget is increased with the height of the widget on the top. The lower half is calculated accordingly.
@@ -233,13 +246,14 @@ class _ConditionDragTargetContainerWidgetState
           // zaraz BARANIE, this jest state?????
           //var abcde= widget.key.currentState; // null safety ?. doesn't work it says about getter. Assume this State is being created - i guess compiler doesn't understand that it is not a problem - this value will be accessed later
 
-          //debugPrint('onMove: state object of ConditionDragTargetContainerWidget:'+abcde.toString());
+          //debugPrint('${ConditionDebugPrint('onMove: state object of ConditionDragTargetContainerWidget:'+abcde.toString())}');
         },
         onWillAccept: (item) {
-          debugPrint('onWillAccept: ');
-          debugPrint('onWillAccept: ' + item.toString());
-          //debugPrint('onAcceptWithMove data: '+item.data.toString());
-          //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+          debugPrint('${ConditionDebugPrint('onWillAccept: ')}');
+          debugPrint(
+              '${ConditionDebugPrint('onWillAccept: ' + item.toString())}');
+          //debugPrint('${ConditionDebugPrint('onAcceptWithMove data: '+item.data.toString())}');
+          //debugPrint('${ConditionDebugPrint('onAcceptWithMove offset: '+item.offset.toString())}');
           return true;
         });
   }
@@ -260,9 +274,10 @@ class ConditionAppRouteManager {
   /// I am still ignorant about it because one url change may trigger something in couple of places, yet
   /// it can be assumed that all the places can be prepared for that and the permanent change to the url is when you want.
   static Route<dynamic>? generateRoute(RouteSettings settings) {
-    debugPrint('Wir sind trying to set up a new route.');
     debugPrint(
-        'The route is $settings , ${settings.name} , ${settings.arguments}');
+        '${ConditionDebugPrint('Wir sind trying to set up a new route.')}');
+    debugPrint(
+        '${ConditionDebugPrint('The route is $settings , ${settings.name} , ${settings.arguments}')}');
     SystemNavigator.routeInformationUpdated(
         uri: Uri.parse(settings.name ?? '/#/'));
     // When changing manually url in the browser without calling the below SystemNavigator.routeInformationUpdated
@@ -318,7 +333,7 @@ class ConditionAppRouteManager {
 /// Read the classess (it's state class) about importing some touch gestures for desktop mouse as param in Material App
 class ConditionApp extends ConditionWidget implements ConditionAppBase {
   ConditionApp(
-    ConditionModelApp super.model, {
+    super.modelContainer, {
     super.key, // ? why is it needed?
   }) {}
 
@@ -403,25 +418,25 @@ class _ConditionAppState extends State<ConditionApp> {
   //@override
   //initState() {
   //  super.initState();
-  //  debugPrint('=================================');
-  //  debugPrint('#pfuehmx7m0y83yc 1: Can we Navigator.push when loaded?');
+  //  debugPrint('${ConditionDebugPrint('=================================')}');
+  //  debugPrint('${ConditionDebugPrint('#pfuehmx7m0y83yc 1: Can we Navigator.push when loaded?')}');
   //  widget.model.initModelFuture.then((driver) async {
-  //    debugPrint('#pfuehmx7m0y83yc 2: Can we Navigator.push when loaded?');
+  //    debugPrint('${ConditionDebugPrint('#pfuehmx7m0y83yc 2: Can we Navigator.push when loaded?')}');
   //    try {
   //      await Navigator.pushNamed(context, '/condition');
-  //      debugPrint('#pfuehmx7m0y83yc 3: Can we Navigator.push when loaded?');
+  //      debugPrint('${ConditionDebugPrint('#pfuehmx7m0y83yc 3: Can we Navigator.push when loaded?')}');
   //    } catch (e) {
-  //      debugPrint(
-  //          '#pfuehmx7m0y83yc 4: error Can we Navigator.push when loaded? errro:$e');
+  //      debugPrint('${ConditionDebugPrint(
+  //          '#pfuehmx7m0y83yc 4: error Can we Navigator.push when loaded? errro:$e')}');
   //    }
-  //    debugPrint('#pfuehmx7m0y83yc 5: Can we Navigator.push when loaded?');
+  //    debugPrint('${ConditionDebugPrint('#pfuehmx7m0y83yc 5: Can we Navigator.push when loaded?')}');
   //  });
   //}
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    debugPrint('wir sind here');
+    debugPrint('${ConditionDebugPrint('wir sind here')}');
     //!!! do not remove this is about importing some gestures for the mouse on windows desktop and anywhere desctop else.
     //scrollBehavior based on my answer https://github.com/flutter/flutter/issues/119386
     /*const Set<PointerDeviceKind> _kTouchLikeDeviceTypes = <PointerDeviceKind>{
@@ -433,7 +448,7 @@ class _ConditionAppState extends State<ConditionApp> {
       // scrollables.
       PointerDeviceKind.unknown,
     };*/
-    debugPrint('The mode:' + themeMode.toString());
+    debugPrint('${ConditionDebugPrint('The mode:' + themeMode.toString())}');
     //throw Exception('here');
 
     return MaterialApp(
@@ -556,48 +571,53 @@ class TabDragTarget extends Tab {
             );
       },
       onAccept: (item) {
-        debugPrint('11onAccept: ' + item.toString());
+        debugPrint('${ConditionDebugPrint('11onAccept: ' + item.toString())}');
       },
       onAcceptWithDetails: (item) {
-        debugPrint('11onAcceptWithDetails: ' + item.toString());
-        debugPrint('11onAcceptWithDetails data: ' + item.data.toString());
-        debugPrint('11onAcceptWithDetails offset: ' + item.offset.toString());
+        debugPrint(
+            '${ConditionDebugPrint('11onAcceptWithDetails: ' + item.toString())}');
+        debugPrint(
+            '${ConditionDebugPrint('11onAcceptWithDetails data: ' + item.data.toString())}');
+        debugPrint(
+            '${ConditionDebugPrint('11onAcceptWithDetails offset: ' + item.offset.toString())}');
         inspect(item);
       },
       onMove: (item) {
-        //debugPrint('#########');
-        //debugPrint('onMove: ' + item.toString());
-        //debugPrint('onMove data: ' + item.data.toString());
-        debugPrint('11tabitem onMove offset: ' + item.offset.toString());
+        //debugPrint('${ConditionDebugPrint('#########')}');
+        //debugPrint('${ConditionDebugPrint('onMove: ' + item.toString())}');
+        //debugPrint('${ConditionDebugPrint('onMove data: ' + item.data.toString())}');
+        debugPrint(
+            '${ConditionDebugPrint('11tabitem onMove offset: ' + item.offset.toString())}');
         //dragDropMenuScrollOnReachingMenuHorizontalEnds(item.offset);
-        //debugPrint('------------------------------------');
+        //debugPrint('${ConditionDebugPrint('------------------------------------')}');
 
-        //debugPrint(  'MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów');
+        //debugPrint('${ConditionDebugPrint(  'MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów')}');
 
-        //debugPrint('onMove this to string:' + this.toString());
-        //debugPrint('onMove this to string:' + this.widget.toString());
-        //debugPrint(this.widget.key.currentContext.toString());
+        //debugPrint('${ConditionDebugPrint('onMove this to string:' + this.toString())}');
+        //debugPrint('${ConditionDebugPrint('onMove this to string:' + this.widget.toString())}');
+        //debugPrint('${ConditionDebugPrint(this.widget.key.currentContext.toString())}');
 
         /*
                    RenderBox box = this.widget.key.currentContext.findRenderObject() as RenderBox;
                    Offset position = box.localToGlobal(Offset.zero); //this is global position
                    double y = position.dy; //this is y - I think it's what you want                   
-                   debugPrint('onMove: position y:'+y.toString());
+                   debugPrint('${ConditionDebugPrint('onMove: position y:'+y.toString())}');
                    */
       },
       onWillAccept: (item) {
         tabBarTabController.animateTo(index);
-        debugPrint('11onWillAccept: ');
-        debugPrint('11onWillAccept: ' + item.toString());
-        //debugPrint('onAcceptWithMove data: '+item.data.toString());
-        //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+        debugPrint('${ConditionDebugPrint('11onWillAccept: ')}');
+        debugPrint(
+            '${ConditionDebugPrint('11onWillAccept: ' + item.toString())}');
+        //debugPrint('${ConditionDebugPrint('onAcceptWithMove data: '+item.data.toString())}');
+        //debugPrint('${ConditionDebugPrint('onAcceptWithMove offset: '+item.offset.toString())}');
         return true;
       },
       onLeave: (item) {
-        debugPrint('11onLeave: ');
-        debugPrint('11onLeave: ' + item.toString());
-        //debugPrint('onAcceptWithMove data: '+item.data.toString());
-        //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+        debugPrint('${ConditionDebugPrint('11onLeave: ')}');
+        debugPrint('${ConditionDebugPrint('11onLeave: ' + item.toString())}');
+        //debugPrint('${ConditionDebugPrint('onAcceptWithMove data: '+item.data.toString())}');
+        //debugPrint('${ConditionDebugPrint('onAcceptWithMove offset: '+item.offset.toString())}');
         //return true;
       },
     );
@@ -619,7 +639,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   RenderBox? box = null;
 
   set tabBarBeingScrolledLeft(bool value) {
-    debugPrint('custom animation to te left');
+    debugPrint('${ConditionDebugPrint('custom animation to te left')}');
     _tabBarBeingScrolledLeft = value;
     if (_tabBarBeingScrolledLeft == true && tabBarTabController.index > 0) {
       tabBarTabController.animateTo(tabBarTabController.index - 1);
@@ -639,14 +659,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       tabBarCurrentScrollingPerformer?.cancel();
       tabBarCurrentScrollingPerformer = null;
     }
-    debugPrint('animation' +
-        tabBarTabController.animation.toString()); //.drive(Tween(0.0, 1));
+    debugPrint(
+        '${ConditionDebugPrint('animation' + tabBarTabController.animation.toString())}'); //.drive(Tween(0.0, 1));
   }
 
   bool get tabBarBeingScrolledLeft => _tabBarBeingScrolledLeft;
 
   set tabBarBeingScrolledRight(bool value) {
-    debugPrint('custom animation to te right');
+    debugPrint('${ConditionDebugPrint('custom animation to te right')}');
     _tabBarBeingScrolledRight = value;
     if (_tabBarBeingScrolledRight == true &&
         tabBarTabController.index <= tabBarTabController.length) {
@@ -666,14 +686,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       tabBarCurrentScrollingPerformer?.cancel();
       tabBarCurrentScrollingPerformer = null;
     }
-    debugPrint('animation' +
-        tabBarTabController.animation.toString()); //.drive(Tween(0.0, 1));
+    debugPrint(
+        '${ConditionDebugPrint('animation' + tabBarTabController.animation.toString())}'); //.drive(Tween(0.0, 1));
   }
 
   bool get tabBarBeingScrolledRight => _tabBarBeingScrolledRight;
 
   /*dragDropMenuScrollOnReachingMenuHorizontalEnds(Offset offset) {
-    debugPrint('merged position ${offset.toString()}');
+    debugPrint('${ConditionDebugPrint('merged position ${offset.toString()}')}');
     // Now prepare and pass the tabBar property a controller thanks to which you can scroll. It uses scroll to tab or something  not animateTo like in scrolling views
     // so at the end do slower smoother animations on scrolling
     // use boxWidth, and offset, offset.dx scroll when cursor is almost to the right of tabBar or to the left
@@ -796,15 +816,17 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 return tabBarClassObject!;
               },
               onWillAccept: (item) {
-                debugPrint('55onWillAccept: ');
-                debugPrint('55onWillAccept: ' + item.toString());
-                //debugPrint('onAcceptWithMove data: '+item.data.toString());
-                //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+                debugPrint('${ConditionDebugPrint('55onWillAccept: ')}');
+                debugPrint(
+                    '${ConditionDebugPrint('55onWillAccept: ' + item.toString())}');
+                //debugPrint('${ConditionDebugPrint('onAcceptWithMove data: '+item.data.toString())}');
+                //debugPrint('${ConditionDebugPrint('onAcceptWithMove offset: '+item.offset.toString())}');
                 return true;
               },
               onMove: (item) {
-                debugPrint('55 onMove offset: ' + item.offset.toString());
-                //debugPrint(this.widget.key.currentContext.toString());
+                debugPrint(
+                    '${ConditionDebugPrint('55 onMove offset: ' + item.offset.toString())}');
+                //debugPrint('${ConditionDebugPrint(this.widget.key.currentContext.toString())}');
                 //dragDropMenuScrollOnReachingMenuHorizontalEnds(item.offset);
 
                 if (null == box) {
@@ -815,16 +837,18 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 Offset position =
                     box!.localToGlobal(Offset.zero); //this is global position
                 double x = position.dx; //this is y - I think it's what you want
-                debugPrint('55onMove: position x:' + x.toString());
+                debugPrint(
+                    '${ConditionDebugPrint('55onMove: position x:' + x.toString())}');
                 Size size = box!.size;
-                debugPrint('55onMove: box width for scrolling:' +
-                    size.width.toString());
+                debugPrint(
+                    '${ConditionDebugPrint('55onMove: box width for scrolling:' + size.width.toString())}');
               },
               onLeave: (item) {
-                debugPrint('55onLeave: ');
-                debugPrint('55onLeave: ' + item.toString());
-                //debugPrint('onAcceptWithMove data: '+item.data.toString());
-                //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+                debugPrint('${ConditionDebugPrint('55onLeave: ')}');
+                debugPrint(
+                    '${ConditionDebugPrint('55onLeave: ' + item.toString())}');
+                //debugPrint('${ConditionDebugPrint('onAcceptWithMove data: '+item.data.toString())}');
+                //debugPrint('${ConditionDebugPrint('onAcceptWithMove offset: '+item.offset.toString())}');
                 //return true;
               },
             )),
@@ -846,61 +870,69 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                       child: const Icon(
                           color: Color(0xFF006A63), Icons.arrow_back))),
               onPointerDown: (event) {
-                debugPrint('88desktop mouse onPointerDown' + event.toString());
+                debugPrint(
+                    '${ConditionDebugPrint('88desktop mouse onPointerDown' + event.toString())}');
                 tabBarBeingScrolledLeft = true;
               },
               onPointerUp: (event) {
                 tabBarBeingScrolledLeft = false;
-                debugPrint('88desktop mouse onPointerDown' + event.toString());
+                debugPrint(
+                    '${ConditionDebugPrint('88desktop mouse onPointerDown' + event.toString())}');
               },
             );
           },
           onAccept: (item) {
             tabBarBeingScrolledLeft = false;
-            debugPrint('88onAccept: ' + item.toString());
+            debugPrint(
+                '${ConditionDebugPrint('88onAccept: ' + item.toString())}');
           },
           onAcceptWithDetails: (item) {
-            debugPrint('88onAcceptWithDetails: ' + item.toString());
-            debugPrint('88onAcceptWithDetails data: ' + item.data.toString());
             debugPrint(
-                '88onAcceptWithDetails offset: ' + item.offset.toString());
+                '${ConditionDebugPrint('88onAcceptWithDetails: ' + item.toString())}');
+            debugPrint(
+                '${ConditionDebugPrint('88onAcceptWithDetails data: ' + item.data.toString())}');
+            debugPrint(
+                '${ConditionDebugPrint('88onAcceptWithDetails offset: ' + item.offset.toString())}');
             inspect(item);
           },
           onMove: (item) {
-            //debugPrint('#########');
-            //debugPrint('onMove: ' + item.toString());
-            //debugPrint('onMove data: ' + item.data.toString());
-            debugPrint('88tabitem onMove offset: ' + item.offset.toString());
+            //debugPrint('${ConditionDebugPrint('#########')}');
+            //debugPrint('${ConditionDebugPrint('onMove: ' + item.toString())}');
+            //debugPrint('${ConditionDebugPrint('onMove data: ' + item.data.toString())}');
+            debugPrint(
+                '${ConditionDebugPrint('88tabitem onMove offset: ' + item.offset.toString())}');
             //dragDropMenuScrollOnReachingMenuHorizontalEnds(item.offset);
-            //debugPrint('------------------------------------');
+            //debugPrint('${ConditionDebugPrint('------------------------------------')}');
 
-            //debugPrint(  'MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów');
+            //debugPrint('${ConditionDebugPrint(  'MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów')}');
 
-            //debugPrint('onMove this to string:' + this.toString());
-            //debugPrint('onMove this to string:' + this.widget.toString());
-            //debugPrint(this.widget.key.currentContext.toString());
+            //debugPrint('${ConditionDebugPrint('onMove this to string:' + this.toString())}');
+            //debugPrint('${ConditionDebugPrint('onMove this to string:' + this.widget.toString())}');
+            //debugPrint('${ConditionDebugPrint(this.widget.key.currentContext.toString())}');
 
             /*
                    RenderBox box = this.widget.key.currentContext.findRenderObject() as RenderBox;
                    Offset position = box.localToGlobal(Offset.zero); //this is global position
                    double y = position.dy; //this is y - I think it's what you want                   
-                   debugPrint('onMove: position y:'+y.toString());
+                   debugPrint('${ConditionDebugPrint('onMove: position y:'+y.toString())}');
                    */
           },
           onWillAccept: (item) {
             tabBarBeingScrolledLeft = true;
-            debugPrint('88onWillAccept: ');
-            debugPrint('88onWillAccept: ' + item.toString());
-            //debugPrint('onAcceptWithMove data: '+item.data.toString());
-            //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+            debugPrint('${ConditionDebugPrint('88onWillAccept: ')}');
+            debugPrint(
+                '${ConditionDebugPrint('88onWillAccept: ' + item.toString())}');
+            //debugPrint('${ConditionDebugPrint('onAcceptWithMove data: '+item.data.toString())}');
+            //debugPrint('${ConditionDebugPrint('onAcceptWithMove offset: '+item.offset.toString())}');
             return true;
           },
           onLeave: (item) {
             tabBarBeingScrolledLeft = false;
-            debugPrint('88onLeave: ');
-            debugPrint('88onLeave: ' + item.toString());
-            //debugPrint('onAcceptWithMove data: '+item.data.toString());
-            //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+            debugPrint('${ConditionDebugPrint('88onLeave: ')}');
+            debugPrint(
+                '${ConditionDebugPrint('88onLeave: ' + item.toString())}');
+            //debugPrint('${ConditionDebugPrint('onAcceptWithMove data: '+item.data.toString())}');
+            //debugPrint('${ConditionDebugPrint('onAcceptWithMove offset: '+item.offset.toString())}');
             //return true;
           },
         ),
@@ -920,61 +952,69 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                       child: const Icon(
                           color: Color(0xFF006A63), Icons.arrow_forward))),
               onPointerDown: (event) {
-                debugPrint('99desktop mouse onPointerDown' + event.toString());
+                debugPrint(
+                    '${ConditionDebugPrint('99desktop mouse onPointerDown' + event.toString())}');
                 tabBarBeingScrolledRight = true;
               },
               onPointerUp: (event) {
                 tabBarBeingScrolledRight = false;
-                debugPrint('99desktop mouse onPointerDown' + event.toString());
+                debugPrint(
+                    '${ConditionDebugPrint('99desktop mouse onPointerDown' + event.toString())}');
               },
             );
           },
           onAccept: (item) {
             tabBarBeingScrolledRight = false;
-            debugPrint('99onAccept: ' + item.toString());
+            debugPrint(
+                '${ConditionDebugPrint('99onAccept: ' + item.toString())}');
           },
           onAcceptWithDetails: (item) {
-            debugPrint('99onAcceptWithDetails: ' + item.toString());
-            debugPrint('99onAcceptWithDetails data: ' + item.data.toString());
             debugPrint(
-                '99onAcceptWithDetails offset: ' + item.offset.toString());
+                '${ConditionDebugPrint('99onAcceptWithDetails: ' + item.toString())}');
+            debugPrint(
+                '${ConditionDebugPrint('99onAcceptWithDetails data: ' + item.data.toString())}');
+            debugPrint(
+                '${ConditionDebugPrint('99onAcceptWithDetails offset: ' + item.offset.toString())}');
             inspect(item);
           },
           onMove: (item) {
-            //debugPrint('#########');
-            //debugPrint('onMove: ' + item.toString());
-            //debugPrint('onMove data: ' + item.data.toString());
-            debugPrint('99tabitem onMove offset: ' + item.offset.toString());
+            //debugPrint('${ConditionDebugPrint('#########')}');
+            //debugPrint('${ConditionDebugPrint('onMove: ' + item.toString())}');
+            //debugPrint('${ConditionDebugPrint('onMove data: ' + item.data.toString())}');
+            debugPrint(
+                '${ConditionDebugPrint('99tabitem onMove offset: ' + item.offset.toString())}');
             //dragDropMenuScrollOnReachingMenuHorizontalEnds(item.offset);
-            //debugPrint('------------------------------------');
+            //debugPrint('${ConditionDebugPrint('------------------------------------')}');
 
-            //debugPrint(  'MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów');
+            //debugPrint('${ConditionDebugPrint(  'MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów')}');
 
-            //debugPrint('onMove this to string:' + this.toString());
-            //debugPrint('onMove this to string:' + this.widget.toString());
-            //debugPrint(this.widget.key.currentContext.toString());
+            //debugPrint('${ConditionDebugPrint('onMove this to string:' + this.toString())}');
+            //debugPrint('${ConditionDebugPrint('onMove this to string:' + this.widget.toString())}');
+            //debugPrint('${ConditionDebugPrint(this.widget.key.currentContext.toString())}');
 
             /*
                    RenderBox box = this.widget.key.currentContext.findRenderObject() as RenderBox;
                    Offset position = box.localToGlobal(Offset.zero); //this is global position
                    double y = position.dy; //this is y - I think it's what you want                   
-                   debugPrint('onMove: position y:'+y.toString());
+                   debugPrint('${ConditionDebugPrint('onMove: position y:'+y.toString())}');
                    */
           },
           onWillAccept: (item) {
             tabBarBeingScrolledRight = true;
-            debugPrint('99onWillAccept: ');
-            debugPrint('99onWillAccept: ' + item.toString());
-            //debugPrint('onAcceptWithMove data: '+item.data.toString());
-            //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+            debugPrint('${ConditionDebugPrint('99onWillAccept: ')}');
+            debugPrint(
+                '${ConditionDebugPrint('99onWillAccept: ' + item.toString())}');
+            //debugPrint('${ConditionDebugPrint('onAcceptWithMove data: '+item.data.toString())}');
+            //debugPrint('${ConditionDebugPrint('onAcceptWithMove offset: '+item.offset.toString())}');
             return true;
           },
           onLeave: (item) {
             tabBarBeingScrolledRight = false;
-            debugPrint('99onLeave: ');
-            debugPrint('99onLeave: ' + item.toString());
-            //debugPrint('onAcceptWithMove data: '+item.data.toString());
-            //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+            debugPrint('${ConditionDebugPrint('99onLeave: ')}');
+            debugPrint(
+                '${ConditionDebugPrint('99onLeave: ' + item.toString())}');
+            //debugPrint('${ConditionDebugPrint('onAcceptWithMove data: '+item.data.toString())}');
+            //debugPrint('${ConditionDebugPrint('onAcceptWithMove offset: '+item.offset.toString())}');
             //return true;
           },
         ),
@@ -1281,41 +1321,41 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                );
                  },
                  onAccept: (item) {
-                   debugPrint('onAccept: '+item.toString());
+                   debugPrint('${ConditionDebugPrint('onAccept: '+item.toString())}');
                  },
                  onAcceptWithDetails: (item) {
-                   debugPrint('onAcceptWithDetails: '+item.toString());
-                   debugPrint('onAcceptWithDetails data: '+item.data.toString());
-                   debugPrint('onAcceptWithDetails offset: '+item.offset.toString());
+                   debugPrint('${ConditionDebugPrint('onAcceptWithDetails: '+item.toString())}');
+                   debugPrint('${ConditionDebugPrint('onAcceptWithDetails data: '+item.data.toString())}');
+                   debugPrint('${ConditionDebugPrint('onAcceptWithDetails offset: '+item.offset.toString())}');
                    inspect(item);
                  },
                  onMove: (item) {
                      
-                   debugPrint('#########');
-                   debugPrint('onMove: '+item.toString());
-                   debugPrint('onMove data: '+item.data.toString());
-                   debugPrint('onMove offset: '+item.offset.toString());
-                   debugPrint('------------------------------------');
+                   debugPrint('${ConditionDebugPrint('#########')}');
+                   debugPrint('${ConditionDebugPrint('onMove: '+item.toString())}');
+                   debugPrint('${ConditionDebugPrint('onMove data: '+item.data.toString())}');
+                   debugPrint('${ConditionDebugPrint('onMove offset: '+item.offset.toString())}');
+                   debugPrint('${ConditionDebugPrint('------------------------------------')}');
                    
-                   debugPrint('MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów');
+                   debugPrint('${ConditionDebugPrint('MUSISZ ZDEFINIOWAĆ KLASĘ ROZSZERZAJĄCĄ DragTarget wewnątrz niej te funkcje jak onMove i nie nadpisuj ich i wewnątrz jej odwołać się do this i będziesz miał offset tego thisa, teraz jest testowo widget (this to state, a this.widget to widget, który trzyma objekt klasy state), który stoi wysoko w hierarchii widgetów i jest on zastępczo, by nie było errorów')}');
                    
-                   debugPrint('onMove this to string:'+this.toString());
-                   debugPrint('onMove this to string:'+this.widget.toString());
-                   //debugPrint(this.widget.key.currentContext.toString());
+                   debugPrint('${ConditionDebugPrint('onMove this to string:'+this.toString())}');
+                   debugPrint('${ConditionDebugPrint('onMove this to string:'+this.widget.toString())}');
+                   //debugPrint('${ConditionDebugPrint(this.widget.key.currentContext.toString())}');
                    
                    
                    RenderBox box = this.widget.key.currentContext.findRenderObject() as RenderBox;
                    Offset position = box.localToGlobal(Offset.zero); //this is global position
                    double y = position.dy; //this is y - I think it's what you want                   
-                   debugPrint('onMove: position y:'+y.toString());
+                   debugPrint('${ConditionDebugPrint('onMove: position y:'+y.toString())}');
                    
                    
                  },
                  onWillAccept: (item) {
-                   debugPrint('onWillAccept: ');
-                   debugPrint('onWillAccept: '+item.toString());
-                   //debugPrint('onAcceptWithMove data: '+item.data.toString());
-                   //debugPrint('onAcceptWithMove offset: '+item.offset.toString());
+                   debugPrint('${ConditionDebugPrint('onWillAccept: ')}');
+                   debugPrint('${ConditionDebugPrint('onWillAccept: '+item.toString())}');
+                   //debugPrint('${ConditionDebugPrint('onAcceptWithMove data: '+item.data.toString())}');
+                   //debugPrint('${ConditionDebugPrint('onAcceptWithMove offset: '+item.offset.toString())}');
                    return true;
                  },
                 ), 

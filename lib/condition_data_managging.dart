@@ -53,11 +53,35 @@ class TestPrivateProtected {
 class TestPrivateProtectedChild extends TestPrivateProtected {
   TestPrivateProtectedChild() {
     debugPrint(
-        rrrr); // ok - in the same file no errors for protected but also no error when in another file there is an extending class but error for accessing from outside the class abc.rrrr no-error info or error if you change linter rules in analysys options yaml
+        '${ConditionDebugPrint(rrrr)}'); // ok - in the same file no errors for protected but also no error when in another file there is an extending class but error for accessing from outside the class abc.rrrr no-error info or error if you change linter rules in analysys options yaml
     debugPrint(
-        _rrrr); // ok - in the same file no errors for privates in the other file always errors
-    debugPrint(_wwww); // ok - in the same file
+        '${ConditionDebugPrint(_rrrr)}'); // ok - in the same file no errors for privates in the other file always errors
+    debugPrint('${ConditionDebugPrint(_wwww)}'); // ok - in the same file
   }
+}
+
+/// This class or extending classes is called inside debugPrint like debugPrint('${ConditionDebugPrint('Hello')}'); or debugPrint(ConditionDebugPrint('Hello').toString());
+/// It is best NOT to have pointers/references to an instance of this class, use debugPrint('${ConditionDebugPrint('Hello')}'); instead or an extending class ofcourse
+class ConditionDebugPrint {
+  /// Here you pass all allowed classes to be debugPrint-ed. If empty, all is printed. If ConditionConfiguration.useCustomDebugPrints == false - all is printed too regardles of settings here - see the toString() method override here.
+  static final Set<Type> classTypesToDebugPrint = {
+    ConditionDebugPrintErrorTrace
+  };
+
+  final String msg;
+  ConditionDebugPrint(String? msg) : msg = msg ?? 'Null';
+
+  @override
+  toString() => !ConditionConfiguration.useCustomDebugPrints ||
+          classTypesToDebugPrint.isEmpty
+      ? msg
+      : classTypesToDebugPrint.contains(runtimeType)
+          ? msg
+          : '';
+}
+
+class ConditionDebugPrintErrorTrace extends ConditionDebugPrint {
+  ConditionDebugPrintErrorTrace(super.msg);
 }
 
 // Avoid especially regex (maybe like too) until it is fully implemented and all major db engines (like mysql) compatible
@@ -108,7 +132,7 @@ mixin ConditionDataManagementDriverQueryBuilderPartColumnNamesAndValuesSqlCommon
       : value.toString().replaceAll("'", "''");
 }
 
-/// Some ideas described in [ConditionDataManagementDriverQueryBuilderPartWhereClause] class
+/// Any existing query builder which model != null must be removed after it's no longer needed and shouldn't be stored in variables (querybuiler = null when models is to be retire() -ed). Some ideas described in [ConditionDataManagementDriverQueryBuilderPartWhereClause] class
 class ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon
     with
         ConditionDataManagementDriverQueryBuilderPartColumnNamesAndValuesSqlCommon {
@@ -346,7 +370,7 @@ class ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon
           }
         } catch (e) {
           debugPrint(
-              'ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon error, probably not initialized field key: $key of a model of class ${model.runtimeType.toString()}');
+              '${ConditionDebugPrint('ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon error, probably not initialized field key: $key of a model of class ${model.runtimeType.toString()}')}');
           rethrow;
         }
         isNotFirstIteration = true; // this has meaning in the next iteration
@@ -363,31 +387,31 @@ class ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon
         isNotFirstIteration = true; // this has meaning in the next iteration
       }
     }
-//    } else {
-//      bool isNotFirstIteration = false;
-//      if (model != null) {
-//        for (String key in columnNames!) {
-//          if (columnNames != null && !columnNames!.contains(key)) {
-//            continue;
-//          }
-//          if (isNotFirstIteration) queryPart += ', ';
-//          if (!model!.containsKey(key)) {
-//            throw Exception(
-//                'ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon a ColumnName (of columnNames property) supplied doesn\'t belong to the model');
-//          }
-//          queryPart += '${getColumnName(key)} = ${getValuePart(model![key])}';
-//          isNotFirstIteration = true; // this has meaning in the next iteration
-//        }
-//      } else {
-//        for (String key in columnNames!) {
-//          if (isNotFirstIteration) queryPart += ', ';
-//          queryPart +=
-//              '${getColumnName(key)} = ${getValuePart(noModelColumnNamesWithValues![key])}';
-//          isNotFirstIteration = true; // this has meaning in the next iteration
-//        }
-//      }
-//    }
-//
+    //    } else {
+    //      bool isNotFirstIteration = false;
+    //      if (model != null) {
+    //        for (String key in columnNames!) {
+    //          if (columnNames != null && !columnNames!.contains(key)) {
+    //            continue;
+    //          }
+    //          if (isNotFirstIteration) queryPart += ', ';
+    //          if (!model!.containsKey(key)) {
+    //            throw Exception(
+    //                'ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon a ColumnName (of columnNames property) supplied doesn\'t belong to the model');
+    //          }
+    //          queryPart += '${getColumnName(key)} = ${getValuePart(model![key])}';
+    //          isNotFirstIteration = true; // this has meaning in the next iteration
+    //        }
+    //      } else {
+    //        for (String key in columnNames!) {
+    //          if (isNotFirstIteration) queryPart += ', ';
+    //          queryPart +=
+    //              '${getColumnName(key)} = ${getValuePart(noModelColumnNamesWithValues![key])}';
+    //          isNotFirstIteration = true; // this has meaning in the next iteration
+    //        }
+    //      }
+    //    }
+    //
     //if (null != whereClause) {
     queryPart += whereClause.queryPart;
     //}
@@ -878,7 +902,7 @@ class ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon
         }
         try {
           debugPrint(
-              'key $key of ${model.runtimeType.toString()} will be assigned to query');
+              '${ConditionDebugPrint('key $key of ${model.runtimeType.toString()} will be assigned to query')}');
           if (null != overwriteModelProperties &&
               overwriteModelProperties!.keys.contains(key)) {
             queryPart += getValuePart(overwriteModelProperties![key]);
@@ -886,10 +910,10 @@ class ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon
             queryPart += getValuePart(model![key]);
           }
           debugPrint(
-              'key $key of ${model.runtimeType.toString()} has been assigned successfully');
+              '${ConditionDebugPrint('key $key of ${model.runtimeType.toString()} has been assigned successfully')}');
         } catch (e) {
           debugPrint(
-              'key $key of ${model.runtimeType.toString()} exceptinog - not be assigned to query');
+              '${ConditionDebugPrint('key $key of ${model.runtimeType.toString()} exceptinog - not be assigned to query')}');
           queryPart += getValuePart(null);
           //rethrow;
         }
@@ -945,8 +969,8 @@ class ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon
     queryPart += ');';
 
     debugPrint(
-        'INSERT INTO query that is going to be performed looks like this:');
-    debugPrint(queryPart);
+        '${ConditionDebugPrint('INSERT INTO query that is going to be performed looks like this:')}');
+    debugPrint('${ConditionDebugPrint(queryPart)}');
     return queryPart;
   }
 }
@@ -1014,11 +1038,11 @@ interface class ConditionRawSQLDBDriverWrapperCommon {
   //      Completer<List<Map<String, dynamic>>?>();
   //  scheduleMicrotask(() {
   //    // in this case db.select returns value synchronously, if not await should be before db.select and this code block {...}, nor this entire method itself, should be async {}
-  //    debugPrint(
-  //        'wrapper select method() 1: here we are, the query is $query the possible result in a while');
+  //    debugPrint('${ConditionDebugPrint(
+  //        'wrapper select method() 1: here we are, the query is $query the possible result in a while')}');
   //    var result = db.select(query);
-  //    debugPrint(
-  //        'wrapper select method() 2: here we are, the result is: $result');
+  //    debugPrint('${ConditionDebugPrint(
+  //        'wrapper select method() 2: here we are, the result is: $result')}');
   //    completer.complete(db.select(query));
   //  });
   //  return completer.future;
@@ -1120,14 +1144,23 @@ abstract interface class ConditionDataManagementDriverSqlSettings {
               ? null
               : ConditionConfiguration.global_http_server_settings['password']);
     } else {
+      String pathToSqliteFile =
+          ConditionConfiguration.local_http_server_settings['db_settings']
+                  ['native_platform_sqlite3_db_paths'][
+              ConditionConfiguration.isWeb
+                  ? ConditionPlatforms.Web
+                  : ConditionPlatforms.Windows];
+
+      if (ConditionConfiguration.profileUser != null) {
+        pathToSqliteFile = pathToSqliteFile.replaceFirstMapped(
+            RegExp(r'(.*)\.(sqlite|sqlite3)$', caseSensitive: false),
+            (mapped) =>
+                '${mapped[1]}_${ConditionConfiguration.profileUser}.${mapped[2]}');
+      }
+
       return ConditionDataManagementDriverSqlSettingsSqlite3(
-          dbPath: ConditionConfiguration
-                  .local_http_server_settings['db_settings']
-              ['native_platform_sqlite3_db_paths'][ConditionConfiguration
-                  .isWeb
-              ? ConditionPlatforms.Web
-              : ConditionPlatforms
-                  .Windows], // at the time of writing it was suspected that the Windows path might work anywhere (linux only?)
+          dbPath:
+              pathToSqliteFile, //??? old info: at the time of writing it was suspected that the Windows path might work anywhere (linux only?)
           login: ConditionConfiguration.isWeb
               ? null
               : ConditionConfiguration.local_http_server_settings['login'],
@@ -1358,9 +1391,10 @@ interface class ConditionDataManagementDriver {
   List<Completer> _storageOperationsQueue = [];
   List<ConditionModelListenerFunction> _changesListeners = [];
 
-  /// Some ideas of the purpose of this property is in [uniqueId] of [ConditionModel] class and [appUniqueId] of [ConditionModelApp]. Shortly, by having this id you can associate [Finalizer] objects to this driver object when last pointer to it is lost. It is related to global management of [ConditionModelApp] objects existing in the entire application scope. It can be better understood when reading [ConditionModelApps] class description with description of some proerties of it.
-  final int driverUniqueId =
-      ConditionModelApps._increaseByOneDriverUniqueIdCounterAndGetItsValue();
+  //  ! No need to block completely independent duplicate settings drivers, but cannot be 2 the same apps - the same settings drivers (don't remember if both local and global and why both or one)
+  // Some ideas of the purpose of this property is in [uniqueId] of [ConditionModel] class and [appUniqueId] of [ConditionModelApp]. Shortly, by having this id you can associate [Finalizer] objects to this driver object when last pointer to it is lost. It is related to global management of [ConditionModelApp] objects existing in the entire application scope. It can be better understood when reading [ConditionModelApps] class description with description of some proerties of it.
+  //final int driverUniqueId =
+  //    ConditionModelApps._increaseByOneDriverUniqueIdCounterAndGetItsValue();
 
   /// !!! Prefix is only in development mode for simulating backend data storage and loading, see the [_prefix] property desc, see method [getNewDefaultDriver] code for backend driver
   ConditionDataManagementDriver({
@@ -1409,7 +1443,8 @@ interface class ConditionDataManagementDriver {
                 Completer<ConditionDataManagementDriver>()) {
     // In the extending class we call initStorage function - see description - the function must be overriden it is left in this class definition for learning purposes only
     // _initStorage(prefix, onInitialised);
-    debugPrint('We are in the constructor of the ConditionModelApp');
+    debugPrint(
+        '${ConditionDebugPrint('We are in the constructor of the ConditionModelApp')}');
 
     //if (null != conditionModelApp) {
     //  this.conditionModelApp = conditionModelApp;
@@ -1418,9 +1453,9 @@ interface class ConditionDataManagementDriver {
     this.driverGlobal?.getDriverOnDriverInited().then((driver) {
       this.initCompleterGlobal!.complete(driver);
     }).catchError((error) {
-      debugPrint('catchError flag #cef1');
+      debugPrint('${ConditionDebugPrint('catchError flag #cef1')}');
       debugPrint(
-          'global driver couldn\'t has been inited the error message is:${error.toString()}');
+          '${ConditionDebugPrint('global driver couldn\'t has been inited the error message is:${error.toString()}')}');
       this.initCompleterGlobal!.completeError(false);
     });
   }
@@ -1792,13 +1827,13 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
                     isGlobalDriver)
                 : settings!.getWrapper()) {
     debugPrint(
-        'We are in the constructor of the ConditionDataManagementDriverSql');
+        '${ConditionDebugPrint('We are in the constructor of the ConditionDataManagementDriverSql')}');
     _initStorage();
   }
 
   @override
   void _initStorage() {
-    debugPrint('1We are here aren\'t we?');
+    debugPrint('${ConditionDebugPrint('1We are here aren\'t we?')}');
     // ! Take note that this code is based on synchronous nature of the pub.dev sqlite3 package
     // To not to block the main layout thread more sophisticated
     // implementation based on isolates should be implemented (the best)
@@ -1823,7 +1858,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
         //enum: ConditionPlatforms
 
-        debugPrint('Checking out some paths');
+        debugPrint('${ConditionDebugPrint('Checking out some paths')}');
 
         await _db.getDriverWhenInited();
 
@@ -1832,17 +1867,17 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
         try {
           debugPrint(
-              'SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;');
+              '${ConditionDebugPrint('SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;')}');
           // In this case We can only fully rely on exception thrown when a table doesn't exist
           var select_is_debinited = await _db.select('''
           SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;
           ''');
           // when table exists this one will always return result of type int from 0 to more than 0
           debugPrint(
-              'SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses; ${select_is_debinited?[0]['count(*)']}');
+              '${ConditionDebugPrint('SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses; ${select_is_debinited?[0]['count(*)']}')}');
         } catch (e) {
           debugPrint(
-              'table doesn\'t exist, so no relevant table with initial data exists, db wrapper exception thrown: $e');
+              '${ConditionDebugPrint('table doesn\'t exist, so no relevant table with initial data exists, db wrapper exception thrown: $e')}');
           isAppDbinited = false;
         }
 
@@ -1859,7 +1894,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             } else if (ConditionConfiguration.isWeb) {
               contents = await _db.httpGetFileContents(
                   'sqlite3/condition_full_db_init.sql') as String;
-              debugPrint('Sqlite db init contents are: $contents');
+              debugPrint(
+                  '${ConditionDebugPrint('Sqlite db init contents are: $contents')}');
             } // !! no need for else and throw Exception - it is done earlier in this method
             // ?? commented unused variable declaration: this shouldn't be used for native, indexes are to be created, this line was probably for test and preparation for sqlweb github web plugin:  const String create_index_regex_string =   r'CREATE[\r\n\t\s]*INDEX[^;]*[;]*';
 
@@ -1874,50 +1910,51 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             contents = replacementMethods.replaceAllCreateIndex(contents);
             contents = replacementMethods.replaceAllInsertInto(contents);
 
-            debugPrint(contents);
+            debugPrint('${ConditionDebugPrint(contents)}');
 
             await _db.execute(contents);
 
             try {
               debugPrint(
-                  '### ! So now the tables should be ready. so let\'s check if it\'s true. For now repeat of that simple command again.');
+                  '${ConditionDebugPrint('### ! So now the tables should be ready. so let\'s check if it\'s true. For now repeat of that simple command again.')}');
               debugPrint(
-                  'SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;');
+                  '${ConditionDebugPrint('SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;')}');
               // In this case We can only fully rely on exception thrown when a table doesn't exist
               var select_is_debinited = await _db.select('''
               SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses;
               ''');
               // when table exists this one will always return result of type int from 0 to more than 0
               debugPrint(
-                  '### ! Whith no exception thrown the app is ready, some debug info again:');
+                  '${ConditionDebugPrint('### ! Whith no exception thrown the app is ready, some debug info again:')}');
               debugPrint(
-                  'SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses; ${select_is_debinited?[0]['count(*)']}');
+                  '${ConditionDebugPrint('SELECT count(*) FROM ${tableNamePrefix}ConditionModelClasses; ${select_is_debinited?[0]['count(*)']}')}');
             } catch (e) {
               debugPrint(
-                  'table doesn\'t exist while this time it should be ready!, the app won t work. $e');
+                  '${ConditionDebugPrint('table doesn\'t exist while this time it should be ready!, the app won t work. $e')}');
               rethrow;
             }
 
             debugPrint(
-                'db_init result: no result is expected, only exception on problems');
+                '${ConditionDebugPrint('db_init result: no result is expected, only exception on problems')}');
 
             inited = true;
             initCompleter.complete(this);
           } catch (error) {
-            debugPrint('catchError flag #prg1: ${error}');
+            debugPrint(
+                '${ConditionDebugPrint('catchError flag #prg1: ${error}')}');
 
             initCompleter.completeError(false);
           }
         } else {
           debugPrint(
-              'Why i have no access to inited property - prefix ${tableNamePrefix}');
+              '${ConditionDebugPrint('Why i have no access to inited property - prefix ${tableNamePrefix}')}');
           inited = true;
           initCompleter.complete(this);
         }
       } catch (e) {
-        debugPrint("we are here 034503845093485");
+        debugPrint('${ConditionDebugPrint("we are here 034503845093485")}');
         initCompleter.completeError(false);
-        debugPrint(e.toString());
+        debugPrint('${ConditionDebugPrint(e.toString())}');
       }
     });
   }
@@ -1960,16 +1997,16 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
                     limit: 1,
                     columnNames: {'id'});
 
-              debugPrint(
-                  'A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like:');
+              debugPrint('${ConditionDebugPrint(
+                  'A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like:')}');
 
               if (conditionMapList == null) {
-                debugPrint('It is null :(');
+                debugPrint('${ConditionDebugPrint('It is null :(')}');
                 completer.completeError(
                     'error: requestGlobalServerAppKeyActualDBRequestHelper(key) The id value couldn\'t has been obtained. It normally means a record hasn\'t been inserted during a preceding create()/insert into operation. It requires to insert the model again into the db.');
               } else {
-                debugPrint(
-                    'requestGlobalServerAppKeyActualDBRequestHelper(key) result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0].toString())}');
+                debugPrint('${ConditionDebugPrint(
+                    'requestGlobalServerAppKeyActualDBRequestHelper(key) result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0].toString())}')}');
                 // !!!!!! RIDICULOUS RETURN :)
                 //return completer.complete(int.tryParse(conditionMapList[0].toString()));
                 //completer.complete(int.tryParse(conditionMapList[0].toString()));
@@ -2008,12 +2045,12 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     // but with limited number of attempts
     try {
       debugPrint(
-          'class [ConditionModelApp], method requestGlobalServerAppKey() now awaiting for up to 10 seconds to create db entry with earlier prepared global server key, inserting to table row. On success we will complete future with the key value ');
+          '${ConditionDebugPrint('class [ConditionModelApp], method requestGlobalServerAppKey() now awaiting for up to 10 seconds to create db entry with earlier prepared global server key, inserting to table row. On success we will complete future with the key value ')}');
       await _requestGlobalServerAppKeyActualDBRequestHelper(key);
       completer.complete(key);
     } catch (e) {
       debugPrint(
-          'class [ConditionModelApp], method requestGlobalServerAppKey() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): The key couldn\t has been inserted into the db, so will try to insert the key periodically not many times,  Exception thrown: $e');
+          '${ConditionDebugPrint('class [ConditionModelApp], method requestGlobalServerAppKey() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): The key couldn\t has been inserted into the db, so will try to insert the key periodically not many times,  Exception thrown: $e')}');
 
       int counter = 2;
       // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
@@ -2024,7 +2061,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           timer.cancel();
         } catch (e) {
           debugPrint(
-              'class [ConditionModelApp], method initCompleteModel() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e');
+              '${ConditionDebugPrint('class [ConditionModelApp], method initCompleteModel() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e')}');
         }
         if (counter == 0) {
           timer.cancel();
@@ -2052,7 +2089,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     try {
       debugPrint(
-          'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper() we are to check if the key == $key is valid using readAll method');
+          '${ConditionDebugPrint('checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper() we are to check if the key == $key is valid using readAll method')}');
       List<Map<String, dynamic>>? conditionMapList = await readAll(
           'ConditionModelApps',
           ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon()
@@ -2062,15 +2099,15 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           globalServerRequestKey: key);
 
       debugPrint(
-          'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper() A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :');
+          '${ConditionDebugPrint('checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper() A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :')}');
 
       if (conditionMapList == null || conditionMapList.isEmpty) {
         debugPrint(
-            'It is null or empty :( but it is NOT a db error! A new key will be obtained in a while or later');
+            '${ConditionDebugPrint('It is null or empty :( but it is NOT a db error! A new key will be obtained in a while or later')}');
         completer.complete(false);
       } else {
         debugPrint(
-            'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0].toString())}');
+            '${ConditionDebugPrint('checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0].toString())}')}');
         // !!!!!! RIDICULOUS RETURN :)
         //return completer.complete(int.tryParse(conditionMapList[0].toString()));
         //completer.complete(int.tryParse(conditionMapList[0].toString()));
@@ -2101,13 +2138,13 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     try {
       debugPrint(
-          'class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() now awaiting for up to 10 seconds to create db entry with earlier prepared global server key, inserting to table row. On success we will complete future with the key value ');
+          '${ConditionDebugPrint('class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() now awaiting for up to 10 seconds to create db entry with earlier prepared global server key, inserting to table row. On success we will complete future with the key value ')}');
       bool canTheKeyBeUsed =
           await _checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key);
       completer.complete(canTheKeyBeUsed);
     } catch (e) {
       debugPrint(
-          'class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): The key couldn\t has been inserted into the db, so will try to insert the key periodically not many times,  Exception thrown: $e');
+          '${ConditionDebugPrint('class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): The key couldn\t has been inserted into the db, so will try to insert the key periodically not many times,  Exception thrown: $e')}');
 
       int counter = 2;
       // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
@@ -2121,7 +2158,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           completer.complete(canTheKeyBeUsed);
         } catch (e) {
           debugPrint(
-              'class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e');
+              '${ConditionDebugPrint('class [ConditionModelApp], method checkOutIfGlobalServerAppKeyIsValid() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e')}');
         }
         if (counter == 0) {
           timer.cancel();
@@ -2161,15 +2198,15 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             globalServerRequestKey: globalServerRequestKey)
         .then((List<Map>? conditionMapList) {
       debugPrint(
-          'getModelIdByOneTimeInsertionKey(), A result of readAll (that was invoked by getModelIdByOneTimeInsertionKey) has arrived. Here how it looks like:');
+          '${ConditionDebugPrint('getModelIdByOneTimeInsertionKey(), A result of readAll (that was invoked by getModelIdByOneTimeInsertionKey) has arrived. Here how it looks like:')}');
 
       if (conditionMapList == null) {
-        debugPrint('It is null :(');
+        debugPrint('${ConditionDebugPrint('It is null :(')}');
         completer.completeError(
             'error: getModelIdByOneTimeInsertionKey() The id value couldn\'t has been obtained. It normally means a record hasn\'t been inserted during a preceding create()/insert into operation. It requires to insert the model again into the db.');
       } else {
         debugPrint(
-            'getModelIdByOneTimeInsertionKey(), It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0]['id'].toString())}');
+            '${ConditionDebugPrint('getModelIdByOneTimeInsertionKey(), It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0]['id'].toString())}')}');
         // !!!!!! RIDICULOUS RETURN :)
         //return completer.complete(int.tryParse(conditionMapList[0].toString()));
         //completer.complete(int.tryParse(conditionMapList[0].toString()));
@@ -2177,7 +2214,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         dynamic id = int.tryParse(conditionMapList[0]['id'].toString());
         if (null != id && id is int && id > 0) {
           debugPrint(
-              'getModelIdByOneTimeInsertionKey id result SUCCESS: it is correnct integer value');
+              '${ConditionDebugPrint('getModelIdByOneTimeInsertionKey id result SUCCESS: it is correnct integer value')}');
           completer.complete(id);
         } else {
           completer.completeError(
@@ -2185,7 +2222,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         }
       }
     }).catchError((e) {
-      debugPrint('catchError flag #prg2');
+      debugPrint('${ConditionDebugPrint('catchError flag #prg2')}');
       //here RangeError ???
       //Predefined error message, rather throw Excepthion custom class, There was a db_error : e == RangeError (index): Invalid value: Valid value range is empty: 0
       // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
@@ -2224,8 +2261,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
     debugPrint(
-        'we are now in the ConditionDataManagement object invoking create method. let\' see how the query looks like and then throw exception until it is ok:');
-    debugPrint(query.queryPart);
+        '${ConditionDebugPrint('we are now in the ConditionDataManagement object invoking create method. let\' see how the query looks like and then throw exception until it is ok:')}');
+    debugPrint('${ConditionDebugPrint(query.queryPart)}');
     //throw Exception('The just promised Exception thrown');
 
     scheduleMicrotask(() async {
@@ -2235,11 +2272,11 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         completer.completeError(
             'A result of nullifyOneTimeInsertionKey() exception/future completeError. An exception during third party library operation occured: ${e.toString()}');
         debugPrint(
-            'A result of nullifyOneTimeInsertionKey() exception/future An exception during third party library operation occured: ${e.toString()}');
+            '${ConditionDebugPrint('A result of nullifyOneTimeInsertionKey() exception/future An exception during third party library operation occured: ${e.toString()}')}');
       }
       debugPrint(
-          'A result of nullifyOneTimeInsertionKey has arrived and in the debug mode it seems it successfully done and it looks like this:');
-      //debugPrint(result);
+          '${ConditionDebugPrint('A result of nullifyOneTimeInsertionKey has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+      //debugPrint('${ConditionDebugPrint(result)}');
 
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
       completer.complete(true);
@@ -2269,7 +2306,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     if (dbTableName != null) {
       debugPrint(
-          'createRawer (createAll or similar: not create()) We are going to iterate enums ConditionModelClasses.values, there is going to be stuff seen here that it iterates or it went a bit wrong.');
+          '${ConditionDebugPrint('createRawer (createAll or similar: not create()) We are going to iterate enums ConditionModelClasses.values, there is going to be stuff seen here that it iterates or it went a bit wrong.')}');
       var i = 0;
       for (var enumValue in ConditionModelClasses.values) {
         i++;
@@ -2277,7 +2314,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             enumValue.toString().replaceFirst('ConditionModelClasses.', '');
         if (className == modelClassName) {
           debugPrint(
-              'createRawer (createAll or similar: not create()) enum ConditionModelClasses value before:${enumValue.toString()} and the className after: $className');
+              '${ConditionDebugPrint('createRawer (createAll or similar: not create()) enum ConditionModelClasses value before:${enumValue.toString()} and the className after: $className')}');
           noModelColumnNamesWithValues['model_type_id'] = i;
 
           break;
@@ -2294,8 +2331,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     );
 
     debugPrint(
-        'createRawer (createAll or similar: not create()): Not to get lost and to understand where we are we are going to see the development query...');
-    debugPrint(query.queryPart);
+        '${ConditionDebugPrint('createRawer (createAll or similar: not create()): Not to get lost and to understand where we are we are going to see the development query...')}');
+    debugPrint('${ConditionDebugPrint(query.queryPart)}');
     /*throw Exception(
         'createRawer (createAll or similar: not create()) And here we have the promised exception :)');
 */
@@ -2306,11 +2343,11 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       } catch (e) {
         completer.completeError(false);
         debugPrint(
-            'An exception during third party library operation occured: ${e.toString()}');
+            '${ConditionDebugPrint('An exception during third party library operation occured: ${e.toString()}')}');
       }
       debugPrint(
-          'A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:');
-      debugPrint(result.toString());
+          '${ConditionDebugPrint('A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+      debugPrint('${ConditionDebugPrint(result.toString())}');
 
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
       completer.complete(true);
@@ -2327,7 +2364,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     // how to implement it?
     //isGlobalRequest: null != globalServerRequestKey ? true : false
     debugPrint(
-        '_getAppIdByAGivenGlobalServerKey Not implemented. NOT Throwing fatal error for now. I was kinda thinking it\'s been implemented :)');
+        '${ConditionDebugPrint('_getAppIdByAGivenGlobalServerKey Not implemented. NOT Throwing fatal error for now. I was kinda thinking it\'s been implemented :)')}');
 
 //    throw Error();
 
@@ -2339,16 +2376,16 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           limit: 1,
           columnNames: {'id'});
       debugPrint(
-          '_getAppIdByAGivenGlobalServerKey() A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :');
+          '${ConditionDebugPrint('_getAppIdByAGivenGlobalServerKey() A result of readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :')}');
 
       if (conditionMapList == null || conditionMapList.isEmpty) {
         debugPrint(
-            '_getAppIdByAGivenGlobalServerKey() It is null or empty :( but it is NOT a db error! A new key will be obtained in a while or later');
+            '${ConditionDebugPrint('_getAppIdByAGivenGlobalServerKey() It is null or empty :( but it is NOT a db error! A new key will be obtained in a while or later')}');
         completer.completeError(
             '_getAppIdByAGivenGlobalServerKey() exception: It is null or empty :( but it is NOT a db error we cannot do anything about! A new key will be obtained in a while or later');
       } else {
         debugPrint(
-            '_getAppIdByAGivenGlobalServerKey() result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0]['id'].toString())}');
+            '${ConditionDebugPrint('_getAppIdByAGivenGlobalServerKey() result: It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0]['id'].toString())}')}');
         // !!!!!! RIDICULOUS RETURN :)
         //return completer.complete(int.tryParse(conditionMapList[0].toString()));
         //completer.complete(int.tryParse(conditionMapList[0].toString()));
@@ -2356,7 +2393,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         dynamic app_id = int.tryParse(conditionMapList[0]['id'].toString());
         if (null != app_id && app_id is int && app_id > 0) {
           debugPrint(
-              '_getAppIdByAGivenGlobalServerKey() app_id result SUCCESS: it is correnct integer value');
+              '${ConditionDebugPrint('_getAppIdByAGivenGlobalServerKey() app_id result SUCCESS: it is correnct integer value')}');
           completer.complete(app_id);
         } else {
           completer.completeError(
@@ -2389,7 +2426,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
                 globalServerUserCredentials['password'].isEmpty))) {
       // async syntax so
       debugPrint(
-          'DataManagementDriver create() _getGlobalServerUserId() method error (1) method global request user credentials failed because one or more necessary params are null. usePassword == $usePassword , globalServerUserCredentials[\'e_mail\'] == ${globalServerUserCredentials?['e_mail']} || globalServerUserCredentials[\'phone_number\']==${globalServerUserCredentials?['phone_number']}');
+          '${ConditionDebugPrint('DataManagementDriver create() _getGlobalServerUserId() method error (1) method global request user credentials failed because one or more necessary params are null. usePassword == $usePassword , globalServerUserCredentials[\'e_mail\'] == ${globalServerUserCredentials?['e_mail']} || globalServerUserCredentials[\'phone_number\']==${globalServerUserCredentials?['phone_number']}')}');
       throw Exception(
           'DataManagementDriver create() _getGlobalServerUserId() method error (1) method global request user credentials failed because one or more necessary params are null usePassword == $usePassword , See more data in a very similar debugPrint message preceding this (seen only in the debug mode).');
       //throw Exception('DataManagementDriver create() (1) method global request user credentials failed one or more necessary params are null _getGlobalServerUserId() method error');
@@ -2419,20 +2456,20 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       //globalServerRequestKey: globalServerRequestKey
     ).then((List<Map>? conditionMapList) {
       debugPrint(
-          ' _getGlobalServerUserId(), A result has arrived. Here how it looks like:');
+          '${ConditionDebugPrint(' _getGlobalServerUserId(), A result has arrived. Here how it looks like:')}');
 
       if (conditionMapList == null) {
         debugPrint(
-            'It is null yet in this case it is not a db engine error - the record in the db just doesn\'t exist :(');
+            '${ConditionDebugPrint('It is null yet in this case it is not a db engine error - the record in the db just doesn\'t exist :(')}');
         completer.complete(null);
       } else {
         debugPrint(
-            '_getGlobalServerUserId(), It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0]['id'].toString())}');
+            '${ConditionDebugPrint('_getGlobalServerUserId(), It is not null :) so we change it toString and parse to int and complete future with this int :${int.tryParse(conditionMapList[0]['id'].toString())}')}');
 
         dynamic id = int.tryParse(conditionMapList[0]['id'].toString());
         if (null != id && id is int && id > 0) {
           debugPrint(
-              '_getGlobalServerUserId(), id result SUCCESS: it is correnct integer value');
+              '${ConditionDebugPrint('_getGlobalServerUserId(), id result SUCCESS: it is correnct integer value')}');
           completer.complete(id);
         } else {
           completer.completeError(
@@ -2440,7 +2477,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         }
       }
     }).catchError((e) {
-      debugPrint('catchError flag #prg3');
+      debugPrint('${ConditionDebugPrint('catchError flag #prg3')}');
 
       //here RangeError ???
       //Predefined error message, rather throw Excepthion custom class, There was a db_error : e == RangeError (index): Invalid value: Valid value range is empty: 0
@@ -2556,7 +2593,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
           // for create we don't need to overwrite id with null value because the query builder
           // will skip the column for the main constructor of the query accepting model object.
           debugPrint(
-              'DataManagementDriver create() method we have app_id == $app_id and columnNames = $columnNames');
+              '${ConditionDebugPrint('DataManagementDriver create() method we have app_id == $app_id and columnNames = $columnNames')}');
 
           if (null != columnNames) {
             columnNames.add('app_id');
@@ -2572,7 +2609,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
               overwriteModelProperties['server_creation_date_timestamp']);
         } catch (e) {
           debugPrint(
-              'DataManagementDriver create() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e');
+              '${ConditionDebugPrint('DataManagementDriver create() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e')}');
           completerCreate.completeError(
               'DataManagementDriver create() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so creating a global server db table row based on model data that was sent from client app to the global server cannot be performed.');
           completerModelIdByOneTimeInsertionKey.completeError(
@@ -2695,7 +2732,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       // !!! DONT FORGET ABOUT IT !!! not implemented
       // FINALLY DON'T FORGET ABOUT IT !!! not implemented
       debugPrint(
-          'DataManagementDriver create() method we are going to miss this piece of code: completerServerLinkIdFuture.');
+          '${ConditionDebugPrint('DataManagementDriver create() method we are going to miss this piece of code: completerServerLinkIdFuture.')}');
       if (null != globalServerRequestKey) {
         if (model['link_id'] == null) {
           completerServerLinkIdFuture!.complete(null);
@@ -2728,8 +2765,10 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       //const Future result=_dbTaskReadAll(completer, ConditionDataManagementDriverDbOperationType.read_all, modelType: modelType, whereClause: whereClause);
 
       // to go any further you need to know what db.execute returns on insert - returns id?
-      debugPrint('=================================================');
-      debugPrint('HOW MANY TIMES ARE WE IN THE CRATE METHOD? LETS SEE ');
+      debugPrint(
+          '${ConditionDebugPrint('=================================================')}');
+      debugPrint(
+          '${ConditionDebugPrint('HOW MANY TIMES ARE WE IN THE CRATE METHOD? LETS SEE ')}');
       // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
       var query =
           ConditionDataManagementDriverQueryBuilderPartInsertClauseSqlCommon(
@@ -2742,34 +2781,34 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       // No need to create the variable? the variable exists rather for the debugPrint purposes, no need to maintain the object long term
       var queryPart = query.queryPart;
       debugPrint(
-          'we are now in the ConditionDataManagement object invoking create method. let\' see how the query looks like and then throw exception until it is ok:');
-      debugPrint(queryPart);
+          '${ConditionDebugPrint('we are now in the ConditionDataManagement object invoking create method. let\' see how the query looks like and then throw exception until it is ok:')}');
+      debugPrint('${ConditionDebugPrint(queryPart)}');
 
       if (model is! ConditionModelOneDbEntryModel) {
         debugPrint(
-            'DataManagementDriver create() method: The model is NOT of ConditionModelOneDbEntryModel class/mixin/whatever');
+            '${ConditionDebugPrint('DataManagementDriver create() method: The model is NOT of ConditionModelOneDbEntryModel class/mixin/whatever')}');
         //throw Exception('The just promised Exception thrown');
       } else {
         debugPrint(
-            'DataManagementDriver create() method: The model IS of ConditionModelOneDbEntryModel class/mixin/whatever');
+            '${ConditionDebugPrint('DataManagementDriver create() method: The model IS of ConditionModelOneDbEntryModel class/mixin/whatever')}');
       }
 
       if (model is! ConditionModelIdAndOneTimeInsertionKeyModel) {
         debugPrint(
-            'DataManagementDriver create() method: The model is NOT of ConditionModelIdAndOneTimeInsertionKeyModel class/mixin/whatever');
+            '${ConditionDebugPrint('DataManagementDriver create() method: The model is NOT of ConditionModelIdAndOneTimeInsertionKeyModel class/mixin/whatever')}');
       } else {
         debugPrint(
-            'DataManagementDriver create() method: The model IS of ConditionModelIdAndOneTimeInsertionKeyModel class/mixin/whatever');
+            '${ConditionDebugPrint('DataManagementDriver create() method: The model IS of ConditionModelIdAndOneTimeInsertionKeyModel class/mixin/whatever')}');
       }
 
       //dynamic result;
       try {
         debugPrint(
-            '###################################### 8IE### EXECUTE INSERT INTO NOW OR THROW EXCEPTION');
+            '${ConditionDebugPrint('###################################### 8IE### EXECUTE INSERT INTO NOW OR THROW EXCEPTION')}');
         await _db.execute(query.queryPart);
       } catch (e) {
         debugPrint(
-            'DataManagementDriver create() method async exception: ## point 1');
+            '${ConditionDebugPrint('DataManagementDriver create() method async exception: ## point 1')}');
         completerCreate.completeError(
             'DataManagementDriver create() method async exception: An object couldn\'t has been created the raw driver error: ${e.toString()}');
         completerModelIdByOneTimeInsertionKey.completeError(
@@ -2778,27 +2817,27 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       }
 
       debugPrint(
-          'A result of create has arrived and in the debug mode it seems it successfully done and it looks like this:');
-      //debugPrint(result);
+          '${ConditionDebugPrint('A result of create has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+      //debugPrint('${ConditionDebugPrint(result)}');
 
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
       if (model is ConditionModelOneDbEntryModel) {
         debugPrint(
-            'DataManagementDriver create() method async exception: ## point 3');
+            '${ConditionDebugPrint('DataManagementDriver create() method async exception: ## point 3')}');
         completerCreate.complete(1);
         completerModelIdByOneTimeInsertionKey.complete(1);
         return;
       } else {
         debugPrint(
-            'DataManagementDriver create() method async exception: ## point 4');
+            '${ConditionDebugPrint('DataManagementDriver create() method async exception: ## point 4')}');
         completerCreate.complete(null);
       }
 
       if (model is ConditionModelIdAndOneTimeInsertionKeyModel) {
         getModelIdByOneTimeInsertionKey(model).then((id) async {
           debugPrint(
-              'DataManagementDriver create() method A result of getModelIdByOneTimeInsertionKey invoked by create method has arrived and in the debug mode it seems it successfully done and it looks like this:');
-          debugPrint(id.toString());
+              '${ConditionDebugPrint('DataManagementDriver create() method A result of getModelIdByOneTimeInsertionKey invoked by create method has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+          debugPrint('${ConditionDebugPrint(id.toString())}');
 
           // we need to set up server_id == id for the global server, then local server
           // will update it to, but local server won\'t synchronize it with the
@@ -2812,7 +2851,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             // to make a query based on what is in that method and execute it similarly like there.
 
             debugPrint(
-                'DataManagementDriver create() method global request success but now need to update server_id based on the returned id of an inserted row model == ${model.runtimeType} : the model is supposed to use not the global server id but local_id and app_id instead (just after that typical updates of the model from client app will use the quick server_id number they have, and the data manager of course will automatically will use the server_id to seek in id column) query to be performed looks like this:');
+                '${ConditionDebugPrint('DataManagementDriver create() method global request success but now need to update server_id based on the returned id of an inserted row model == ${model.runtimeType} : the model is supposed to use not the global server id but local_id and app_id instead (just after that typical updates of the model from client app will use the quick server_id number they have, and the data manager of course will automatically will use the server_id to seek in id column) query to be performed looks like this:')}');
             var query =
                 ConditionDataManagementDriverQueryBuilderPartUpdateClauseSqlCommon(
                     model,
@@ -2821,37 +2860,37 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
                     isGlobalRequest: true
                     //null != globalServerRequestKey ? true : false
                     );
-            debugPrint(query.queryPart);
+            debugPrint('${ConditionDebugPrint(query.queryPart)}');
             //throw Exception('UPDATE The just promised Exception thrown');
 
             try {
               await _db.execute(query.queryPart);
               debugPrint(
-                  'DataManagementDriver create() method (global server/aspect table row) no exception thrown - there is server_id in the db table row involved. By the way the returned result of the db operation is: no result is expected for _db.execute method as of today.');
+                  '${ConditionDebugPrint('DataManagementDriver create() method (global server/aspect table row) no exception thrown - there is server_id in the db table row involved. By the way the returned result of the db operation is: no result is expected for _db.execute method as of today.')}');
               // no exception thrown - there is server_id in the db table row involved.
               completerModelIdByOneTimeInsertionKey.complete(id);
             } catch (e) {
               completerModelIdByOneTimeInsertionKey.completeError(false);
               debugPrint(
-                  'DataManagementDriver create() method (global server/aspect table row) An exception during third party library operation occured: ${e.toString()}');
+                  '${ConditionDebugPrint('DataManagementDriver create() method (global server/aspect table row) An exception during third party library operation occured: ${e.toString()}')}');
             }
 
             debugPrint(
-                'DataManagementDriver create() method (global server/aspect table row) A result of update method has arrived and in the debug mode it seems it successfully done and it looks like this:');
-            //debugPrint(result.toString());
+                '${ConditionDebugPrint('DataManagementDriver create() method (global server/aspect table row) A result of update method has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+            //debugPrint('${ConditionDebugPrint(result.toString())}');
           }
         }).catchError((error) {
-          debugPrint('catchError flag #prg4');
+          debugPrint('${ConditionDebugPrint('catchError flag #prg4')}');
 
           debugPrint(
-              'DataManagementDriver create() methodAn !error! result of getModelIdByOneTimeInsertionKey invoked by create method has arrived and in the debug mode it seems it successfully done and it looks like this:');
-          debugPrint(error.toString());
+              '${ConditionDebugPrint('DataManagementDriver create() methodAn !error! result of getModelIdByOneTimeInsertionKey invoked by create method has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+          debugPrint('${ConditionDebugPrint(error.toString())}');
           completerModelIdByOneTimeInsertionKey.completeError(
               'DataManagementDriver create() method ABC1 Getting id by getModelIdByOneTimeInsertionKey() method has failed, raw db driver error: ${error.toString()}');
         });
       } else {
         debugPrint(
-            'DataManagementDriver create() method A model is not of ConditionModelIdAndOneTimeInsertionKeyModel class so a completer of create method is completed with null ');
+            '${ConditionDebugPrint('DataManagementDriver create() method A model is not of ConditionModelIdAndOneTimeInsertionKeyModel class so a completer of create method is completed with null ')}');
         completerModelIdByOneTimeInsertionKey.completeError(
             'DataManagementDriver create() methodIt\'s almost not even an exception, so if you use catchError of the Future object or async programming you can handle it. The message you see is to made you aware of a problem and to be aware you need to conciously approach it not to flood your db with potential garbage. The point: A row in the database has been created, however there is no way to obtain the id of the inserted row, because you hadn\'t used a model compatible with classess [ConditionModelIdAndOneTimeInsertionKeyModel] (read description) or [ConditionModelOneDbEntryModel] where id always = 1. Do you created the model class in a way that allows to find it\'s entry in the db? A method like readAll (maybe renamed to readRaw of somehting allows you to find what you seek in the db in a more flexible, customized way.)');
       }
@@ -2884,7 +2923,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     if (dbTableName != null) {
       debugPrint(
-          'updateAll() We are going to iterate enums ConditionModelClasses.values, there is going to be stuff seen here that it iterates or it went a bit wrong.');
+          '${ConditionDebugPrint('updateAll() We are going to iterate enums ConditionModelClasses.values, there is going to be stuff seen here that it iterates or it went a bit wrong.')}');
       var i = 0;
       for (var enumValue in ConditionModelClasses.values) {
         i++;
@@ -2892,7 +2931,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             enumValue.toString().replaceFirst('ConditionModelClasses.', '');
         if (className == modelClassName) {
           debugPrint(
-              'updateAll() enum ConditionModelClasses value before:${enumValue.toString()} and the className after: $className');
+              '${ConditionDebugPrint('updateAll() enum ConditionModelClasses value before:${enumValue.toString()} and the className after: $className')}');
           whereClause?.add(
               'model_type_id',
               i,
@@ -2914,8 +2953,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     );
 
     debugPrint(
-        'updateAll()  Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
-    debugPrint(query.queryPart);
+        '${ConditionDebugPrint('updateAll()  Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair')}');
+    debugPrint('${ConditionDebugPrint(query.queryPart)}');
     throw Exception('updateAll() And here we have the promised exception :)');
 
     scheduleMicrotask(() async {
@@ -2925,11 +2964,11 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       } catch (e) {
         completer.completeError(false);
         debugPrint(
-            'An exception during third party library operation occured: ${e.toString()}');
+            '${ConditionDebugPrint('An exception during third party library operation occured: ${e.toString()}')}');
       }
       debugPrint(
-          'A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:');
-      debugPrint(result.toString());
+          '${ConditionDebugPrint('A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+      debugPrint('${ConditionDebugPrint(result.toString())}');
 
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
       // FIXME: Similar situations are here. It was not used code at the time of writing this.Here there should be no dynamic result list of int consisting of affected rows should be given
@@ -2945,7 +2984,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       throw Exception(
           'DataManagementDriver $methodName() CATCHED EXCEPTION method calling _commonBasicNeccesaryValidation() and it calling _checkingModelsCredentialsForOperation: HANDLED exception NOT IMPLEMENTED: ');
     } catch (e) {
-      debugPrint('catched exception: $e');
+      debugPrint('${ConditionDebugPrint('catched exception: $e')}');
     }
   }
 
@@ -2954,41 +2993,41 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       String? globalServerRequestKey = null,
       ConditionModelUser? userForGlobalRequest,
       Map? userLoginDataForGlobalRequest}) async {
-    //debugPrint('_commonBasicNeccesaryValidation 1');
-    //debugPrint(
-    //    '_commonBasicNeccesaryValidation 1 : model[\'local_id\'] == ${model['local_id']}');
+    //debugPrint('${ConditionDebugPrint('_commonBasicNeccesaryValidation 1')}');
+    //debugPrint('${ConditionDebugPrint(
+    //    '_commonBasicNeccesaryValidation 1 : model[\'local_id\'] == ${model['local_id']}')}');
     //
-    //debugPrint('_commonBasicNeccesaryValidation 2');
-    //debugPrint(
-    //    '_commonBasicNeccesaryValidation 2 : model[\'server_id\'] == ${model['server_id']}');
-    //debugPrint('_commonBasicNeccesaryValidation 3');
+    //debugPrint('${ConditionDebugPrint('_commonBasicNeccesaryValidation 2')}');
+    //debugPrint('${ConditionDebugPrint(
+    //    '_commonBasicNeccesaryValidation 2 : model[\'server_id\'] == ${model['server_id']}')}');
+    //debugPrint('${ConditionDebugPrint('_commonBasicNeccesaryValidation 3')}');
 
     // some model properties may havent't been initialized so they throw exceptions
     // so we need apply some remedy to it :).
     bool is_local_id_viable_to_be_used = true;
     bool is_server_id_viable_to_be_used = true;
     try {
-      debugPrint('GGGG1');
+      debugPrint('${ConditionDebugPrint('GGGG1')}');
       if (model['local_id'] == null) {
         is_local_id_viable_to_be_used = false;
       }
-      debugPrint('GGGG2');
+      debugPrint('${ConditionDebugPrint('GGGG2')}');
     } catch (e) {
       is_local_id_viable_to_be_used = false;
     }
 
     try {
-      debugPrint('GGGG3');
+      debugPrint('${ConditionDebugPrint('GGGG3')}');
       if (model['server_id'] == null) {
         is_server_id_viable_to_be_used = false;
       }
-      debugPrint('GGGG4');
+      debugPrint('${ConditionDebugPrint('GGGG4')}');
     } catch (e) {
       is_server_id_viable_to_be_used = false;
     }
 
     debugPrint(
-        'GGGG5 is_local_id_viable_to_be_used == $is_local_id_viable_to_be_used , is_server_id_viable_to_be_used == $is_server_id_viable_to_be_used');
+        '${ConditionDebugPrint('GGGG5 is_local_id_viable_to_be_used == $is_local_id_viable_to_be_used , is_server_id_viable_to_be_used == $is_server_id_viable_to_be_used')}');
 
     // ??? comment from other method??? or invoked method has this validation better:
     // old comment here simple key checking, which is enough, but later more advanced
@@ -3014,7 +3053,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
               'DataManagementDriver $methodName() CATCHED EXCEPTION, WHY?! method calling _commonBasicNeccesaryValidation(): exception: the app/library/whatever is in the early stage. A request using server_id (model[\'server_id\'] ) is going to be performed. However there is no checking if a client app has right to perform any operation on the relevant unique row of id == server_id');
         } catch (e) {
           debugPrint(
-              'DataManagementDriver $methodName() CATCHED EXCEPTION, WHY?! method calling _commonBasicNeccesaryValidation(): exception: catched exception, pointing to an vitally important security checking implementation, error thrown: $e');
+              '${ConditionDebugPrint('DataManagementDriver $methodName() CATCHED EXCEPTION, WHY?! method calling _commonBasicNeccesaryValidation(): exception: catched exception, pointing to an vitally important security checking implementation, error thrown: $e')}');
         }
         if (model['server_id'] < 1) {
           throw Exception(
@@ -3084,7 +3123,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             };
           } catch (e) {
             debugPrint(
-                'DataManagementDriver update() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e');
+                '${ConditionDebugPrint('DataManagementDriver update() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e')}');
             completer.completeError(
                 'DataManagementDriver update() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so updating of model data that was sent from client app to the global server cannot be performed.');
           }
@@ -3101,8 +3140,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         isGlobalRequest: null != globalServerRequestKey ? true : false,
       );
       debugPrint(
-          'UPDATE model == ${model.runtimeType} we are now in the ConditionDataManagement object invoking UPDATE method. let\' see how the query looks like and then throw exception until it is ok:');
-      debugPrint(query.queryPart);
+          '${ConditionDebugPrint('UPDATE model == ${model.runtimeType} we are now in the ConditionDataManagement object invoking UPDATE method. let\' see how the query looks like and then throw exception until it is ok:')}');
+      debugPrint('${ConditionDebugPrint(query.queryPart)}');
       //throw Exception('UPDATE The just promised Exception thrown');
 
       try {
@@ -3111,12 +3150,12 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
         completer.completeError(
             'DataManagementDriver update() method An exception during third party library operation occured: ${e.toString()}');
         debugPrint(
-            'DataManagementDriver update() method An exception during third party library operation occured: ${e.toString()}');
+            '${ConditionDebugPrint('DataManagementDriver update() method An exception during third party library operation occured: ${e.toString()}')}');
       }
 
       debugPrint(
-          'DataManagementDriver update() method A result of update method has arrived and in the debug mode it seems it successfully done and it looks like this:');
-      //debugPrint(result.toString());
+          '${ConditionDebugPrint('DataManagementDriver update() method A result of update method has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+      //debugPrint('${ConditionDebugPrint(result.toString())}');
 
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
       completer.complete(null != overwriteModelProperties
@@ -3149,7 +3188,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     if (dbTableName != null) {
       debugPrint(
-          'deleteAll() We are going to iterate enums ConditionModelClasses.values, there is going to be stuff seen here that it iterates or it went a bit wrong.');
+          '${ConditionDebugPrint('deleteAll() We are going to iterate enums ConditionModelClasses.values, there is going to be stuff seen here that it iterates or it went a bit wrong.')}');
       var i = 0;
       for (var enumValue in ConditionModelClasses.values) {
         i++;
@@ -3157,7 +3196,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             enumValue.toString().replaceFirst('ConditionModelClasses.', '');
         if (className == modelClassName) {
           debugPrint(
-              'deleteAll() enum ConditionModelClasses value before:${enumValue.toString()} and the className after: $className');
+              '${ConditionDebugPrint('deleteAll() enum ConditionModelClasses value before:${enumValue.toString()} and the className after: $className')}');
           whereClause?.add(
               'model_type_id',
               i,
@@ -3178,8 +3217,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     );
 
     debugPrint(
-        'deleteAll()   Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
-    debugPrint(query.queryPart);
+        '${ConditionDebugPrint('deleteAll()   Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair')}');
+    debugPrint('${ConditionDebugPrint(query.queryPart)}');
     throw Exception('deleteAll()  And here we have the promised exception :)');
 
     scheduleMicrotask(() async {
@@ -3189,11 +3228,11 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       } catch (e) {
         completer.completeError(false);
         debugPrint(
-            'An exception during third party library operation occured: ${e.toString()}');
+            '${ConditionDebugPrint('An exception during third party library operation occured: ${e.toString()}')}');
       }
       debugPrint(
-          'A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:');
-      debugPrint(result.toString());
+          '${ConditionDebugPrint('A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+      debugPrint('${ConditionDebugPrint(result.toString())}');
 
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
       // FIXME: Similar situations are here. It was not used code at the time of writing this.Here there should be no dynamic result list of int consisting of affected rows should be given
@@ -3240,7 +3279,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             overwriteModelProperties = {'app_id': app_id};
           } catch (e) {
             debugPrint(
-                'DataManagementDriver delete() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e');
+                '${ConditionDebugPrint('DataManagementDriver delete() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e')}');
             completer.completeError(
                 'DataManagementDriver delete() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so updating of model data that was sent from client app to the global server cannot be performed.');
           }
@@ -3256,8 +3295,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
               isGlobalRequest: null != globalServerRequestKey ? true : false);
 
       debugPrint(
-          'delete(): Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
-      debugPrint(query.queryPart);
+          '${ConditionDebugPrint('delete(): Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair')}');
+      debugPrint('${ConditionDebugPrint(query.queryPart)}');
       throw Exception('And here we have the promised exception :)');
 
       //dynamic result;
@@ -3266,12 +3305,12 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       } catch (e) {
         completer.completeError(false);
         debugPrint(
-            'delete(): An exception during third party library operation occured: ${e.toString()}');
+            '${ConditionDebugPrint('delete(): An exception during third party library operation occured: ${e.toString()}')}');
       }
 
       debugPrint(
-          'delete(): A result of delete method has arrived and in the debug mode it seems it successfully done and it looks like this:');
-      //debugPrint(result.toString());
+          '${ConditionDebugPrint('delete(): A result of delete method has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+      //debugPrint('${ConditionDebugPrint(result.toString())}');
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
       completer.complete(null);
     });
@@ -3288,13 +3327,13 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       /*ConditionDataManagementDriverQueryBuilderPartWhereClauseSqlCommon
           whereClause*/
       ) {
-    debugPrint('Model debug print: ${model['id']}');
+    debugPrint('${ConditionDebugPrint('Model debug print: ${model['id']}')}');
 
-    debugPrint(model.toString());
+    debugPrint('${ConditionDebugPrint(model.toString())}');
 
     debugPrint(
-        'read() We are now in the read method of native platform ConditionDataManagementDriverSql driver.:');
-    //debugPrint(whereClause.queryPart);
+        '${ConditionDebugPrint('read() We are now in the read method of native platform ConditionDataManagementDriverSql driver.:')}');
+    //debugPrint('${ConditionDebugPrint(whereClause.queryPart)}');
     Completer<Map?> completer = Completer<Map?>();
 
     //storageOperationsQueue.add(completer);
@@ -3355,7 +3394,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             overwriteModelProperties = {'app_id': app_id};
           } catch (e) {
             debugPrint(
-                'DataManagementDriver read() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e');
+                '${ConditionDebugPrint('DataManagementDriver read() method calling _getAppIdByAGivenGlobalServerKey() error thrown: $e')}');
             completer.completeError(
                 'DataManagementDriver read() method calling _getAppIdByAGivenGlobalServerKey() An operation on the global server (or global aspect of the app storage server) coldn\'t has been performed and the app_id couldn\'t has been obtained, so updating of model data that was sent from client app to the global server cannot be performed.');
           }
@@ -3371,8 +3410,8 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
               isGlobalRequest: null != globalServerRequestKey ? true : false);
 
       debugPrint(
-          'read() Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair');
-      debugPrint(query.queryPart);
+          '${ConditionDebugPrint('read() Not to get lost and to understand where we are we are going to see the development query and throw an exception to stop and think and repair')}');
+      debugPrint('${ConditionDebugPrint(query.queryPart)}');
       // throw Exception('And here we have the promised exception :)');
 
       List<Map<String, dynamic>>? result;
@@ -3381,17 +3420,18 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       } catch (e) {
         completer.completeError(false);
         debugPrint(
-            'read() An exception during third party library operation occured: ${e.toString()}');
+            '${ConditionDebugPrint('read() An exception during third party library operation occured: ${e.toString()}')}');
       }
 
       debugPrint(
-          'read() A result of read method has arrived and in the debug mode it seems it successfully done, the query was ${query.queryPart} and the result it looks like this:');
-      debugPrint(result.toString());
+          '${ConditionDebugPrint('read() A result of read method has arrived and in the debug mode it seems it successfully done, the query was ${query.queryPart} and the result it looks like this:')}');
+      debugPrint('${ConditionDebugPrint(result.toString())}');
       if (result != null && !result.isEmpty) {
         debugPrint(
-            "read() Result is not null nor empty ant it looks like this:${result.first.toString()}");
+            '${ConditionDebugPrint("read() Result is not null nor empty ant it looks like this:${result.first.toString()}")}');
       } else {
-        debugPrint('read() Result is null or empty which is technically fine.');
+        debugPrint(
+            '${ConditionDebugPrint('read() Result is null or empty which is technically fine.')}');
       }
 
       completer
@@ -3423,10 +3463,10 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     if (globalServerRequestKey != null) {
       debugPrint(
-          'readAll() we are at the beginning of the method with globalServerRequestKey != null');
+          '${ConditionDebugPrint('readAll() we are at the beginning of the method with globalServerRequestKey != null')}');
     } else {
       debugPrint(
-          'readAll() we are at the beginning of the method with globalServerRequestKey == null');
+          '${ConditionDebugPrint('readAll() we are at the beginning of the method with globalServerRequestKey == null')}');
     }
 
     Completer<List<Map<String, dynamic>>?> completer =
@@ -3436,7 +3476,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
 
     if (dbTableName != null) {
       debugPrint(
-          'globalServerRequestKey == $globalServerRequestKey, readAll()  We are going to iterate enums ConditionModelClasses.values, there is going to be stuff seen here that it iterates or it went a bit wrong.');
+          '${ConditionDebugPrint('globalServerRequestKey == $globalServerRequestKey, readAll()  We are going to iterate enums ConditionModelClasses.values, there is going to be stuff seen here that it iterates or it went a bit wrong.')}');
       var i = 0;
       for (var enumValue in ConditionModelClasses.values) {
         i++;
@@ -3444,7 +3484,7 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
             enumValue.toString().replaceFirst('ConditionModelClasses.', '');
         if (className == modelClassName) {
           debugPrint(
-              'globalServerRequestKey == $globalServerRequestKey, readAll() enum ConditionModelClasses value before:${enumValue.toString()} and the className after: $className');
+              '${ConditionDebugPrint('globalServerRequestKey == $globalServerRequestKey, readAll() enum ConditionModelClasses value before:${enumValue.toString()} and the className after: $className')}');
           whereClause?.add(
               'model_type_id',
               i,
@@ -3460,11 +3500,11 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     //  now is used null checking:
     if (null != globalServerRequestKey)
       debugPrint(
-          'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 1');
+          '${ConditionDebugPrint('globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 1')}');
     bool isGlobalRequest = null == globalServerRequestKey ? false : true;
     if (null != globalServerRequestKey)
       debugPrint(
-          'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 2 this.driverGlobal == ${this.driverGlobal}, but this.tableNamePrefix == ${this.tableNamePrefix}, but ConditionConfiguration.isClientApp == ${ConditionConfiguration.isClientApp}');
+          '${ConditionDebugPrint('globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 2 this.driverGlobal == ${this.driverGlobal}, but this.tableNamePrefix == ${this.tableNamePrefix}, but ConditionConfiguration.isClientApp == ${ConditionConfiguration.isClientApp}')}');
 
     //+ (model!.appCoreModelClassesCommonDbTableName ?? model.runtimeType.toString())}
 
@@ -3489,19 +3529,19 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
     } catch (e) {
       if (null != globalServerRequestKey)
         debugPrint(
-            'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 2!A! ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon exception: $e');
+            '${ConditionDebugPrint('globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 2!A! ConditionDataManagementDriverQueryBuilderPartSelectClauseSqlCommon exception: $e')}');
       rethrow;
     }
 
     if (null != globalServerRequestKey)
       debugPrint(
-          'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 3');
+          '${ConditionDebugPrint('globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 3')}');
 
     if (null != globalServerRequestKey)
       debugPrint(
-          'K] globalServerRequestKey == $globalServerRequestKey, readAll() Not to get lost and to understand where we are we are going to see the development query: query.queryPart == ${query.queryPart}');
+          '${ConditionDebugPrint('K] globalServerRequestKey == $globalServerRequestKey, readAll() Not to get lost and to understand where we are we are going to see the development query: query.queryPart == ${query.queryPart}')}');
 
-    debugPrint(query.queryPart);
+    debugPrint('${ConditionDebugPrint(query.queryPart)}');
     //throw Exception('And here we have the promised exception :)');
 
     scheduleMicrotask(() async {
@@ -3509,35 +3549,36 @@ class ConditionDataManagementDriverSql extends ConditionDataManagementDriver
       try {
         if (null != globalServerRequestKey)
           debugPrint(
-              'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 4');
+              '${ConditionDebugPrint('globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 4')}');
         result = await _db.select(query.queryPart);
         if (null != globalServerRequestKey)
           debugPrint(
-              'globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 5');
+              '${ConditionDebugPrint('globalServerRequestKey == $globalServerRequestKey, readAll(), debug flag: 5')}');
       } catch (e) {
         completer.completeError(false);
         debugPrint(
-            'K] globalServerRequestKey == $globalServerRequestKey, readAll() An exception during third party library operation occured: ${e.toString()}');
+            '${ConditionDebugPrint('K] globalServerRequestKey == $globalServerRequestKey, readAll() An exception during third party library operation occured: ${e.toString()}')}');
       }
       debugPrint(
-          'K] globalServerRequestKey == $globalServerRequestKey, readAll() A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:');
-      debugPrint(result.toString());
+          '${ConditionDebugPrint('K] globalServerRequestKey == $globalServerRequestKey, readAll() A result of readAll method has arrived and in the debug mode it seems it successfully done and it looks like this:')}');
+      debugPrint('${ConditionDebugPrint(result.toString())}');
       if (result == null) {
         debugPrint(
-            'K] readAll() : seeking result[0][\'id\'] BUT result == null');
+            '${ConditionDebugPrint('K] readAll() : seeking result[0][\'id\'] BUT result == null')}');
       } else if (result.isEmpty) {
         debugPrint(
-            'K] readAll() : seeking result[0][\'id\'] BUT result.isEmpty == true');
+            '${ConditionDebugPrint('K] readAll() : seeking result[0][\'id\'] BUT result.isEmpty == true')}');
       } else {
-        debugPrint('K] readAll() : result[0][\'id\'] == ${result[0]['id']}');
         debugPrint(
-            'K] readAll() : result[0][\'id\'].runtimeType == ${result[0]['id'].runtimeType}');
+            '${ConditionDebugPrint('K] readAll() : result[0][\'id\'] == ${result[0]['id']}')}');
+        debugPrint(
+            '${ConditionDebugPrint('K] readAll() : result[0][\'id\'].runtimeType == ${result[0]['id'].runtimeType}')}');
       }
       // Complete with null In assynchronous operations i cannot 100% assume it will return it id, as in the meantime another insert might has happened and it would returned the second insert id
       // And if exception wasn\'t thrown
       if (!completer.isCompleted) {
         debugPrint(
-            'K] COMPLETEING WITH THE RESULT readAll() : result == ${result} ');
+            '${ConditionDebugPrint('K] COMPLETEING WITH THE RESULT readAll() : result == ${result} ')}');
         completer.complete(result);
       }
     });
@@ -3648,7 +3689,7 @@ abstract class ConditionDataManagementDriverSqlite3RegexMatchesReplacementMethod
 
   String replaceAllCreateTable(String contents) {
     debugPrint(
-        'sqlite3CreateTableRegexString ${patterns.sqlite3CreateTableRegexString}');
+        '${ConditionDebugPrint('sqlite3CreateTableRegexString ${patterns.sqlite3CreateTableRegexString}')}');
 
     return contents.replaceAllMapped(patterns.sqlite3CreateTableRegex, (m) {
       return '\nCREATE TABLE IF NOT EXISTS $tableNamePrefix${m[1]} ${m[2]}';
@@ -3657,7 +3698,7 @@ abstract class ConditionDataManagementDriverSqlite3RegexMatchesReplacementMethod
 
   String replaceAllCreateIndex(String contents) {
     debugPrint(
-        'sqlite3CreateIndexRegexString ${patterns.sqlite3CreateIndexRegexString}');
+        '${ConditionDebugPrint('sqlite3CreateIndexRegexString ${patterns.sqlite3CreateIndexRegexString}')}');
 
     return contents.replaceAllMapped(patterns.sqlite3CreateIndexRegex, (m) {
       return '\nCREATE INDEX $tableNamePrefix${m[1]} ON $tableNamePrefix${m[2]} ${m[3]}';
@@ -3666,7 +3707,7 @@ abstract class ConditionDataManagementDriverSqlite3RegexMatchesReplacementMethod
 
   String replaceAllInsertInto(String contents) {
     debugPrint(
-        'sqlite3InsertIntoRegexString ${patterns.sqlite3InsertIntoRegexString}');
+        '${ConditionDebugPrint('sqlite3InsertIntoRegexString ${patterns.sqlite3InsertIntoRegexString}')}');
 
     return contents.replaceAllMapped(patterns.sqlite3InsertIntoRegex, (m) {
       return '\nINSERT INTO $tableNamePrefix${m[1]} ${m[2]}';
@@ -3724,8 +3765,11 @@ enum ConditionModelFieldDatabaseSynchronisationType {
 @Stub()
 @Makeshift()
 abstract class ConditionModelField {
-  /// To make some database operations easier especially in the debug mode because the related model with its own user [ConditionModelUser] model and data driver (update name class) is attached is at hand
-  ConditionModel model;
+  /// Old line: Is this for the property? To make some database operations easier especially in the debug mode because the related model with its own user [ConditionModelUser] model and data driver (update name class) is attached is at hand
+  /// This property is private so that it's .value can be set up from this file only. but getter get model is public
+  final WeakReference<ConditionModel> _modelContainer;
+  ConditionModel? get model => _modelContainer.target;
+
   String columnName;
 
   final ConditionModelFieldDatabaseSynchronisationType propertySynchronisation;
@@ -3758,9 +3802,10 @@ abstract class ConditionModelField {
   @MustBeImplemented()
   late String _validation_exception_message = '';
 
-  ConditionModelField(this.model, this.columnName,
-      {required this.propertySynchronisation,
-      this.isFinal = false}) /* : this.config = config*/ {
+  ConditionModelField(ConditionModel model, this.columnName,
+      {required this.propertySynchronisation, this.isFinal = false})
+      : _modelContainer =
+            WeakReference<ConditionModel>(model) /* : this.config = config*/ {
     //also properties like this.key and this.indexed should be updated if necessary
 
     //if (null == this.config) this.config = {};
@@ -3769,8 +3814,8 @@ abstract class ConditionModelField {
   /// There are two points of using this method. 1. Initial values passed to the model's constructor are already set and just need to be validated (throwing Exceptions if necessary). 2. By validating them a lazily initialized [ConditionModelField] is created and it gets "this" object as an argument which is possible only on lazy initialization (a fully defined class property extending [ConditionModelField] class gets this object which is not available if the property is not lazily inited).
   void init() {
     // for consistency let it be this way, yet for information calling model[columnName] is possible would trigger getter but couldn't trigger setter []= which would call a sepparete validation so probably two times validation
-    model.defValue[columnName] = this;
-    model.addDefinedKeyAndItsModelField(this);
+    model!.defValue[columnName] = this;
+    model!.addDefinedKeyAndItsModelField(this);
   }
 }
 
@@ -3885,7 +3930,7 @@ class ConditionModelFieldInt extends ConditionModelFieldIntUniversal {
   @override
   init() {
     super.init();
-    model.addFullyFeaturedValidateAndSetValue(
+    model!.addFullyFeaturedValidateAndSetValue(
         this, _fullyFeaturedValidateAndSetValue);
   }
 
@@ -3930,18 +3975,18 @@ class ConditionModelFieldInt extends ConditionModelFieldIntUniversal {
       if (_isThisFirstValueAssignement == true) {
         _isThisFirstValueAssignement = false;
         _firstValueAssignementCompleter.complete(value);
-        model._changesStreamController.add(
+        model!._changesStreamController.add(
             ConditionModelInfoEventPropertyChangeRegularChangeFirstChange(
                 columnName, this));
       } else {
-        model._changesStreamController.add(
+        model!._changesStreamController.add(
             ConditionModelInfoEventPropertyChangeRegularChange(
                 columnName, this));
       }
 
       if (isToBeSynchronized) {
-        model.changed = true;
-        model.triggerLocalAndGlobalServerUpdatingProcess(
+        model!.changed = true;
+        model!.triggerLocalAndGlobalServerUpdatingProcess(
             columnName, isToBeSynchronizedLocallyOnly);
       }
     }
@@ -3953,7 +3998,7 @@ class ConditionModelFieldInt extends ConditionModelFieldIntUniversal {
   /// There are two points of using this method. 1. Initial values passed to the model's constructor are already set and just need to be validated (throwing Exceptions if necessary). 2. By validating them a lazily initialized [ConditionModelField] is created and it gets "this" object as an argument which is possible only on lazy initialization (a fully defined class property extending [ConditionModelField] class gets this object which is not available if the property is not lazily inited).
   void validate() {
     // for consistency let it be this way, yet for information calling model[columnName] is possible would trigger getter but couldn't trigger setter []= which would call a sepparete validation so probably two times validation
-    validateAndSet(model.defValue[columnName], false);
+    validateAndSet(model!.defValue[columnName], false);
   }
 
   @Stub()
@@ -4030,7 +4075,7 @@ class ConditionModelFieldIntOrNull
   @override
   init() {
     super.init();
-    model.addFullyFeaturedValidateAndSetValue(
+    model!.addFullyFeaturedValidateAndSetValue(
         this, _fullyFeaturedValidateAndSetValue);
   }
 
@@ -4063,18 +4108,18 @@ class ConditionModelFieldIntOrNull
       if (_isThisFirstValueAssignement == true) {
         _isThisFirstValueAssignement = false;
         _firstValueAssignementCompleter.complete(value);
-        model._changesStreamController.add(
+        model!._changesStreamController.add(
             ConditionModelInfoEventPropertyChangeRegularChangeFirstChange(
                 columnName, this));
       } else {
-        model._changesStreamController.add(
+        model!._changesStreamController.add(
             ConditionModelInfoEventPropertyChangeRegularChange(
                 columnName, this));
       }
 
       if (isToBeSynchronized) {
-        model.changed = true;
-        model.triggerLocalAndGlobalServerUpdatingProcess(
+        model!.changed = true;
+        model!.triggerLocalAndGlobalServerUpdatingProcess(
             columnName, isToBeSynchronizedLocallyOnly);
       }
     }
@@ -4086,7 +4131,7 @@ class ConditionModelFieldIntOrNull
   /// There are two points of using this method. 1. Initial values passed to the model's constructor are already set and just need to be validated (throwing Exceptions if necessary). 2. By validating them a lazily initialized [ConditionModelField] is created and it gets "this" object as an argument which is possible only on lazy initialization (a fully defined class property extending [ConditionModelField] class gets this object which is not available if the property is not lazily inited).
   void validate() {
     // for consistency let it be this way, yet for information calling model[columnName] is possible would trigger getter but couldn't trigger setter []= which would call a sepparete validation so probably two times validation
-    validateAndSet(model.defValue[columnName], false);
+    validateAndSet(model!.defValue[columnName], false);
   }
 
   @Stub()
@@ -4163,7 +4208,7 @@ class ConditionModelFieldString extends ConditionModelFieldStringUniversal {
   @override
   init() {
     super.init();
-    model.addFullyFeaturedValidateAndSetValue(
+    model!.addFullyFeaturedValidateAndSetValue(
         this, _fullyFeaturedValidateAndSetValue);
   }
 
@@ -4194,18 +4239,18 @@ class ConditionModelFieldString extends ConditionModelFieldStringUniversal {
       if (_isThisFirstValueAssignement == true) {
         _isThisFirstValueAssignement = false;
         _firstValueAssignementCompleter.complete(value);
-        model._changesStreamController.add(
+        model!._changesStreamController.add(
             ConditionModelInfoEventPropertyChangeRegularChangeFirstChange(
                 columnName, this));
       } else {
-        model._changesStreamController.add(
+        model!._changesStreamController.add(
             ConditionModelInfoEventPropertyChangeRegularChange(
                 columnName, this));
       }
 
       if (isToBeSynchronized) {
-        model.changed = true;
-        model.triggerLocalAndGlobalServerUpdatingProcess(
+        model!.changed = true;
+        model!.triggerLocalAndGlobalServerUpdatingProcess(
             columnName, isToBeSynchronizedLocallyOnly);
       }
     }
@@ -4217,7 +4262,7 @@ class ConditionModelFieldString extends ConditionModelFieldStringUniversal {
   /// There are two points of using this method. 1. Initial values passed to the model's constructor are already set and just need to be validated (throwing Exceptions if necessary). 2. By validating them a lazily initialized [ConditionModelField] is created and it gets "this" object as an argument which is possible only on lazy initialization (a fully defined class property extending [ConditionModelField] class gets this object which is not available if the property is not lazily inited).
   void validate() {
     // for consistency let it be this way, yet for information calling model[columnName] is possible would trigger getter but couldn't trigger setter []= which would call a sepparete validation so probably two times validation
-    validateAndSet(model.defValue[columnName], false);
+    validateAndSet(model!.defValue[columnName], false);
   }
 
   @Stub()
@@ -4295,7 +4340,7 @@ class ConditionModelFieldStringOrNull
   @override
   init() {
     super.init();
-    model.addFullyFeaturedValidateAndSetValue(
+    model!.addFullyFeaturedValidateAndSetValue(
         this, _fullyFeaturedValidateAndSetValue);
   }
 
@@ -4320,7 +4365,8 @@ class ConditionModelFieldStringOrNull
     if (isToBeSet) {
       //model.defValue[columnName] = value;
       // setter decides which property containing value to use _value or _valueFinal - see the properties description
-      debugPrint('B]B]A new value is going to be set - datetime: $value');
+      debugPrint(
+          '${ConditionDebugPrint('B]B]A new value is going to be set - datetime: $value')}');
       if (isFinal) {
         _valueFinal = value;
       } else {
@@ -4330,17 +4376,17 @@ class ConditionModelFieldStringOrNull
       if (_isThisFirstValueAssignement == true) {
         _isThisFirstValueAssignement = false;
         _firstValueAssignementCompleter.complete(value);
-        model._changesStreamController.add(
+        model!._changesStreamController.add(
             ConditionModelInfoEventPropertyChangeRegularChangeFirstChange(
                 columnName, this));
       } else {
-        model._changesStreamController.add(
+        model!._changesStreamController.add(
             ConditionModelInfoEventPropertyChangeRegularChange(
                 columnName, this));
       }
       if (isToBeSynchronized) {
-        model.changed = true;
-        model.triggerLocalAndGlobalServerUpdatingProcess(
+        model!.changed = true;
+        model!.triggerLocalAndGlobalServerUpdatingProcess(
             columnName, isToBeSynchronizedLocallyOnly);
       }
     }
@@ -4353,7 +4399,7 @@ class ConditionModelFieldStringOrNull
   void validate() {
     // for consistency let it be this way, yet for information calling model[columnName] is possible would trigger getter but couldn't trigger setter []= which would call a sepparete validation so probably two times validation
 
-    validateAndSet(model.defValue[columnName], false);
+    validateAndSet(model!.defValue[columnName], false);
   }
 
   @Stub()
@@ -4773,7 +4819,7 @@ abstract class ConditionModelCompleteModel {
     ConditionConfiguration.maxNotLazyModelTreeRestorationLevelForStandaloneModels
     currenTreeLevel++;''');
     } catch (e) {
-      debugPrint('$e');
+      debugPrint('${ConditionDebugPrint('$e')}');
     }
     // Any time you impelment the method check out for this:
     //if (!this._children.isEmpty) {
@@ -4800,10 +4846,22 @@ mixin ConditionModelDynamic {}
 mixin ConditionModelOneDbEntryModel {}
 
 /// Really see [ConditionModelDynamic] class too. [!READ and see for "[To do]""] Important rules: all tables must have id column, if a newly created model object has only 'id' (so with .id) property set-up, the data is fetched and only the validated and the all model's properties are set up. If a newly created model has some or all properties set up except for id property - the model completely new, it doesn't have it's row in the sql db (speaking in sql language terms), so the models properties except for id are validated and send into db, if all is successful, the db returns inserted id. Then updates of single or more properties are done automatically when they are changed. Seek for more properties related to automatic or less automatic changes. You could even do the id stuff automatically even if a model doesn't have the id column defined - rethink it well.
+/// Warning: Please when you are user of this library using it in custom way. Please consider not using reference to "this" directly but using [_thisModelWeakReference] [_conditionModelApp] which are instaces of WeakReference containing their model objects or null! Just be prepared they could get null and dive deeper to understand why and when which analysing [ConditionModelApps] class may help.
 /// Important. if f.e. this.id throws exception then this['id'] == null. This is because id hasn't been initialized yet (the "late" keyword before the corresponding a_id property) and hasn't gotten it's value from the db. The same rule for all the rest of properties of model classes. this['id'] cannot throw any exception because a the map specs requires that. It includes a not defined 'nonidsomefield' key of using a a_nonidsomefield field that hasn't been defined too for a given [ConditionModel] extending class.
 abstract class ConditionModel extends ConditionMap {
-  /// it is always set up in the constructor body properly or exception is thrown that something went wrong
-  late final ConditionModelApp conditionModelApp;
+  /// It is never null, except for when the model has retired (retire() method success) or this is also [ConditionModelApp].
+  /// Warning! Alway use conditionModelApp getter because [conditionModelApp] overrides the getter and returns itself while at the same time it has _conditionModelApp == null. This is related to avoiging unnecessary pointers to an app object left to trigger some stuff - read more in this desc below.
+  /// It is always set up in the constructor body properly or exception is thrown that something went wrong
+  /// This property cannot be final (setter assures finality for thid-party programmers) and must be nullable, when last pointer to an app model is lost everywhere (if successful in retiring a app or non-app model retire() method nullifies this property here), then [ConditionModelApps] stops calling it's method cyclically and allows for a new app object with the same server settings (logical duplicate) to be created. No two the same settings app is allowed. More on that in [ConditionModelApps] and [ConditionModelApp] description.
+  /// You shouldn't create unnecessary new pointers to this variable, because if you forget to unlink unused variable pointing to the app the [ConditionModelApps] class won't perform some operations relasing resources related to the app model object like a method called cyclically (this is released thanks to a Finalizer class). If you have 100 no more used app models with forgotten pointers to them this will cause 100 methods to be called cyclically which in this way or the other slows down either app objects or the entire app.
+  late WeakReference<ConditionModelApp> _conditionModelApp;
+
+  /// Used internally with Finalizer class. Thanks to using this property instead using referrence to this directly like var a = this, when a = _thisModelWeakReference then a Garbage Collector action can be triggered for this model when there is no strong reference (our a = this) is left in the programe.
+  /// You ofcourse could create you own such a weak referrecnce but this is also to notify you of good practices is better to adhere to.
+  late final WeakReference<ConditionModel> _thisModelWeakReference;
+
+  /// Use this getter instead of [_conditionModelApp]. In [_conditionModelApp] desc you have reasons why you should not unnecessarily assign the result of this getter to a variable/pointer and possibly forget to assign the pointer to null when the app is gonna be no more used.
+  ConditionModelApp? get conditionModelApp => _conditionModelApp.target;
 
   /// Assigned immediately in the constructor body. Also necessary to read [_appUniqueId] desc of [ConditionModelApp] class. Each model object has uniqueId in the app object not in the entire application scope. The ids and minId, maxId is described better in [ConditionModelApps] and [ConditionModelApp]. In short it is for [Finazlizer] of this model to start working when last reference to this particular model is lost. When some object of some class can't have a reference to this model instance so that the model's finaliser is able to start working the other object has the model's id to associate some other object with the model and on model's the removal it can remove the related objects based on the id or perform other finishing/finalizing actions.
   late final int uniqueId;
@@ -4871,8 +4929,520 @@ abstract class ConditionModel extends ConditionMap {
   @protected
   final ConditionDataManagementDriver driver;
 
-  /// See the type [ConditionWidgetBase] class' description. In reality ConditionWidget object will be used for frontend app not on the server
+  /// FIXME: Make sure you call dispose method on widget/state? when necessary and you understand how it works. Well, we set model property in widget to null in model's retire() method.
+  /// See the type [ConditionWidgetBase] class' description. In reality [ConditionWidget] object will be used for frontend app not on the server
   late final ConditionWidgetBase widget;
+
+  // ====================================================
+  // FOR THE RETIRE METHOD.
+  // So i asked on the dart discord server and i was told that GC decides when to call the Finalizer
+  // this is why the retire(); method is required to be called but the finalizer stuff leave as it is. Why?
+  // however if someone forgot about it but the app lost all pointers directed to it that would automatically trigger
+  // what's necessary by the GC. It is practical and also good for educational purposes.
+  // TODO: LET'S FORCE IMMEDIATE GC FOR TESTS (?) AS SUGGESTED BY SOMEONE ON DISCORD FOR TEST BEFORE CHANGING ANYTHING
+  // TODO: AFTER! THE ABOVE because of that NATIVEFINALIZER CLASS FINALIZERNATIVE? IS NEEDED
+  // TO BE IMPLEMENTED BUT WE NEED TO DO A MULTIPLATFORMFINALIZER THAT USES THE DART FINALIZER CLASS FOR WEB ONLY.
+  // ====================================================
+
+  /// FIXME: This was for ConditionModelApp initially and now the app uses ConditionModel retire method that was moved from the parentid model class. The docs and some naming should be updated.
+  /// Warning! This particular implementation must have SYNC body and is probably called directly only by [ConditionModelApp] object so the below warning:
+  /// Warning! By convention this particular implementation is 100% sure to be SYNCHRONICALLY finished successfully and quickly so it can be called only if a child class has and has already finished it's retire() implementation successfully and then at the end it should call super.retire() (something like this) and you can find at least one such implementation you can follow.
+  /// So any other method call afther call of this method is pefromed knowing that all the neceessary stuff here is finished successfully already even if by convention the method must return Future and the future you may ignore knowing it's result is informally true while not yet it's result has been set up!
+  /// Each [ConditionModel] MUST call retire before being loosing last known pointer to it (works like dispose) to especially remove a pointer to the model that is in the model's [widget] and remove possible other such references to it and release other resources that might be otherwise still maintained by the dart or flutter framework (animations, endless not cancelled timers).
+  /// The method returns null because the most important implementation of the retire method of some descending class returns null when another async retire method hasn't fully finished it's sophisticated stuff yet, please see the method for whys.
+  @mustCallSuper
+  Future<bool>? retire2() {
+    debugPrint(
+        '${ConditionDebugPrint('ConditionModel retire2() has just been called.')}');
+
+    // No need for the below a lot of stuff as we use weak referrence to model app
+    //for (ConditionModelField value in defValue.values) {
+    //  debugPrint('${ConditionDebugPrint(
+    //      'ConditionModel retireMethod: ConditionModelField of columnName = ${value.columnName} to set value._modelContainer.value = null')}');
+    //  value._modelContainer.value = null;
+    //}
+    //_nullifierOfModelContainerOfWidget();
+    // weak reference - not needed: _conditionModelApp =       null; // See ConditionModelApps about [Finalizer]s and removing some stuff (cyclical too) when the last pointer is lost.
+//HERE
+//FIXME:
+//For now it is like all places APP SET TO NULL BUT IT STILL MUST BE SOMEWHERE :( BECAUSE THE FINALIZER DON'T TRIGGER
+//Lets set up conditionModelApp1 = null to loose all pointers to the app object.
+//flutter: ConditionModel retireMethod has just been called.
+//flutter: ConditionModel retireMethod: ConditionModelField of columnName = server_key to set value._modelContainer.value = null
+//flutter: ConditionModel retireMethod: ConditionModelField of columnName = users_counter to set value._modelContainer.value = null
+//flutter: ConditionModel retireMethod: ConditionModelField of columnName = currently_active_user_id to set value._modelContainer.value = null
+//flutter: ConditionModel retireMethod: ConditionModelField of columnName = currently_logged_users_ids to set value._modelContainer.value = null
+//flutter: ConditionModel retireMethod: ConditionModelField of columnName = users_ids to set value._modelContainer.value = null
+//flutter: ConditionWidgetBase inside, call of nullifierOfModelContainerOfWidget property which is method.
+//flutter: conditionModelApp1 = null has just been set
+
+    return Future.value(true);
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------- //
+  // SYNCHRONOUS PART ----------- //
+  // ---------------------------------------------------------------------------------------------------------------- //
+
+  /// See the [lastRetireModelProcessStart] which is not the same. Each call of retire uptates this property with timestamp.
+  ConditionTimeNowMillisecondsSinceEpoch? _lastRetireMethodCall;
+  ConditionTimeNowMillisecondsSinceEpoch? get lastRetireMethodCall =>
+      _lastRetireMethodCall;
+
+  // Linter orange notification that the property isn't ued but actually the property is used in the class.
+  /// FIXME: where is description? Some is [_retireMethodItsBodyCodeExecutionLastFinish];
+  ConditionTimeNowMillisecondsSinceEpoch?
+      _retireMethodItsBodyCodeExecutionLastStart;
+
+  // Linter orange notification that the property isn't ued but actually the property is used in the class.
+  /// important - always updated when [_retireMethodItsBodyCodeExecutionLastStart] updated, even when synchronous body exception is thrown
+  ConditionTimeNowMillisecondsSinceEpoch?
+      _retireMethodItsBodyCodeExecutionLastFinish;
+
+  /// Means synchronous aspect of the [retire] method body, read more: With [isRetirementProcessPending] you can use the both properties features as you need (use public getters). Check out if some stuff is performed even befor this property is set at the top or the [retire] method. The [retire] method is executed synchronously but apart from [isRetirementProcessPending] is not everything we need to know if the method is being executed right know which is not the same as [isRetirementProcessPending] which may last after the body or the [retire] method was executed.
+  bool _isRetireMethodBodyAlreadyBeingExecuted = false;
+  bool get isRetireMethodBodyAlreadyBeingExecuted =>
+      _isRetireMethodBodyAlreadyBeingExecuted;
+
+  // ---------------------------------------------------------------------------------------------------------------- //
+  // ASYNCHRONOUS PART ----------- //
+  // ---------------------------------------------------------------------------------------------------------------- //
+
+  /// Use getter - this is internal stuff, Not the same as [lastRetireMethodCall] (if both properties are changed in the same [retire] method called they have the same time) where each call on retire() method updates the the [lastRetireMethodCall] while [lastRetireModelProcessStart] is updated when we start an actual retire process. this See also properties here starting from "retire..." and the retire method. When [retire]() is called this value is updated ConditionModelApp.getTimeNowMillisecondsSinceEpoch(); When retire is called unsuccessfuly a conditoinModelApp may monitor the model for some time by calling the retire method cyclically; if [conditionModelApp] detects that f.e. model has been reattached to the model tree it stops cyclically calling the retire method. Other factors may have impact if the retire method is called on a model or not. And after the model is retired it is unlinked from the app models or similar ? app property - 2 properties are for this.
+  ConditionTimeNowMillisecondsSinceEpoch? _lastRetireModelProcessStart;
+  ConditionTimeNowMillisecondsSinceEpoch? get lastRetireModelProcessStart =>
+      _lastRetireModelProcessStart;
+
+  /// Use the public getter of [_lastRetireModelProcessStart], but see the desc of [_lastRetireModelProcessStart]
+  ConditionTimeNowMillisecondsSinceEpoch? _lastRetireModelProcessFinish;
+  ConditionTimeNowMillisecondsSinceEpoch? get lastRetireModelProcessFinish =>
+      _lastRetireModelProcessFinish;
+
+  /// Do not change it, only reading purposes, this is managed by [conditionModelApp] conditionModelApp property, this is used byt it's [hangOnModelOperationIfNeeded] and is related to model retiring system ([retire] method) allowing to release resources taken by unused models. if a completer is not completed it means a model will not start a particular operation until the completer completes (related future finishes) which allows to retire method safely most probably not interrupting a possibly long global server operation. When we can prevent such an operation or other from starting we can retire model and release it's resources or possibly resume all model to fully active state if in the meantime a model was restored to the model tree, read more. conditionModelApp will monitor models that are removed from children list (removeChild method) if their resources can be released by unlinking from _allAppModels or so Set. It can be assumed that if conditions are met no link is left to the model after retire() method was called successfuly, etc. quite a number of factors involved.
+  final Map<ConditionModelClassesTypeOfSucpendableOperation, Completer?>
+      _conditionModelAppHangOnModelOperationsCompleters = {};
+
+  /// only if non-null completer.isCompleted == false the retirement process is being in progress now. All important retire stuff depend on it, like public [isRetired], [isRetirementProcessPending], [pendingRetirementProcessFuture], or [retire] method if not more. If non-null completer.isCompleted == true, the model is retired. The [retire]() method updates this completer. The retirement may be completely cancelled. Maybe pending already for f.e. 10 seconds, may be created new, etc. So retire() methods updates it and you use the Future getter only in normal circumstances.
+  Completer<bool>? _pendingRetirementProcessCompleter = null;
+
+  /// Read used here [_pendingRetirementProcessCompleter] desc.
+  Future<bool>? get pendingRetirementProcessFuture =>
+      _pendingRetirementProcessCompleter?.future;
+
+  /// Read used here [_pendingRetirementProcessCompleter] desc.
+  bool get isRetirementProcessPending =>
+      _pendingRetirementProcessCompleter != null &&
+              !_pendingRetirementProcessCompleter!.isCompleted
+          ? true
+          : false;
+
+  /// ! Use getter [isRetired] got a reason!. The value can be set once and bee true; The code setting up the up-to-date value is in [retire]() method at the top of it probably. Verify this desc - is older a bit. Used in connection with retire() method and [ConditionModelApp] managing all the models connected to the [ConditionModelApp] object. the property is set internally, use getter isRetired. The property can be set once and be true if set, getter will return false if this property is not initialized (the getter catches exception and correctly returns false)
+  late final bool _isRetired;
+  bool get isRetired {
+    try {
+      return _isRetired;
+      //exception when not inited - its fine this is to prevent from setting-up this twice or more and to detect any incorrect modifications to this library
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // FIXME: I guess ConditionModelApp can only retire if it has 0 children but this method may be called. Trace the process for the app model.
+  // Probably universal but this is called by retire method just before _isRetired = true;. Must be before the retire is finished, it is to trigger possible retirement process for children also where possible, it may be that at this stage any exception will be catched in the method
+  removeAllChildren() {
+    if (this is ConditionModelParentIdModel) {
+      var thisAsConditionModelParentIdModel =
+          (this as ConditionModelParentIdModel);
+      // you cannot remove elements from an iterable ? when now it being iterated - we need a copy of the set
+      Set<ConditionModelParentIdModel> childrenSetCopy = Set.from(
+          thisAsConditionModelParentIdModel
+              ._children); // the variable is destroyed after the method finished
+      for (ConditionModelParentIdModel child in childrenSetCopy) {
+        // remove child triggers retirement process on child automatically - it will be successful or not - which is fine bet the child 100% will be removed from the model too.
+        // and important: when removed from the tree an event is sent to conditionModelApp and cyclically it will be checked if the child can be removed from _allApp scheduled for unlinking etc. Set
+        // Monitor the synchronous apsect.
+        thisAsConditionModelParentIdModel.removeChild(child);
+      }
+    }
+  }
+
+  /// Never returns null - null for compatibility with the [retire] return method. As with the [retire] method body must be performed synchronous even if it returns the future. Used by the [retire] method couple of times so the need to put it into a separate method
+  Future<bool>? _retireRealSynchronousCodeExecutionFinish() {
+    _retireMethodItsBodyCodeExecutionLastFinish =
+        ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+    _isRetireMethodBodyAlreadyBeingExecuted = false;
+    if (this is ConditionModelParentIdModel) {
+      _changesStreamController.add(
+          ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustFinishedItsSynchronousAspectOfBodyCodeExecution(
+              this as ConditionModelParentIdModel));
+    }
+
+    /// It must be not null. At the time of writing the only situation null was allowed or the retire method when _isRetireMethodBodyAlreadyBeingExecuted was already called
+    return _pendingRetirementProcessCompleter!.future;
+  }
+
+  /// FIXME: THE BELOW TO DO IS ALMOST FIXME.
+  /// TODO: Track down all Futures and Completers that apart from those in the metod might still exist and lock any method finish.
+  /// Only internally used by the retire() method basically when the model has just successfully finished retirement process. initially Related to [_conditionModelAppHangOnModelOperationsCompleters]. In short when there are unfinished completers there may be some async/await -ing methods suspended untile the completers/futures finish. This means that such a completer and also right at the moment one or more methods are still in memory and they are never going to be finished and completers removed from general memory.
+  _completeAndUnlinkAllCompletersAndAllOtherNecessaryStuff() {
+    for (final ConditionModelClassesTypeOfSucpendableOperation key
+        in _conditionModelAppHangOnModelOperationsCompleters.keys) {
+      if (_conditionModelAppHangOnModelOperationsCompleters[key] != null) {
+        Completer completer =
+            _conditionModelAppHangOnModelOperationsCompleters[key]!;
+        completer.completeError(
+            'retire() method has just called _completeAndUnlinkAllCompleters() see it\'s description. Now we complete all _conditionModelAppHangOnModelOperationsCompleters with an error, to unlock any potential async/await operations and finish any suspended methods and release memory or other resources related to the completers.');
+        // i assume the key for map can be here removed in the for loop. If it was a list it coudn't
+        _conditionModelAppHangOnModelOperationsCompleters.remove(key);
+      }
+    }
+  }
+
+  /// FIXME: This method was moved from other class, the old retire changed its name, docs need to be updated
+  /// Warning! A super.retire() may require to be called when this.retire() is 100% successfully right now. Read any super/super.super...super.retire() descriptions.
+  /// The super.retire() returns future, but its code is synchronically finished successfully even if the future it's value is not yet available because Future result is available after some asynchronical time. So after the super.retire() call you may synchronically do other stuff knowing all in super classes was retired synchronically.
+  /// Synchronously returns null probably only when [_isRetireMethodBodyAlreadyBeingExecuted] == true. Warnings: One retirement process triggered by the retire method (information about it taken from the future) must and "decides" how long it can last but it should be designed in a way it doesn't last for too long. [retireModelWhenWhenRemovedFromTheModelTree] == false (value can be changed) is to be used by conditionModelApp internally to prevent model from removing from internal list/s, also can be used in custom code, but here retire does it's job; Public and synchronous body on purpose. Returns future of [_pendingRetirementProcessCompleter] ".future" property. It is public because you may create a model object outside this library and when it is independent of the main tree you may want to retire it on your own. Important if this synchronous-body method returns the completer which is is already completed .isCompleted == true, you may use it in a regular synchronous if (completer.isCompleted == true) function body you don't need to use in async await method but you can ofcourse do the await completer.future anytime you want when you wait for the completer to complete. Sometimes it is needed to have the information right now. You can call the method any time you want, true = retired, false = not - it is as it was. If you use models customarily then after the future is complete you can set any remaining pointer to it to null. If however a model is in the model tree. The retire method will not work and will throw an asynchronous exception (completeError). May be in Readme more desc. This must be somehow implemented however difficult it might be. Not going here into details here but there may be model removed from the model tree, there may be no other reference active to the model except for a special List of models in the ConditionModelApp class. When a model is nowhere else except for this list it must be removed. It could be implemented with some delay - if it is not in the tree and no property change induced by app user has taken place, the model can be detached and send some locking if accidentally it is suprisingly linked somewhere, and in the development process such places will be gradually corrected, some log messages, errors (no exceptions - wrongly constructed piece of code). No unused link to the model can be left
+  Future<bool>? retire() {
+    // READ AND KEEP IT AT THE TOP
+    // READ - ONE ASYNC RETIRE PROCESS MUST NOT LAST FOR TWO LONG TO ABOUT 30 SECODS FOR EXAMPLE.
+    // THIS IS BECAUSE ConditionModelApp or maybe more in the future is depending on the workings of this method
+    // To achieve that there is need for efficient finishing or locking global server operations
+    // by setting timeouts on the remote url servers and timeouts defined in the app
+    // WHERE ALL OF THIS IS ALREADY TAKEN INTO ACCOUNT BUT NEEDS REVISION.
+
+    // READ AND KEEP IT AT THE TOP
+    // READ! NO ASYNC HERE, See why in the method description. return true if retired, or false if not it is assumed that if false it the model is fully functional as it was
+    // HOWEVER, at some point there was scheduleMicrotask() which is a slightly delayed separate piece of code execution
+    // and in this and as i assume possible other cases it is documented why this async separate call won't work on a changed variables/properties values and why
+    // SO KEEP IN MIND THE ABOVE WHEN YOU WANT TO MESS UP THIS METHOD ! :)
+
+    // Review event, timestamps, some other, not all stuff in the right order of occuring:
+    // Important, again and again all related to reaction to synchronous aspect of retire call
+    // ---------------
+    // _lastRetireMethodCall
+    // ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustBeenCalledOnModel
+    // ---------------
+    //
+    // _retireMethodItsBodyCodeExecutionLastStart
+    // _isRetireMethodBodyAlreadyBeingExecuted == true;
+    // ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustStartedItsSynchronousAspectOfBodyCodeExecutionJustAfterItHadBeenCalled
+    // --------------------
+    // _retireMethodItsBodyCodeExecutionLastFinish // important - always updated when _retireMethodItsBodyCodeExecutionLastStart updated, even when synchronous body exception is thrown
+    // _isRetireMethodBodyAlreadyBeingExecuted == false;
+    // ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustFinishedItsSynchronousAspectOfBodyCodeExecution
+
+    if (this is ConditionModelParentIdModel &&
+        (this as ConditionModelParentIdModel)
+            .isModelInTheTreeOrInsideAParentLinkModel()) {
+      throw Exception(
+          'retire() method exception: You cannot retire a model that is in the main model tree as a child or as as a model in it\'s parent/container that is a link model. Using removeChild() method and/or removeParentLinkModel() on all models will trigeer retirement process automatically when conditions are met.');
+    }
+
+    final ConditionTimeNowMillisecondsSinceEpoch commonTimestampNow =
+        ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+
+    _lastRetireMethodCall = commonTimestampNow;
+
+    if (this is ConditionModelParentIdModel) {
+      _changesStreamController.add(
+          ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustBeenCalledOnModel(
+              this as ConditionModelParentIdModel));
+    }
+
+    if (_isRetireMethodBodyAlreadyBeingExecuted) {
+      return null;
+    } else {
+      _retireMethodItsBodyCodeExecutionLastStart = commonTimestampNow;
+      _isRetireMethodBodyAlreadyBeingExecuted = true;
+      if (this is ConditionModelParentIdModel) {
+        _changesStreamController.add(
+            ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustStartedItsSynchronousAspectOfBodyCodeExecutionJustAfterItHadBeenCalled(
+                this as ConditionModelParentIdModel));
+      }
+    }
+
+    /// We have to make sure that if an exception is thrown by the SYNCHRONOUS PART OF THE METHOD we call _retireRealSynchronousCodeExecutionFinish(); but probably rethrow;
+    try {
+      if (isRetired) {
+        // WARNING BELOW CONDITOIN IS NOT TO BE THE SAME AS isRetirementProcessPending GETTER so it is not
+        if (_pendingRetirementProcessCompleter == null ||
+            !_pendingRetirementProcessCompleter!.isCompleted) {
+          throw Exception(
+              'retire() method. Closer to a debug exception. It is assumed that by design it is not going to be thrown. While the model is alread retired for some reason it\'s completer is null or is not completed ');
+        }
+        return _retireRealSynchronousCodeExecutionFinish();
+      } else if (isRetirementProcessPending) {
+        // it is understood that previous retire() call is still working so we don't change _lastRetireModelProcessStart
+        // it is important that this is synchronous body of a method that synchronously returns future, not value, after finishing the body
+        // so in no way on the event loop something should have changed and we can return the future now
+        return _retireRealSynchronousCodeExecutionFinish();
+      } else if (_pendingRetirementProcessCompleter ==
+              null // can be so because isRetirementProcessPending has just been checked
+          ) {
+        _lastRetireModelProcessStart = commonTimestampNow;
+
+        // is not retired so:
+        _pendingRetirementProcessCompleter = Completer<bool>();
+
+        _pendingRetirementProcessCompleter!.future.catchError((e) {
+          debugPrint(
+              '${ConditionDebugPrint('internal retire() method body catchError (method non async body syntax exception) the completer will be completed with false value anyway: $e')}');
+        });
+      } else {
+        // it IS completed and NOT null and NOT retired // OLD DESC: it is not retired but also it is completed isCompleted == true,
+        // SO we need update "the" timestamp a new completer object
+        _lastRetireModelProcessStart = commonTimestampNow;
+        _pendingRetirementProcessCompleter = Completer<bool>();
+      }
+
+      // Interesting syntax anyway now dart cast this as thisAsConditionModelParentIdModel automatically
+      // ConditionModelParentIdModel thisAsConditionModelParentIdModel = this;
+
+      // FIRST PART/TYPE OF CHECKING CAREFULLY CHECK OUT IF SOMETHING IS MISSING
+      // !!! yeah i found one missing and working (models added/removed not tested in real life):
+      // ConditionModelEachWidgetModel get hasModelParentLinkModels of the private _....
+      // IS IT TO BE PERFORMED HERE OR IN THE CONDITION MODEL APP? I THINK HERE BUT...
+      // First we won't retire model that is not in the main tree a a child or in any model as link child
+      // also there is param or more params that tell - the model cannot be retired automatically seek the params
+      if (
+          // isModel... may be called two times - one time on conditionmodelapp however it is not an expensive operation
+          //isModelInTheTreeOrInsideAParentLinkModel()
+          // the below utilises probably now two properties updated correctly
+          this is ConditionModelParentIdModel &&
+              (this as ConditionModelParentIdModel)
+                  .isModelInTheTreeOrInsideAParentLinkModel()
+          // WARNING retireModelWhenWhenRemovedFromTheModelTree == true // removed part: this is to be used by conditionModelApp that just won't call retire at all
+          ) {
+        // if model is prepared to be removed when retire() called and model is not in the tree/etc and retireModelWhenWhenRemovedFromTheModelTree == true
+        // if model is successfuly retired or before that it must remove it's children - unlink so that they can be automatically retired too if conditions are met
+        // is not retired so:
+        // we have:
+        // new _pendingRetirementProcessCompleter, updated _lastRetireModelProcessStart (and as always updated _lastRetireMethodCall)
+
+        _lastRetireModelProcessFinish = commonTimestampNow;
+        _pendingRetirementProcessCompleter!.complete(false);
+        return _retireRealSynchronousCodeExecutionFinish();
+      } // no else we can go ahead with the code below
+
+      /// SECOND PART/TYPE OF CHECKING
+
+      // !!!! ARE THE COMMENTS HERE UP TO DATE ??? !!!!
+      // -----------------------------------------------------------
+      // YOU NEED TO ANALYSE ALL THE PROCES OF INITING, CREATING, UPDATING ETC. TO MODIFY IT TO OR ALIGN IT WITH RETIRE METHOD.
+      // - NOT A ONE MINUTE MATTER
+      // problem: global server may not be working so this will prevent the model from retirement.
+      // so we will have to change the the uptate for the global server
+      // something like:
+      // one update cycle failed
+      // we have time windows to retire model if we want to.
+      // we can retire model
+      // if not we try the update cycle to make sure model cant be retired in the meantime.
+      // so global server update cycle cannot last too long
+      //
+      // but basically it is assumed that update cycle for local serve is always successful because it is on disk and "fast" like in memory.
+      // --------------------------------------
+      // there is a need to retire model any way but wait until ome timeout ends
+      // when the timeout ends it will
+      // so you add isModelLocked but not yet retired because you are sure the model will be retired - all neccessary conditoins are met.
+      // you think over if some regular or finalizing events in the changes stream are allowed and which ones
+      // global singular operation cannot be interupted but also must be prevented from repeating
+      // when model is removed from ConditionModelApp it will be recreated periodically as standalone, added to conditionmodelapp
+      // then removed when synchronisation, update is finished, etc.
+      // when any model is created when it exists on the conditionmodelapp list exception should be thrown.
+      // so if a model is in the tree get it or create new. However if you get a now retiring object it's a big problem.
+      // !!! you then need to wait or a mechanism of possible replacement of two such objects if needed should be implemented
+      // model may need time to be inited locally but it's on hard disk - 30 seconds and must be inited, for retire() purposes
+      // so you need another mechanism.
+
+      // THIS condition if true as a starting point doesn't retire the model,
+      // however we will try to seek if we can do something about it, has some additional information - analyse please the belo code
+
+      bool localServerRetireConditionSet = _modelIsBeingUpdated ||
+          _fieldsToBeUpdated.isNotEmpty ||
+          _fieldsNowBeingInTheProcessOfUpdate.isNotEmpty;
+
+      if (!inited || localServerRetireConditionSet) {
+        // REMINDER inited is local server so it is considered "immediate" operation you don't wait long as if from RAM So we don't care and finish quickly with false;
+        // is not retired so:
+        // we have:
+        // new _pendingRetirementProcessCompleter, updated _lastRetireModelProcessStart (and as always updated _lastRetireMethodCall)
+
+        _lastRetireModelProcessFinish = commonTimestampNow;
+        _pendingRetirementProcessCompleter!.complete(false);
+        return _retireRealSynchronousCodeExecutionFinish();
+      } else if (
+          // we know is is false==localServerRetireConditionSet HOWEVER THE VARIABLE MUST BE UPDATED AGAIN IN ASYNC schedule scheduleMicrotask() BECAUSE OF THE DELAY SCHEDULEMICROTASK IS CALLED ON THE EVENT LOPP. It is not impossible some values to changed in the meantime
+          _modelIsBeingUpdatedGlobalServer // !!! read below we will focus on to determine if we can retire the model anyway
+              ||
+              _fieldsToBeUpdatedGlobalServer
+                  .isNotEmpty // possible this one can allow for retirement if possible see later
+              ||
+              _fieldsNowBeingInTheProcessOfUpdateGlobalServer
+                  .isNotEmpty // possible this one can allow for retirement if possible see later
+          ) {
+        // is not retired so:
+        // we have:
+        // new _pendingRetirementProcessCompleter, updated _lastRetireModelProcessStart (and as always updated _lastRetireMethodCall)
+
+        // SEE PLEASE, if the below list of variables play any important role here or in the conditoin above:
+        // any model must be inited quickly from local storage so inited must be in the main condition
+        // __inited, _completerInitModel, __initedGlobalServer, _completerInitModelGlobalServer, _isModelInTheModelTree
+        // i found also this _hasModelParentLinkModels
+        // has Future?: hangOnWithServerCreateUntilParentAllows, _hangOnWithServerCreateUntilParentAllowsCompleter,
+        // autoRestoreMyChildren
+
+        // IMPORTANT EDUCATIONAL: This absolutely could be done synchronously and the return of the retire method might be bool not Completer
+        // However it takes into account possible longer period actions to be performed to retire the model
+
+        // here we attempt to retire. CAUTION! Maybe better With no async/await you have one piece of code in the event loop executed at once; any stop may cause change to some property values in the meantime
+        scheduleMicrotask(() {
+          // READ this body is also somewhat educative, NOT necessary the MOST EFFICIENT NOW!
+          // f.e. this if there is an exception it should be handled
+          // in such a way we are sure the retire process didn't finish correctly and can be started again from now
+          // basically when the exception is catched in the catch body
+          try {
+            // If you are going to be successfull complete true if not: false; false means the model is active as it was
+            // EXPECTED KEY EFFECTS:
+            // 1.
+            //_pendingRetirementProcessCompleter!.complete(false);
+            // ---- OR ------
+            // 2. In the order presented here
+            // _isRetired=true;
+            //_pendingRetirementProcessCompleter!.complete(true);
+
+            // to siimplify for now
+
+            // As mentioned earlier we will focus now if we can retire the model if _modelIsBeingUpdatedGlobalServer is true
+
+            // what can be made of "Completer hangOnModelOperationIfNeeded("
+            // 1. We can retire the model if _modelIsBeingUpdatedGlobalServer but
+            // SYNCHRONOUSLY - IT MEANS ALL ON THE EVENT LOOP BUT IN ONE FULL SYNC CODE FRAGMENT TO BE EXECUTED SO THAT NO CHANGES IN THE MODEL STATE ARE DONE IN BETWEEN ASYNC/AWAIT CALLS NO ASYNC AWAIT NOW
+            // 2. Synronously During code execution hangOnModelOperationIfNeeded was called and the code STOPPED (!isCompleted) and RIGHT NOW is waiting in suspension
+            //    f.e. !this._conditionModelAppHangOnModelOperationsCompleters[ConditionModelClassesTypeOfSucpendableOperation.globalServerCreate].isCompleted
+            // 3. After that synchronously We _isRetired=true; conditionModelApp never cannot finish the future or change it withing it's list/set, etc.
+            // 4. We complete the completer the future with true
+
+            // As mentioned earlier this value must be assigned again i quote from the condition block we are in as it is/was: "HOWEVER THE VARIABLE MUST BE UPDATED AGAIN IN ASYNC schedule scheduleMicrotask() BECAUSE OF THE DELAY SCHEDULEMICROTASK IS CALLED ON THE EVENT LOPP. It is not impossible some values to changed in the meantime"
+            localServerRetireConditionSet = _modelIsBeingUpdated ||
+                _fieldsToBeUpdated.isNotEmpty ||
+                _fieldsNowBeingInTheProcessOfUpdate.isNotEmpty;
+
+            /// !!! CAUTION! We are sure that in this synchronous code block the _pendingRetirementProcessCompleter will be completed with this date
+            _lastRetireModelProcessFinish =
+                ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+
+            if (localServerRetireConditionSet) {
+              _pendingRetirementProcessCompleter!.complete(false);
+            } else if (
+                // checking if the global server code has been locked right now - prevented from STARTING data operation it is not in the middle
+                (
+                        // This means a situation where global server possibly longer action event-loop code execution has stopped and is suspended
+                        // and normally it would be unlocked in another place also on the event-loop synchronous code block
+                        // "normally" is not now because we are going to retire the method with this condition met and the model
+                        // will never have it's lock code unlocked
+                        // TODO: // [To do: #dlkj2fhpeg8nqxwpiu]
+                        // TODO: to // do: around line 8127
+                        // TODO: So // add in conditionmodelapp to never complete (no error so no completeError needed) for all of completers the completer belong to this model so they will be unlinked automatically when model has no link. Make sure there no accident before the model is removed from modelsscheduledforunlinking list
+                        // TODO: Also // [ok but user and conditionmodelapp addchild need another approach?] models in the retirement process or when at the moment their retire method body is synchronously called cannot be added via addchild nor add parent link methods or something like that
+                        // TODO: also// [ok] you can call on the retire method only if a model is not in the main model tree, it works this way when child is removed (again review) but not sure if it is allowed or no
+                        // TODO: Forgot // [ok just before _isRetired == true done whats needed] about removing all children from the model when the model hasretired or possibly just before (which exactly pinpointed moment is the best?). Is 100% any process triggered just after the removal? Should they be retired too? Or first checked for getter retireModelWhenWhenRemovedFromTheModelTree ?
+                        // TODO: Unfortunately // i need to rethink ConditionModelApp and at least and especially ConditionModelUser in tree and retirement process for now user probably can be retired but maybe it never should, because it takes not much memory and is too much work. But user can be excluded from many actions and exceptions should be thrown.
+                        // TODO: !!!! SUMMING UP
+                        // TODO: ! ALL APP AND USER MODELS ARE IRREMOVABLE AND URETIRABLE
+                        // TODO: ! FOR APP MODELS WE HAVE STATIC SET ConditionModelApps
+                        // TODO: ! FOR USERS we have isLogged to block any submodels/children global operations if == false but not local
+                        // TODO: ! if for each app + users falss 100 usual models in memory the 1-5 typical models is 1000 other in RAM
+                        // TODO: ! SO NO NEED TO CARE FOR PERMANENT STORAGE OF APP AND USER MODELS IN RAM
+                        // TODO: ! IF IT WAS TO CHANGE SOMEONE HAS TO PAY BILLIONS TO IMPLEMENT NEEDLESS STUFF.
+                        // TODO: ! SnappApps: BUT YOU CAN BYPASS IT BY ADDING TO app constructor option doNotAddToTheGlobalAppList = true (DEFAULT FALSE), by doing this you are ready to pay the price of possible unfinished operations which is fine, databases may be removed after session time out, etc., there may be global/local server apps like this - snap apps, removing any last link to the app would cause cascadingly submodels destructdion with reasonable expectations no data will be left in memory
+                        // TODO: !!! Reject duplicate apps (throw the first already existing app in Exception like in parentidmodels and method to checkout like it too) you sniff especially by db/table prefixes, filename for sqlite, host/login/password for mysql, but global server settings can be ignored - we may have many objects connecting to the global server
+                        // TODO: !!! For this you need for local driver to add required sort of interface method isDriverDuplicate() or operator == that calls the method mentioned. It is easier just method, less confusing
+                        // TODO: EDIT: got to a conslusion no need to care but you make test if a future ends with error when pointer is lost or what else happens ! //some methods may be suspended now so we need to finish them by completing completers! so in retire() we need to complete them with errors and modify the code to react properly. Curious how unlinked futures/completers finish? with an error? They should!
+                        _conditionModelAppHangOnModelOperationsCompleters[
+                                    ConditionModelClassesTypeOfSucpendableOperation
+                                        .globalServerCreate] !=
+                                null &&
+                            !_conditionModelAppHangOnModelOperationsCompleters[
+                                    ConditionModelClassesTypeOfSucpendableOperation
+                                        .globalServerCreate]!
+                                .isCompleted) ||
+                    (
+                        // This means a situation where global server possibly longer action event-loop code execution has stopped and is suspended
+                        // and normally it would be unlocked in another place also on the event-loop synchronous code block
+                        // "normally" is not now because we are going to retire the method with this condition met and the model
+                        // will never have it's lock code unlocked
+                        _conditionModelAppHangOnModelOperationsCompleters[
+                                    ConditionModelClassesTypeOfSucpendableOperation
+                                        .globalServerUpdate] !=
+                                null &&
+                            _conditionModelAppHangOnModelOperationsCompleters[
+                                    ConditionModelClassesTypeOfSucpendableOperation
+                                        .globalServerUpdate]!
+                                .isCompleted)) {
+              // Must be before the retire is finished, it is to trigger possible retirement process for children also where possible, it may be that at this stage any exception will be catched in the method
+              removeAllChildren();
+              _completeAndUnlinkAllCompletersAndAllOtherNecessaryStuff();
+              _isRetired = true;
+
+              /// This is the exact moment to call super.retire() as described the super.retire() method does it's job synchronously, only returns future. See all relevant retire() methods descriptions
+              retire2();
+              // Now, this is key thing to remember that this is synchronous issue of event so it is handled internally right away by conditionModelApp object
+              // Also the order is important, before the async completer is completed, just after this stream event handled synchronously
+              if (this is ConditionModelParentIdModel) {
+                _changesStreamController.add(
+                    ConditionModelInfoEventConditionModelAppModelSetsManagementModelHasJustRetired(
+                        this as ConditionModelParentIdModel));
+              }
+
+              _pendingRetirementProcessCompleter!.complete(true);
+            } else {
+              _pendingRetirementProcessCompleter!.complete(false);
+            }
+
+            // already completed no need again _pendingRetirementProcessCompleter!.complete(false);
+          } catch (e) {
+            // !!! READ the debug print message.
+            debugPrint(
+                '${ConditionDebugPrint('retire() method exception: the retire async part of the retirement process excpressed in the retire method mainly, couldn\'t had finished the retirement of the model correctly, so it hasnt retired yet. Now a new retirement process can be started by the new call of the retire method. Additionally. There should be no exception like this, because of the design of the retirement process where any issues should be intercepted and fully handled earlier. If an exception like this is thrown it might hypothetically mean that some settings of the model has been irreversibly changed causing possible malfunction of the model. The exception message: $e')}');
+            _lastRetireModelProcessFinish =
+                ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+            _pendingRetirementProcessCompleter!.complete(false);
+          }
+        });
+
+        return _retireRealSynchronousCodeExecutionFinish();
+
+        //_triggerServerUpdatingProcessRetrigerAfterFinish
+        //_triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer
+      } else {
+        // is not retired so:
+        // we have:
+        // new _pendingRetirementProcessCompleter, updated _lastRetireModelProcessStart (and as always updated _lastRetireMethodCall)
+
+        // The model can be retired now
+        // if _isRetired == true; all operations on the model are locked assigning to the properties, local and global server updates and more
+
+        // Must be before the retire is finished, it is to trigger possible retirement process for children also where possible, it may be that at this stage any exception will be catched in the method
+        removeAllChildren();
+        //
+        _completeAndUnlinkAllCompletersAndAllOtherNecessaryStuff();
+        _isRetired = true;
+
+        /// This is the exact moment to call super.retire() as described the super.retire() method does it's job synchronously, only returns future. See all relevant retire() methods descriptions
+        retire2();
+        _lastRetireModelProcessFinish = commonTimestampNow;
+        if (this is ConditionModelParentIdModel) {
+          _changesStreamController.add(
+              ConditionModelInfoEventConditionModelAppModelSetsManagementModelHasJustRetired(
+                  this as ConditionModelParentIdModel));
+        }
+        _pendingRetirementProcessCompleter!.complete(true);
+        return _retireRealSynchronousCodeExecutionFinish();
+      }
+    } catch (e) {
+      _retireRealSynchronousCodeExecutionFinish();
+      rethrow;
+    }
+  }
 
   /// Needs to be private (or protected), so that setter "change" also triggers possible db update if conditions are met (maybe simple or highly sofisticated update). When you've updated any property related to model changed is set to true. it may indicate whether or not the widget should be updated in localStorage. Some architectural idesa has changed in the meantime i don't remember exactly if this property is necessary even for localStorage changes storage when went offline.
   @protected
@@ -4890,8 +5460,7 @@ abstract class ConditionModel extends ConditionMap {
   late final bool __inited;
 
   /// When the property [__inited] (See it's description) is set to true using the setter [_inited] (one underscore) the completer completes, the future of the completer you can get using [getModelOnModelInitComplete] method.
-  final Completer<ConditionModel> _completerInitModel =
-      Completer<ConditionModel>();
+  final Completer<void> _completerInitModel = Completer<void>();
 
   get initModelFuture => _completerInitModel.future;
 
@@ -4899,14 +5468,16 @@ abstract class ConditionModel extends ConditionMap {
   late final bool __initedGlobalServer;
 
   /// When the property [__inited] (See it's description) is set to true using the setter [_inited] (one underscore) the completer completes, the future of the completer you can get using [getModelOnModelInitCompleteGlobalServer] method.
-  final Completer<ConditionModel> _completerInitModelGlobalServer =
-      Completer<ConditionModel>();
+  final Completer<void> _completerInitModelGlobalServer = Completer<void>();
 
-  /// Warning, to not assign the property to another variable! When the model is retire()d ther should be no link to it so that the model's properties are properly removed and memory released. As some outside (don't know proper word) developer never use the private synchronous version [_changesStreamController], see why it it's description. It is well described in the [ConditionModelPropertyChangeInfo] class description - see the docs also all extending classess, especially [ConditionModelPropertyChangeInfoRegularChange], [ConditionModelPropertyChangeInfoModelToLocalServerStart]. To remember: Assuming that a streamcontroller and its stream, sink closes after the object is no more pointed to by a variable/pointer, programmer should alway remember of closing its f.e. stream subscrptions.
+  /// See the [_changesStreamController] desc also for memory leaks, gc. Warning, to not assign the property to another variable! When the model is retire()d ther should be no link to it so that the model's properties are properly removed and memory released. As some outside (don't know proper word) developer never use the private synchronous version [_changesStreamController], see why it it's description. It is well described in the [ConditionModelPropertyChangeInfo] class description - see the docs also all extending classess, especially [ConditionModelPropertyChangeInfoRegularChange], [ConditionModelPropertyChangeInfoModelToLocalServerStart]. To remember: Assuming that a streamcontroller and its stream, sink closes after the object is no more pointed to by a variable/pointer, programmer should alway remember of closing its f.e. stream subscrptions.
+  /// If the stream is
   @protected
   final StreamController<ConditionModelInfoStreamEvent> changesStreamController;
 
   /// Warning 1! See Warning of [changesStreamController] property. Warning 2!  This is private synchronous version of the [changesStreamController] stream controller. Whatever goes into it (the private version) goes into asynchronous stream. This private [_changesStreamController] can be use in time/procesor non-expensive cases, when you need to do changes synchronously. This property was created when an idea came up to synchronously checking by the conditionModelApp if after some model removal from the conditionModelApp model tree there is another instance of the model in the tree (only one instance allowed but in a parent link (link_id property) model, there may be several link models with the model just was removed), etc. So the developer of the app saw it better to do such stuff synchronously for some reason. In Readme or this file there may be more information on that, and if the idea was abandoned in the meantime.
+  /// All events from this controller go to the synchronous [ConditionModelApp] [_changesStreamControllerAllAppModelsChangesControllers] and from there to async [ConditionModelApp] [changesStreamControllerAllAppModelsChangesControllers], and apart from this sync property [_changesStreamController] events go to to this class here async [changesStreamController].
+  /// Read the mentioned properties for some memory leak info. For example, if the [changesStreamController] is supplied in this class constructor, it is required to be broadcast and amont other things it will prevent buffering events when there is no listener to the property's stream which in turn prevents storing the events in memory and the events have pointer to [ConditionModel] model object. And if a model was retired and last pointer to it was supposed to has been already removed so in the event however you have a pointer to the model not removed. So the Garbage Collector for the model cannot be triggered. But the stream is broadcast so the it will be triggered.
   final SynchronousStreamController<ConditionModelInfoStreamEvent>
       _changesStreamController =
       StreamController<ConditionModelInfoStreamEvent>.broadcast(sync: true)
@@ -4933,12 +5504,15 @@ abstract class ConditionModel extends ConditionMap {
       : changesStreamController = changesStreamController ??
             StreamController<ConditionModelInfoStreamEvent>.broadcast(),
         super({}) {
+    _thisModelWeakReference = WeakReference<ConditionModel>(this);
+
     if (this is ConditionModelApp) {
       if (conditionModelApp != null) {
         throw Exception(
             'ConditionModel constructor exception: this is ConditionModelApp and conditionModelApp!=null');
       } else {
-        this.conditionModelApp = this as ConditionModelApp;
+        _conditionModelApp =
+            WeakReference<ConditionModelApp>(this as ConditionModelApp);
         uniqueId = ConditionModelApps.minId;
       }
     } else {
@@ -4946,7 +5520,8 @@ abstract class ConditionModel extends ConditionMap {
         throw Exception(
             'ConditionModel constructor exception: this is! ConditionModelApp && conditionModelApp==null');
       } else {
-        this.conditionModelApp = conditionModelApp;
+        _conditionModelApp =
+            WeakReference<ConditionModelApp>(conditionModelApp);
         uniqueId = conditionModelApp
             ._increaseByOneModelUniqueIdCounterAndGetItsValue();
       }
@@ -4963,6 +5538,8 @@ abstract class ConditionModel extends ConditionMap {
     }
 
     if (this is! ConditionModelCompleteModel) {
+      debugPrint(
+          '${ConditionDebugPrint('this is! ConditionModelCompleteModel ')}');
       throw const ConditionModelCompleteModelException();
     }
     if (!this.changesStreamController.stream.isBroadcast) {
@@ -4990,9 +5567,8 @@ abstract class ConditionModel extends ConditionMap {
     // changes streams are private or @protected so they shouldn't be missused or passed to
     // outside the api properties.
     _changesStreamController.stream.listen((event) {
-      this
-          .conditionModelApp
-          ._changesStreamControllerAllAppModelsChangesControllers
+      _conditionModelApp
+          .target!._changesStreamControllerAllAppModelsChangesControllers
           .add(event);
     });
 
@@ -5003,9 +5579,8 @@ abstract class ConditionModel extends ConditionMap {
     //    .addStream(this.changesStreamController.stream);
 
     this.changesStreamController.stream.listen((event) {
-      this
-          .conditionModelApp
-          .changesStreamControllerAllAppModelsChangesControllers
+      _conditionModelApp
+          .target!.changesStreamControllerAllAppModelsChangesControllers
           .add(event);
     });
 
@@ -5066,16 +5641,17 @@ abstract class ConditionModel extends ConditionMap {
             as ConditionModelFieldStringOrNull;
       }
 
-      debugPrint('to be assigned runtimeType == $runtimeType');
+      debugPrint(
+          '${ConditionDebugPrint('to be assigned runtimeType == $runtimeType')}');
       if (temporaryInitialData.containsKey(key)) {
         debugPrint(
-            'to be assigned: columnNamesAndTheirModelFields[$key].value with value ${temporaryInitialData[key]} the value is of type ${temporaryInitialData[key].runtimeType}');
+            '${ConditionDebugPrint('to be assigned: columnNamesAndTheirModelFields[$key].value with value ${temporaryInitialData[key]} the value is of type ${temporaryInitialData[key].runtimeType}')}');
         //field.value = temporaryInitialData[key];
         columnNamesAndFullyFeaturedValidateAndSetValueMethods[key]!(
             temporaryInitialData[key], true, false);
 
         debugPrint(
-            'just assigned: columnNamesAndTheirModelFields[$key].value == ${field.value}');
+            '${ConditionDebugPrint('just assigned: columnNamesAndTheirModelFields[$key].value == ${field.value}')}');
       }
     }
   }
@@ -5087,7 +5663,7 @@ abstract class ConditionModel extends ConditionMap {
       return defValue[key]?.value;
     } catch (e) {
       debugPrint(
-          'ConditionModel [] getter CATCHED exception: key == $key, error: $e');
+          '${ConditionDebugPrint('ConditionModel [] getter CATCHED exception: key == $key, error: $e')}');
       return null;
     }
   }
@@ -5099,11 +5675,11 @@ abstract class ConditionModel extends ConditionMap {
               this as ConditionModelIdAndOneTimeInsertionKeyModel)
           .then((isSuccess) {
         debugPrint(
-            '2:initModel() success The key column or the model\'s row has just been nullified');
+            '${ConditionDebugPrint('2:initModel() success The key column or the model\'s row has just been nullified')}');
       }).catchError((error) {
-        debugPrint('catchError flag #cef2');
+        debugPrint('${ConditionDebugPrint('catchError flag #cef2')}');
         debugPrint(
-            '2:initModel() !error The key column or the model\'s row hasn\'t been nullified. It is not a big deal. When the model will be recreated during f.e. another app restart/lauch another nullifying attempt will be performed. However this message shouldn\t have had occured for local server especially. This might point to an underlying problem to be watched closer to. An ConditionDataManagementDriver or db engine original error: ${error.toString()}');
+            '${ConditionDebugPrint('2:initModel() !error The key column or the model\'s row hasn\'t been nullified. It is not a big deal. When the model will be recreated during f.e. another app restart/lauch another nullifying attempt will be performed. However this message shouldn\t have had occured for local server especially. This might point to an underlying problem to be watched closer to. An ConditionDataManagementDriver or db engine original error: ${error.toString()}')}');
       });
     }
   }
@@ -5112,7 +5688,7 @@ abstract class ConditionModel extends ConditionMap {
   Future<int?> _performTheModelUpdateUsingDriverGlobalServer(
       ConditionModelApp conditionModelApp) {
     debugPrint(
-        'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() inside _fieldsNowBeingInTheProcessOfUpdateGlobalServer == ${_fieldsNowBeingInTheProcessOfUpdateGlobalServer.toString()}');
+        '${ConditionDebugPrint('C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() inside _fieldsNowBeingInTheProcessOfUpdateGlobalServer == ${_fieldsNowBeingInTheProcessOfUpdateGlobalServer.toString()}')}');
     var completer = Completer<int?>();
     if (_fieldsNowBeingInTheProcessOfUpdateGlobalServer.isEmpty) {
       completer.completeError(
@@ -5125,15 +5701,15 @@ abstract class ConditionModel extends ConditionMap {
               globalServerRequestKey: conditionModelApp.server_key)
           .then((int? result) {
         debugPrint(
-            'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() a Timer invoked the update(), updated SUCCESSFULLY, result: ${result.toString()}');
+            '${ConditionDebugPrint('C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() a Timer invoked the update(), updated SUCCESSFULLY, result: ${result.toString()}')}');
         completer.complete(result);
         _fieldsNowBeingInTheProcessOfUpdateGlobalServer.clear();
         _triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer = true;
         _triggerLocalAndGlobalServerUpdatingProcessGlobalServer();
       }).catchError((error) {
-        debugPrint('catchError flag #cef3');
+        debugPrint('${ConditionDebugPrint('catchError flag #cef3')}');
         debugPrint(
-            'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() a Timer invoked the update(), NOT updated, result error: ${error.toString()}');
+            '${ConditionDebugPrint('C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() a Timer invoked the update(), NOT updated, result error: ${error.toString()}')}');
         if (!completer.isCompleted) {
           // as you can see above it might be completed
           // but _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(); might have
@@ -5161,13 +5737,13 @@ abstract class ConditionModel extends ConditionMap {
           'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): exception: global driver isn\'t defined for the model and by extention for the entire ConditionModelApp app the model cannot be synchronized with the global server');
     } else if (!driver.driverGlobal!.inited) {
       debugPrint(
-          'C]!!!!3 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): model.runtimeType == ${runtimeType} driver.inited == ${driver.inited}, driver.inited == ${driver.inited}');
+          '${ConditionDebugPrint('C]!!!!3 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): model.runtimeType == ${runtimeType} driver.inited == ${driver.inited}, driver.inited == ${driver.inited}')}');
       debugPrint(
-          'C]!!!!3 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver == ${driver}');
+          '${ConditionDebugPrint('C]!!!!3 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver == ${driver}')}');
       debugPrint(
-          'C]!!!!4 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver.driverGlobal!.inited == ${driver.driverGlobal!.inited}, driver.driverGlobal!.inited == ${driver.driverGlobal!.inited}');
+          '${ConditionDebugPrint('C]!!!!4 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver.driverGlobal!.inited == ${driver.driverGlobal!.inited}, driver.driverGlobal!.inited == ${driver.driverGlobal!.inited}')}');
       debugPrint(
-          'C]!!!!4 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver.driverGlobal == ${driver.driverGlobal}');
+          '${ConditionDebugPrint('C]!!!!4 _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): driver.driverGlobal == ${driver.driverGlobal}')}');
 
       throw Exception(
           'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): exception: global driver is defined but isn\'t inited (is being initialized now). The model cannot be synchronized now with the global server it is supposed to be synchronized later (check out if implemented already).');
@@ -5220,13 +5796,14 @@ abstract class ConditionModel extends ConditionMap {
     // ---------------------------------------
 
     ConditionModelApp conditionModelApp =
-        thisConditionModelIdAndOneTimeInsertionKeyModelServer.conditionModelApp;
+        thisConditionModelIdAndOneTimeInsertionKeyModelServer.conditionModelApp
+            as ConditionModelApp;
 
     debugPrint(
-        'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): a columnName == no columnName in globalServer update - all in queue at once\'}\' value change is attempting to treigger updating process or related stuff is going to be performed (if param columnName == null then the method invokation is related to just earlier setting up _triggerServerUpdatingProcessRetrigerAfterFinish = true to again perform checking on any new changes on the model\'s properties. Adding single columns to the queue is done using triggerLocalAndGlobalServerUpdatingProcess()), model == $this');
+        '${ConditionDebugPrint('C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): a columnName == no columnName in globalServer update - all in queue at once\'}\' value change is attempting to treigger updating process or related stuff is going to be performed (if param columnName == null then the method invokation is related to just earlier setting up _triggerServerUpdatingProcessRetrigerAfterFinish = true to again perform checking on any new changes on the model\'s properties. Adding single columns to the queue is done using triggerLocalAndGlobalServerUpdatingProcess()), model == $this')}');
 
     debugPrint(
-        'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): model _modelIsBeingUpdatedGlobalServer == $_modelIsBeingUpdatedGlobalServer and _fieldsToBeUpdatedGlobalServer.toString() == ${_fieldsToBeUpdatedGlobalServer.toString()}');
+        '${ConditionDebugPrint('C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): model _modelIsBeingUpdatedGlobalServer == $_modelIsBeingUpdatedGlobalServer and _fieldsToBeUpdatedGlobalServer.toString() == ${_fieldsToBeUpdatedGlobalServer.toString()}')}');
     scheduleMicrotask(() {
       // TODO: REVIEW:
       // also there is similar situation in _triggerLocalAndGlobalServerUpdatingProcessGlobalServer
@@ -5249,7 +5826,7 @@ abstract class ConditionModel extends ConditionMap {
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // !!!!! This is the moment we can trigger the global server update (granted the [ConditionModelApp] object has its global server enabled)
         debugPrint(
-            '?????????????? C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer()');
+            '${ConditionDebugPrint('?????????????? C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer()')}');
         completer.complete();
         return;
       }
@@ -5267,7 +5844,7 @@ abstract class ConditionModel extends ConditionMap {
       if (!_modelIsBeingUpdatedGlobalServer ||
           _triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer) {
         debugPrint(
-            'C]V Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): model _modelIsBeingUpdatedGlobalServer == $_modelIsBeingUpdatedGlobalServer and _triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer == $_triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer');
+            '${ConditionDebugPrint('C]V Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): model _modelIsBeingUpdatedGlobalServer == $_modelIsBeingUpdatedGlobalServer and _triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer == $_triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer')}');
         // this should be set up now not in event loop asynchronous method read just below Timer() comments:
         _modelIsBeingUpdatedGlobalServer = true;
         _changesStreamController.add(
@@ -5280,7 +5857,7 @@ abstract class ConditionModel extends ConditionMap {
               .addAll(_fieldsToBeUpdatedGlobalServer);
 
           debugPrint(
-              'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): START OF: await conditionModelApp.getServerKeyWhenReady(); ');
+              '${ConditionDebugPrint('C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): START OF: await conditionModelApp.getServerKeyWhenReady(); ')}');
           // the below may even never end, but it's ok, any invoking of this method
           // will cause that the code will not reach this Timer() invokation which is ok.
           // if the future completes (should never throw exception) it will allow the code
@@ -5290,10 +5867,10 @@ abstract class ConditionModel extends ConditionMap {
             await conditionModelApp.getServerKeyWhenReady();
           } catch (e) {
             debugPrint(
-                'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): await conditionModelApp.getServerKeyWhenReady(); error: $e');
+                '${ConditionDebugPrint('C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): await conditionModelApp.getServerKeyWhenReady(); error: $e')}');
           }
           debugPrint(
-              'C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): SUCCESSFUL END OF: await conditionModelApp.getServerKeyWhenReady(); ');
+              '${ConditionDebugPrint('C] _triggerLocalAndGlobalServerUpdatingProcessGlobalServer(): SUCCESSFUL END OF: await conditionModelApp.getServerKeyWhenReady(); ')}');
           // Especially In the early process of development all these conditions may be needed but later after you make sure all is well designed and implemented you will know what to remove;
           // above doeas the job: await conditionModelApp.getServerKeyWhenReady();
           //if (conditionModelApp.server_key == null ||
@@ -5320,16 +5897,16 @@ abstract class ConditionModel extends ConditionMap {
             //result won't be null for global server request - always int
             //this will update on local server only what was returned from global server
             debugPrint(
-                'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() we did a successful update on global server and if this is ConditionModelCreationDateModel then we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_update_date_timestamp\'] = $result');
+                '${ConditionDebugPrint('C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() we did a successful update on global server and if this is ConditionModelCreationDateModel then we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_update_date_timestamp\'] = $result')}');
             if (this is ConditionModelCreationDateModel) {
               columnNamesAndFullyFeaturedValidateAndSetValueMethods[
                   'server_update_date_timestamp']!(result, true, true, true);
             }
           }).catchError((error) {
-            debugPrint('catchError flag #cef4');
+            debugPrint('${ConditionDebugPrint('catchError flag #cef4')}');
 
             debugPrint(
-                'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() a Timer invoked the performTheModelUpdateUsingDriver() which invoked update() and returned error, NOT updated, result error, depending on the type of error (two processess accessed the same db file (if sqlite3) at the same time, internet connection lost, etc) !!!we now are trying to update the model doing it once per some longer time!!!: ${error.toString()}');
+                '${ConditionDebugPrint('C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() a Timer invoked the performTheModelUpdateUsingDriver() which invoked update() and returned error, NOT updated, result error, depending on the type of error (two processess accessed the same db file (if sqlite3) at the same time, internet connection lost, etc) !!!we now are trying to update the model doing it once per some longer time!!!: ${error.toString()}')}');
             // For the local server there is no attemptsLimitCountDownCounter localServer is supposed to work always in all circumstances, but for global server you can loose the internet connection, the server bandwitdh may be too much congested, etc.
             int attemptsLimitCountDownCounter = 12;
             Timer.periodic(
@@ -5347,7 +5924,7 @@ abstract class ConditionModel extends ConditionMap {
                 return;
               }
               debugPrint(
-                  'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update attempt: A cyclical attempts to update the model of class [${runtimeType.toString()}] on the local server are being performed. This is invokation');
+                  '${ConditionDebugPrint('C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update attempt: A cyclical attempts to update the model of class [${runtimeType.toString()}] on the local server are being performed. This is invokation')}');
               await conditionModelApp
                   .hangOnModelOperationIfNeeded(
                       this as ConditionModelParentIdModel,
@@ -5362,17 +5939,17 @@ abstract class ConditionModel extends ConditionMap {
                 //result won't be null for global server request - always int
                 //this will update on local server only what was returned from global server
                 debugPrint(
-                    'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer, we did a successful update on global server and if this is ConditionModelCreationDateModel then we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_update_date_timestamp\'] = $result');
+                    '${ConditionDebugPrint('C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer, we did a successful update on global server and if this is ConditionModelCreationDateModel then we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_update_date_timestamp\'] = $result')}');
                 if (this is ConditionModelCreationDateModel) {
                   columnNamesAndFullyFeaturedValidateAndSetValueMethods[
                           'server_update_date_timestamp']!(
                       result, true, true, true);
                 }
               }).catchError((error) {
-                debugPrint('catchError flag #cef5');
+                debugPrint('${ConditionDebugPrint('catchError flag #cef5')}');
 
                 debugPrint(
-                    'C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update attempt _fieldsNowBeingInTheProcessOfUpdateGlobalServer == $_fieldsNowBeingInTheProcessOfUpdateGlobalServer , _fieldsToBeUpdatedGlobalServer == $_fieldsToBeUpdatedGlobalServer : error: ${error.toString()}');
+                    '${ConditionDebugPrint('C] Inside _triggerLocalAndGlobalServerUpdatingProcessGlobalServer() cyclical timer update attempt _fieldsNowBeingInTheProcessOfUpdateGlobalServer == $_fieldsNowBeingInTheProcessOfUpdateGlobalServer , _fieldsToBeUpdatedGlobalServer == $_fieldsToBeUpdatedGlobalServer : error: ${error.toString()}')}');
                 // !!!!! Even if it works not much sure if something elsevhere was designed worse
                 // than it should be - find out one day why the condition below shouldn't be here
                 if (_fieldsNowBeingInTheProcessOfUpdateGlobalServer.isEmpty &&
@@ -5400,7 +5977,7 @@ abstract class ConditionModel extends ConditionMap {
   Future<bool> _performTheModelUpdateUsingDriver(
       [bool isToBeSynchronizedLocallyOnly = false]) {
     debugPrint(
-        'C] Inside triggerLocalAndGlobalServerUpdatingProcess(), inside _performTheModelUpdateUsingDriver() inside _fieldsNowBeingInTheProcessOfUpdate == ${_fieldsNowBeingInTheProcessOfUpdate.toString()}');
+        '${ConditionDebugPrint('C] Inside triggerLocalAndGlobalServerUpdatingProcess(), inside _performTheModelUpdateUsingDriver() inside _fieldsNowBeingInTheProcessOfUpdate == ${_fieldsNowBeingInTheProcessOfUpdate.toString()}')}');
     var completer = Completer<bool>();
     if (_fieldsNowBeingInTheProcessOfUpdate.isEmpty) {
       completer.completeError(
@@ -5414,16 +5991,16 @@ abstract class ConditionModel extends ConditionMap {
       )
           .then((int? result) {
         debugPrint(
-            'C] Inside triggerLocalAndGlobalServerUpdatingProcess(), inside _performTheModelUpdateUsingDriver() a Timer invoked the update(), updated SUCCESSFULLY, result: ${result.toString()}');
+            '${ConditionDebugPrint('C] Inside triggerLocalAndGlobalServerUpdatingProcess(), inside _performTheModelUpdateUsingDriver() a Timer invoked the update(), updated SUCCESSFULLY, result: ${result.toString()}')}');
         completer.complete(true);
         _fieldsNowBeingInTheProcessOfUpdate.clear();
         _triggerServerUpdatingProcessRetrigerAfterFinish = true;
         triggerLocalAndGlobalServerUpdatingProcess(
             null, isToBeSynchronizedLocallyOnly);
       }).catchError((error) {
-        debugPrint('catchError flag #cef6');
+        debugPrint('${ConditionDebugPrint('catchError flag #cef6')}');
         debugPrint(
-            'C] Inside triggerLocalAndGlobalServerUpdatingProcess(), inside _performTheModelUpdateUsingDriver() a Timer invoked the update(), NOT updated, result error: ${error.toString()}');
+            '${ConditionDebugPrint('C] Inside triggerLocalAndGlobalServerUpdatingProcess(), inside _performTheModelUpdateUsingDriver() a Timer invoked the update(), NOT updated, result error: ${error.toString()}')}');
         completer.completeError(error);
       });
     }
@@ -5435,7 +6012,7 @@ abstract class ConditionModel extends ConditionMap {
   triggerLocalAndGlobalServerUpdatingProcess(
       [String? columnName, bool isToBeSynchronizedLocallyOnly = false]) async {
     debugPrint(
-        'C] triggerLocalAndGlobalServerUpdatingProcess(): a columnName \'$columnName\' value change is attempting to treigger updating process or related stuff is going to be performed (if param columnName == null then the method invokation is related to just earlier setting up _triggerServerUpdatingProcessRetrigerAfterFinish = true to again perform checking on any new changes on the model\'s properties)');
+        '${ConditionDebugPrint('C] triggerLocalAndGlobalServerUpdatingProcess(): a columnName \'$columnName\' value change is attempting to treigger updating process or related stuff is going to be performed (if param columnName == null then the method invokation is related to just earlier setting up _triggerServerUpdatingProcessRetrigerAfterFinish = true to again perform checking on any new changes on the model\'s properties)')}');
 
     // model.changed was just set to true
     // model.inited must be true or exception is to be thrown
@@ -5478,13 +6055,13 @@ abstract class ConditionModel extends ConditionMap {
     }
 
     debugPrint(
-        'C] Inside triggerLocalAndGlobalServerUpdatingProcess(): model _modelIsBeingUpdated == $_modelIsBeingUpdated and right now at the beginning of the current method body: _fieldsToBeUpdated.toString() == ${_fieldsToBeUpdated.toString()}, _fieldsToBeUpdatedGlobalServer.toString() == $_fieldsToBeUpdatedGlobalServer');
+        '${ConditionDebugPrint('C] Inside triggerLocalAndGlobalServerUpdatingProcess(): model _modelIsBeingUpdated == $_modelIsBeingUpdated and right now at the beginning of the current method body: _fieldsToBeUpdated.toString() == ${_fieldsToBeUpdated.toString()}, _fieldsToBeUpdatedGlobalServer.toString() == $_fieldsToBeUpdatedGlobalServer')}');
 
-    debugPrint('C]2:1!!!');
+    debugPrint('${ConditionDebugPrint('C]2:1!!!')}');
 
     if (_triggerServerUpdatingProcessRetrigerAfterFinish &&
         _fieldsToBeUpdated.isEmpty) {
-      debugPrint('C]2:2!!!');
+      debugPrint('${ConditionDebugPrint('C]2:2!!!')}');
       _triggerServerUpdatingProcessRetrigerAfterFinish = false;
       _modelIsBeingUpdated = false;
       _changesStreamController.add(
@@ -5495,7 +6072,7 @@ abstract class ConditionModel extends ConditionMap {
       }
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       // !!!!! This is the moment we can trigger the global server update (granted the [ConditionModelApp] object has its global server enabled)
-      debugPrint('C]2:3!!!');
+      debugPrint('${ConditionDebugPrint('C]2:3!!!')}');
       return;
     }
     //});
@@ -5513,7 +6090,7 @@ abstract class ConditionModel extends ConditionMap {
     if (!_modelIsBeingUpdated ||
         _triggerServerUpdatingProcessRetrigerAfterFinish) {
       debugPrint(
-          'C]V Inside triggerLocalAndGlobalServerUpdatingProcess(): model _modelIsBeingUpdated == $_modelIsBeingUpdated and _triggerServerUpdatingProcessRetrigerAfterFinish == $_triggerServerUpdatingProcessRetrigerAfterFinish, _fieldsNowBeingInTheProcessOfUpdate == $_fieldsNowBeingInTheProcessOfUpdate, _fieldsToBeUpdated == $_fieldsToBeUpdated');
+          '${ConditionDebugPrint('C]V Inside triggerLocalAndGlobalServerUpdatingProcess(): model _modelIsBeingUpdated == $_modelIsBeingUpdated and _triggerServerUpdatingProcessRetrigerAfterFinish == $_triggerServerUpdatingProcessRetrigerAfterFinish, _fieldsNowBeingInTheProcessOfUpdate == $_fieldsNowBeingInTheProcessOfUpdate, _fieldsToBeUpdated == $_fieldsToBeUpdated')}');
       // this should be set up now not in event loop asynchronous method read just below Timer() comments:
       _modelIsBeingUpdated = true;
       _changesStreamController
@@ -5541,12 +6118,13 @@ abstract class ConditionModel extends ConditionMap {
         //}
         _performTheModelUpdateUsingDriver(isToBeSynchronizedLocallyOnly)
             .catchError((error) {
-          debugPrint('catchError flag #cef7 $isToBeSynchronizedLocallyOnly');
           debugPrint(
-              'C] Inside triggerLocalAndGlobalServerUpdatingProcess() a Timer invoked the performTheModelUpdateUsingDriver() which invoked update() and returned error, NOT updated, result error, depending on the type of error (two processess accessed the same db file (if sqlite3) at the same time, internet connection lost, etc) !!!we now are trying to update the model doing it once per some longer time!!!: ${error.toString()}');
+              '${ConditionDebugPrint('catchError flag #cef7 $isToBeSynchronizedLocallyOnly')}');
+          debugPrint(
+              '${ConditionDebugPrint('C] Inside triggerLocalAndGlobalServerUpdatingProcess() a Timer invoked the performTheModelUpdateUsingDriver() which invoked update() and returned error, NOT updated, result error, depending on the type of error (two processess accessed the same db file (if sqlite3) at the same time, internet connection lost, etc) !!!we now are trying to update the model doing it once per some longer time!!!: ${error.toString()}')}');
           Timer.periodic(const Duration(seconds: 3), (timer) {
             debugPrint(
-                'C] Inside triggerLocalAndGlobalServerUpdatingProcess() cyclical timer update attempt: A cyclical attempts to update the model of class [${this.runtimeType.toString()}] on the local server are being performed. This is invokation');
+                '${ConditionDebugPrint('C] Inside triggerLocalAndGlobalServerUpdatingProcess() cyclical timer update attempt: A cyclical attempts to update the model of class [${this.runtimeType.toString()}] on the local server are being performed. This is invokation')}');
             _performTheModelUpdateUsingDriver(isToBeSynchronizedLocallyOnly)
                 .then((result) {
               // result must be always true or throw error (catch error of future)
@@ -5554,10 +6132,10 @@ abstract class ConditionModel extends ConditionMap {
               timer.cancel();
             }).catchError((error) {
               debugPrint(
-                  'catchError flag #cef8 $isToBeSynchronizedLocallyOnly');
+                  '${ConditionDebugPrint('catchError flag #cef8 $isToBeSynchronizedLocallyOnly')}');
 
               debugPrint(
-                  'C] Inside triggerLocalAndGlobalServerUpdatingProcess() cyclical timer update attempt _fieldsNowBeingInTheProcessOfUpdate == $_fieldsNowBeingInTheProcessOfUpdate , _fieldsToBeUpdated == $_fieldsToBeUpdated: error: ${error.toString()}');
+                  '${ConditionDebugPrint('C] Inside triggerLocalAndGlobalServerUpdatingProcess() cyclical timer update attempt _fieldsNowBeingInTheProcessOfUpdate == $_fieldsNowBeingInTheProcessOfUpdate , _fieldsToBeUpdated == $_fieldsToBeUpdated: error: ${error.toString()}')}');
               // !!!!! Even if it works not much sure if something elsevhere was designed worse
               // than it should be - find out one day why the condition below shouldn't be here
               if (_fieldsNowBeingInTheProcessOfUpdate.isEmpty &&
@@ -5601,7 +6179,9 @@ abstract class ConditionModel extends ConditionMap {
       throw Exception(
           '_doDirectCreateOnGlobalServer: if statement causing exceptoin: this is! ConditionModelParentIdModel, it mayb be that in _triggerLocalAndGlobalServerUpdatingProcessGlobalServer similar situation is to be in agreement with any changes code here');
     }
-    await conditionModelApp
+
+    // FIXME: It should be ok but here and elsewhere to think over when target is null
+    await _conditionModelApp.target!
         .hangOnModelOperationIfNeeded(this as ConditionModelParentIdModel,
             ConditionModelClassesTypeOfSucpendableOperation.globalServerUpdate)
         .future;
@@ -5610,7 +6190,7 @@ abstract class ConditionModel extends ConditionMap {
     // ?not vary sure very much if mixed future and async/await syntax
     // ?will always produce the expected results
     debugPrint(
-        '2:2:initModel() in _doDirectCreateOnGlobalServer() working_driver.driverGlobal.create()');
+        '${ConditionDebugPrint('2:2:initModel() in _doDirectCreateOnGlobalServer() working_driver.driverGlobal.create()')}');
     if (null == conditionModelAppInstance.server_key) {
       _completerInitModelGlobalServer.completeError(
           '2:2:initModel() in _doDirectCreateOnGlobalServer() working_driver.driverGlobal.create() async exception: server_key of ConditionModelApp is null, we cannot immediately and directly (this is not non-cyclical synchronization) synchroznize local server model with the global server now waiting for the key and for synchronizing later (if already implemented)');
@@ -5619,7 +6199,7 @@ abstract class ConditionModel extends ConditionMap {
           '2:2:initModel() in _doDirectCreateOnGlobalServer() working_driver.driverGlobal.create() async exception: !working_driver.driverGlobal!.inited is not inited so it cannot be used now. Depending on how it is designed so far the model may be synchronized later with the global server');
     } else {
       debugPrint(
-          '2:2:initModel() in _doDirectCreateOnGlobalServer() WE CAN CRETAE NOW IN GLOBAL SERVER working_driver.driverGlobal.create()');
+          '${ConditionDebugPrint('2:2:initModel() in _doDirectCreateOnGlobalServer() WE CAN CRETAE NOW IN GLOBAL SERVER working_driver.driverGlobal.create()')}');
 
       //if (this is ConditionModelParentIdModel) {await (this as ConditionModelParentIdModel).hangOnWithServerCreateUntilParentAllowsFuture;}
       //before we creaate anything
@@ -5645,7 +6225,7 @@ abstract class ConditionModel extends ConditionMap {
       if (this is! ConditionModelContact &&
           this is ConditionModelBelongingToContact) {
         debugPrint(
-            "2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelBelongingToContact so we are waiting until a_server_owner_contact_id is set up to non null int value");
+            '${ConditionDebugPrint("2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelBelongingToContact so we are waiting until a_server_owner_contact_id is set up to non null int value")}');
         // whether or not it is already completed the below future always does the job suspending the code execution or not
         ConditionModelBelongingToContact
             thisAsConditionModelBelongingToContact =
@@ -5659,7 +6239,7 @@ abstract class ConditionModel extends ConditionMap {
               '2:2:initModel() in _doDirectCreateOnGlobalServer() a_server_owner_contact_id cannot have null value at the moment when it is going to be created on the global server');
         }
         debugPrint(
-            "2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelBelongingToContact a_server_owner_contact_id has just been set up to non null int value");
+            '${ConditionDebugPrint("2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelBelongingToContact a_server_owner_contact_id has just been set up to non null int value")}');
         //.a_server_owner_contact_id.firstValueAssignement();
       }
 
@@ -5669,23 +6249,23 @@ abstract class ConditionModel extends ConditionMap {
       //  try {
       //    throw Exception('_doDirectCreateOnGlobalServer method : catched exception: i need to postpone implementing it a contact to be created on the global server must have the server_contact_user_id already');
       //  } catch (e) {
-      //    debugPrint("$e");
+      //    debugPrint('${ConditionDebugPrint("$e")}');
       //  }
-      //  debugPrint("2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelContact so we are waiting until a_server_contact_user_id is set up to non null int value");
+      //  debugPrint('${ConditionDebugPrint("2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelContact so we are waiting until a_server_contact_user_id is set up to non null int value")}');
       //  // whether or not it is already completed the below future always does the job suspending the code execution or not
       //  ConditionModelContact thisAsConditionModelContact = (this as ConditionModelContact);
       //  await thisAsConditionModelContact.a_server_contact_user_id.firstValueAssignement;
       //  if (thisAsConditionModelContact.a_server_contact_user_id.value == null) {
       //    throw Exception('2:2:initModel() in _doDirectCreateOnGlobalServer() a_server_contact_user_id cannot have null value at the moment when it is going to be created on the global server');
       //  }
-      //  debugPrint("2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelContact a_server_owner_contact_id has just been set up to non null int value");
+      //  debugPrint('${ConditionDebugPrint("2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelContact a_server_owner_contact_id has just been set up to non null int value")}');
       //  //.a_server_owner_contact_id.firstValueAssignement();
       //}
 
       if (this
           is ConditionModelIdAndOneTimeInsertionKeyModelServer /*ConditionModelParentIdModel*/) {
         debugPrint(
-            "2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelIdAndOneTimeInsertionKeyModelServer so we are waiting until a_server_parent_id is set up to null or non null int value");
+            '${ConditionDebugPrint("2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelIdAndOneTimeInsertionKeyModelServer so we are waiting until a_server_parent_id is set up to null or non null int value")}');
         // whether or not it is already completed the below future always does the job suspending the code execution or not
         ConditionModelIdAndOneTimeInsertionKeyModelServer
             thisAsConditionModelParentIdModel =
@@ -5693,7 +6273,7 @@ abstract class ConditionModel extends ConditionMap {
         await thisAsConditionModelParentIdModel
             .a_server_parent_id.firstValueAssignement;
         debugPrint(
-            '2:2:initModel() in _doDirectCreateOnGlobalServer() : server_parent_id has been set up (at least once to null or non-null but set up). we can go ahead with the create on the global server');
+            '${ConditionDebugPrint('2:2:initModel() in _doDirectCreateOnGlobalServer() : server_parent_id has been set up (at least once to null or non-null but set up). we can go ahead with the create on the global server')}');
         //!! below it can be null but must be assigned (await above) on purpose
         //if (thisAsConditionModelParentIdModel.a_server_parent_id.value == null) {
         //  throw Exception('2:2:initModel() in _doDirectCreateOnGlobalServer() a_server_parent_id must be set up');
@@ -5701,13 +6281,13 @@ abstract class ConditionModel extends ConditionMap {
 
         //---------------
         // !!!!!!!!!! not needed Server user id is assigned on create.
-        //debugPrint("2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelIdAndOneTimeInsertionKeyModelServer a_server_user_id has just been set up to non-null value");
+        //debugPrint('${ConditionDebugPrint("2:2:initModel() in _doDirectCreateOnGlobalServer() - this is ConditionModelIdAndOneTimeInsertionKeyModelServer a_server_user_id has just been set up to non-null value")}');
         //.a_server_owner_contact_id.firstValueAssignement();
         // !!!!!!!!!! not needed Server user id is assigned on create.
         //try {
         //  throw Exception('_doDirectCreateOnGlobalServer method : catched exception: i need to postpone implementing it a contact to be created on the global server must have the server_user_id already');
         //} catch (e) {
-        //  debugPrint("$e");
+        //  debugPrint('${ConditionDebugPrint("$e")}');
         //}
         //await thisAsConditionModelParentIdModel.a_server_user_id.firstValueAssignement;
         //if (thisAsConditionModelParentIdModel.a_server_user_id.value == null) {
@@ -5734,7 +6314,7 @@ abstract class ConditionModel extends ConditionMap {
           bool nullifyTheKey = false;
 
           debugPrint(
-              'result 2:initModel() in _doDirectCreateOnGlobalServer() runtimeType == $runtimeType and result is $result');
+              '${ConditionDebugPrint('result 2:initModel() in _doDirectCreateOnGlobalServer() runtimeType == $runtimeType and result is $result')}');
 
           //hej!
           //HERESTOPPED // all the rest of the properties yet not set up based on the class of model
@@ -5826,19 +6406,19 @@ abstract class ConditionModel extends ConditionMap {
             //on local server with no update to the global server this should solve the problems
             //why there is no server_id both on local and global server
             debugPrint(
-                '2:2:initModel() in _doDirectCreateOnGlobalServer() setting up server_id with no to global server update serverId = ${serverId}');
+                '${ConditionDebugPrint('2:2:initModel() in _doDirectCreateOnGlobalServer() setting up server_id with no to global server update serverId = ${serverId}')}');
             columnNamesAndFullyFeaturedValidateAndSetValueMethods['server_id']!(
                 serverId, true, true, true);
 
             debugPrint(
-                '2:2:initModel() in _doDirectCreateOnGlobalServer() we did a successful create on global server and we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_creation_date_timestamp\'] = ${result[2]}');
+                '${ConditionDebugPrint('2:2:initModel() in _doDirectCreateOnGlobalServer() we did a successful create on global server and we will set up only on local server (already set up  on the global server and just now received) this model property this[\'server_creation_date_timestamp\'] = ${result[2]}')}');
             columnNamesAndFullyFeaturedValidateAndSetValueMethods[
                 'server_creation_date_timestamp']!(result[2], true, true, true);
 
             nullifyTheKey = true;
 
             debugPrint(
-                '2:2:initModel() in _doDirectCreateOnGlobalServer() NOW SUCCESS, THE MODEL IS GOING TO BE INITED GLOBALLY _completerInitModelGlobalServer.complete(this);');
+                '${ConditionDebugPrint('2:2:initModel() in _doDirectCreateOnGlobalServer() NOW SUCCESS, THE MODEL IS GOING TO BE INITED GLOBALLY _completerInitModelGlobalServer.complete(this)}')}');
             _completerInitModelGlobalServer.complete(this);
           } else {
             _completerInitModelGlobalServer.completeError(
@@ -5857,15 +6437,15 @@ abstract class ConditionModel extends ConditionMap {
                       // it should be enough to just set model['one_time_insertion_key'] to null
                       nullifyOneTimeInsertionKey(working_driver);
                     } catch (e) {
-                      debugPrint(
-                          '1:initModel() nullifyOneTimeInsertionKey error - at this state it may fail will be done later [to do]: error: e == $e');
+                      debugPrint('${ConditionDebugPrint(
+                          '1:initModel() nullifyOneTimeInsertionKey error - at this state it may fail will be done later [to do]: error: e == $e')}');
                     }
                     */
         } catch (error) {
-          debugPrint('catchError flag #cef9');
+          debugPrint('${ConditionDebugPrint('catchError flag #cef9')}');
           // here the error?
           debugPrint(
-              'Debugprint: 2:initModel() working_driver.driverGlobal.create() error: With a list of one or two possible integers containing no int id a model initiation could\'t has been finished. Exception thrown: error == $error');
+              '${ConditionDebugPrint('Debugprint: 2:initModel() working_driver.driverGlobal.create() error: With a list of one or two possible integers containing no int id a model initiation could\'t has been finished. Exception thrown: error == $error')}');
           //Here // exactly this line below is causeing the second excepton all catchError and async try catch need to be checke
           _completerInitModelGlobalServer.completeError(
               '2:initModel() working_driver.driverGlobal.create() error: With a list of one or two possible integers containing no int id a model initiation could\'t has been finished. Exception thrown: error == $error');
@@ -5879,7 +6459,8 @@ abstract class ConditionModel extends ConditionMap {
 
   /// FIXME: Is this future always finished? In a ConditionApp widget state initModel had no finished future from this _initedCompleter was used instead. See [ConditionModelCompleteModel] class desc. This method must be called in a complete model class that is not extended by other classess but is an object that is stored in the db
   @nonVirtual
-  Future<ConditionModel> initModel() {
+  Future<void> initModel() {
+    // KEEP THE BODY NON ASYNC, KEEP, AS IT IS, ANY ASYNC INSIDE RUN INDEPENDENTLY FROM SYNC.
     // as far as i remember this method shouldn't be async.
     if (this is! ConditionModelCompleteModel) {
       throw Exception(
@@ -5898,7 +6479,8 @@ abstract class ConditionModel extends ConditionMap {
       // By design when isAllModelDataProvidedViaConstructor == true a full record from the db might has been passed in temporaryInitialData
       // if so there may be some column names from the db that a model class is not allowed to use, so we can remove them now
       // which is reasonable, it then enables the model to pass validation and the model will set those values as properties like f.e. model['user_id'] = '1'
-      debugPrint('flag #ndntxhwhgkgid23 - 1 runtimetype == $runtimeType');
+      debugPrint(
+          '${ConditionDebugPrint('flag #ndntxhwhgkgid23 - 1 runtimetype == $runtimeType')}');
       try {
         for (final String key in
             // cannot use temporaryInitialData because when uring temporaryInitialData.remove it throws excetion that trying to remove on a iterated now elements. It somehow disrupts so lets use a new independent list of keys
@@ -5908,11 +6490,12 @@ abstract class ConditionModel extends ConditionMap {
           }
         }
       } catch (e) {
-        debugPrint('what is going on here $e');
+        debugPrint('${ConditionDebugPrint('what is going on here $e')}');
         rethrow;
       }
 
-      debugPrint('flag #ndntxhwhgkgid23 - 2 runtimetype == $runtimeType');
+      debugPrint(
+          '${ConditionDebugPrint('flag #ndntxhwhgkgid23 - 2 runtimetype == $runtimeType')}');
     }
 
     // this is to be removed when it is listened somewhere else and options for listening are added.
@@ -5922,9 +6505,9 @@ abstract class ConditionModel extends ConditionMap {
       try {
         await _completerInitModelGlobalServer.future;
       } catch (error) {
-        debugPrint('catchError flag #cef10');
+        debugPrint('${ConditionDebugPrint('catchError flag #cef10')}');
         debugPrint(
-            'initModel() _completerInitModelGlobalServer.future exception catched see code of initModel seek the debugPrint, and the async exception thrown is: $error');
+            '${ConditionDebugPrint('initModel() _completerInitModelGlobalServer.future exception catched see code of initModel seek the debugPrint, and the async exception thrown is: $error')}');
 
         /// !!! Rethrow?
         rethrow;
@@ -5937,7 +6520,8 @@ abstract class ConditionModel extends ConditionMap {
     if (this is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
       conditionModelAppInstance =
           (this as ConditionModelIdAndOneTimeInsertionKeyModelServer)
-              .conditionModelApp;
+              ._conditionModelApp
+              .target;
       if (null == driver.driverGlobal) {
         _completerInitModelGlobalServer.completeError(
             'initModel global driver is null so no data can be synchronized');
@@ -5948,10 +6532,11 @@ abstract class ConditionModel extends ConditionMap {
     bool dontInitUserIdValueAgain = false;
 
     debugPrint(
-        'flag #;vnpr1pwpiutw: 3 this is $runtimeType and isAllModelDataProvidedViaConstructor == $isAllModelDataProvidedViaConstructor');
+        '${ConditionDebugPrint('flag #;vnpr1pwpiutw: 3 this is $runtimeType and isAllModelDataProvidedViaConstructor == $isAllModelDataProvidedViaConstructor')}');
     if (isAllModelDataProvidedViaConstructor) {
       // there was a little check in the constructor for id and now all:
-      debugPrint('flag #;vnpr1pwpiutw: 1 this is $runtimeType');
+      debugPrint(
+          '${ConditionDebugPrint('flag #;vnpr1pwpiutw: 1 this is $runtimeType')}');
       _validateAndSetAllAllowedModelDataProperties();
 
       // If this library gives "too much" freedom to the developer: but we have a problem that when a model has by mistake some properties changed it is not valid so there are couple of issues involved about data integrity.
@@ -5960,12 +6545,12 @@ abstract class ConditionModel extends ConditionMap {
             'Exception message update: The problem mentioned in the original exception message is less important or it can be seen now that it is ok but see the description of isAllModelDataProvidedViaConstructor where it is explained why you can even pass to the constructor as a non-third-party programmer some changed properties different from those in the local server db record corresponding to the model. Original exception message: The autor is aware of the overall problem. If this library gives "too much" freedom to the developer: but we have a problem that when a model has by mistake some initial properties changed (properties passsed to the constructor) it is not valid so there are couple of issues involved about data integrity, and adding such a model as child via addChild method.');
       } catch (e) {
         debugPrint(
-            'Catched exception isAllModelDataProvidedViaConstructor, exception message: $e');
+            '${ConditionDebugPrint('Catched exception isAllModelDataProvidedViaConstructor, exception message: $e')}');
       }
-      debugPrint('flag #;vnpr1pwpiutw: 2');
+      debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 2')}');
 
       if (this is ConditionModelParentIdModel) {
-        debugPrint('flag #;vnpr1pwpiutw: 3');
+        debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 3')}');
 
         var thisAsConditionModelParentIdModel =
             this as ConditionModelParentIdModel;
@@ -5977,30 +6562,30 @@ abstract class ConditionModel extends ConditionMap {
                 .hangOnWithServerCreateUntilParentAllowsFuture;
             _inited = true;
             // this is done in _init setter: _completerInitModel.complete(this);
-            _completerInitModelGlobalServer.complete(this);
+            _completerInitModelGlobalServer.complete();
           });
         } else {
-          debugPrint('flag #;vnpr1pwpiutw: 4');
+          debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 4')}');
           _inited = true;
-          debugPrint('flag #;vnpr1pwpiutw: 5');
+          debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 5')}');
           // this is done in _init setter: _completerInitModel.complete(this);
-          debugPrint('flag #;vnpr1pwpiutw: 6');
-          _completerInitModelGlobalServer.complete(this);
-          debugPrint('flag #;vnpr1pwpiutw: 7');
+          debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 6')}');
+          _completerInitModelGlobalServer.complete();
+          debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 7')}');
         }
       } else {
-        debugPrint('flag #;vnpr1pwpiutw: 8');
+        debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 8')}');
         _inited = true;
-        debugPrint('flag #;vnpr1pwpiutw: 9');
+        debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 9')}');
         // this is done in _init setter: _completerInitModel.complete(this);
-        debugPrint('flag #;vnpr1pwpiutw: 10');
-        _completerInitModelGlobalServer.complete(this);
-        debugPrint('flag #;vnpr1pwpiutw: 11');
+        debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 10')}');
+        _completerInitModelGlobalServer.complete();
+        debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 11')}');
       }
 
-      debugPrint('flag #;vnpr1pwpiutw: 12');
+      debugPrint('${ConditionDebugPrint('flag #;vnpr1pwpiutw: 12')}');
       debugPrint(
-          '2:initModel() A model which has all initial data properties set from a constructor and constructor param isAllModelDataProvidedViaConstructor == true has just been inited.');
+          '${ConditionDebugPrint('2:initModel() A model which has all initial data properties set from a constructor and constructor param isAllModelDataProvidedViaConstructor == true has just been inited.')}');
     } else {
       if (temporaryInitialData['id'] != null &&
           temporaryInitialData['id'] is int &&
@@ -6021,26 +6606,30 @@ abstract class ConditionModel extends ConditionMap {
 
       driver.getDriverOnDriverInited().then((working_driver) {
         debugPrint(
-            'Now we have the Map of the defined columnNames with their ConditionModelField objects - of the newly created model:');
+            '${ConditionDebugPrint('Now we have the Map of the defined columnNames with their ConditionModelField objects - of the newly created model:')}');
         debugPrint(
-            'The column names alone are: ${columnNamesAndTheirModelFields.keys.toString()}');
+            '${ConditionDebugPrint('The column names alone are: ${columnNamesAndTheirModelFields.keys.toString()}')}');
         debugPrint(
-            'all the columnNamesAndTheirModelFields map is like this:${columnNamesAndTheirModelFields.toString()}');
-        debugPrint('The current model looks like this:');
-        debugPrint('this.runtimeType==$runtimeType');
-        debugPrint('this.toString()==${toString()}');
-        debugPrint('jsonEncode==${jsonEncode(this)}');
-        debugPrint('And it is fully iterable first for(var i...):');
+            '${ConditionDebugPrint('all the columnNamesAndTheirModelFields map is like this:${columnNamesAndTheirModelFields.toString()}')}');
+        debugPrint(
+            '${ConditionDebugPrint('The current model looks like this:')}');
+        debugPrint('${ConditionDebugPrint('this.runtimeType==$runtimeType')}');
+        debugPrint('${ConditionDebugPrint('this.toString()==${toString()}')}');
+        debugPrint('${ConditionDebugPrint('jsonEncode==${jsonEncode(this)}')}');
+        debugPrint(
+            '${ConditionDebugPrint('And it is fully iterable first for(var i...):')}');
         for (var key in keys) {
           try {
-            debugPrint('key==$key, value==${this[key]}');
+            debugPrint(
+                '${ConditionDebugPrint('key==$key, value==${this[key]}')}');
           } catch (e) {
-            debugPrint('Handled debug Exception $key: ${e.toString()}');
+            debugPrint(
+                '${ConditionDebugPrint('Handled debug Exception $key: ${e.toString()}')}');
           }
         }
 
         debugPrint(
-            'let\' distribute initial map data to proper ConditionModelField objects');
+            '${ConditionDebugPrint('let\' distribute initial map data to proper ConditionModelField objects')}');
 
         //Let's distribute initial map data to proper ConditionModelField objects
 
@@ -6053,7 +6642,7 @@ abstract class ConditionModel extends ConditionMap {
         // if a model is read from the db all its values will be validated when each property like
         // 'id' is set (the same for the one db entry models when id =1 - it is treated the same way)
         debugPrint(
-            'Some more distant future implementation: Don\'t forget in the future of comparing driver with working_driver - this should be the same object. If not a fallback driver like in memory has been created for the app to work in the emergency mode.');
+            '${ConditionDebugPrint('Some more distant future implementation: Don\'t forget in the future of comparing driver with working_driver - this should be the same object. If not a fallback driver like in memory has been created for the app to work in the emergency mode.')}');
 
         if (this is ConditionModelOneDbEntryModel ||
             (temporaryInitialData['id'] != null &&
@@ -6061,11 +6650,11 @@ abstract class ConditionModel extends ConditionMap {
                 temporaryInitialData['id'] > 0)) {
           working_driver.read(this).then((result) {
             debugPrint(
-                'initModel() working_driver.read() success result: ${result.toString()}');
+                '${ConditionDebugPrint('initModel() working_driver.read() success result: ${result.toString()}')}');
 
             if (null == result) {
               debugPrint(
-                  'initModel() result is null so let\'s put model into database');
+                  '${ConditionDebugPrint('initModel() result is null so let\'s put model into database')}');
 
               _validateAndSetAllAllowedModelDataProperties();
 
@@ -6083,27 +6672,27 @@ abstract class ConditionModel extends ConditionMap {
 
                 working_driver.create(this).future.then((result) async {
                   debugPrint(
-                      '2:initModel() working_driver.create() success result: $result');
+                      '${ConditionDebugPrint('2:initModel() working_driver.create() success result: $result')}');
                   debugPrint(
-                      '2:initModel() rrggttrrrr#1 working_driver.create() error: ');
+                      '${ConditionDebugPrint('2:initModel() rrggttrrrr#1 working_driver.create() error: ')}');
 
                   if (this is! ConditionModelApp) {
                     if (result[0] != null && result[0]! > 0) {
                       debugPrint(
-                          '2:initModel() rrggttrrrr#2 working_driver.create() error: ${columnNamesAndFullyFeaturedValidateAndSetValueMethods['id']}');
+                          '${ConditionDebugPrint('2:initModel() rrggttrrrr#2 working_driver.create() error: ${columnNamesAndFullyFeaturedValidateAndSetValueMethods['id']}')}');
                       //this['id'] = result[0];
                       columnNamesAndFullyFeaturedValidateAndSetValueMethods[
                           'id']!(result[0], true, false);
                       debugPrint(
-                          '2:initModel() rrggttrrrr#2B working_driver.create() error: ');
+                          '${ConditionDebugPrint('2:initModel() rrggttrrrr#2B working_driver.create() error: ')}');
                     } else if (result[1] != null && result[1]! > 0) {
                       //this['id'] = result[1];
                       debugPrint(
-                          '2:initModel() rrggttrrrr#3 working_driver.create() error: ');
+                          '${ConditionDebugPrint('2:initModel() rrggttrrrr#3 working_driver.create() error: ')}');
                       columnNamesAndFullyFeaturedValidateAndSetValueMethods[
                           'id']!(result[1], true, false);
                       debugPrint(
-                          '2:initModel() rrggttrrrr#3B working_driver.create() error: ');
+                          '${ConditionDebugPrint('2:initModel() rrggttrrrr#3B working_driver.create() error: ')}');
                     } else {
                       _completerInitModel.completeError(
                           '2:initModel() working_driver.create() error: With a list of one or two possible integers ${result.toString()} containing no int id a model initiation could\'t has been finished');
@@ -6111,29 +6700,29 @@ abstract class ConditionModel extends ConditionMap {
                     }
 
                     debugPrint(
-                        '2:initModel() afewrt#1 working_driver.create() error: ');
+                        '${ConditionDebugPrint('2:initModel() afewrt#1 working_driver.create() error: ')}');
                     if (this is ConditionModelIdAndOneTimeInsertionKeyModel) {
                       debugPrint(
-                          '2:initModel() afewrt#2 working_driver.create() error: ');
+                          '${ConditionDebugPrint('2:initModel() afewrt#2 working_driver.create() error: ')}');
                       // this one must work, even with timers to try again
                       columnNamesAndFullyFeaturedValidateAndSetValueMethods[
                           'local_id']!(this['id'], true, false);
 
                       debugPrint(
-                          '2:initModel() afewrt#3 working_driver.create() error: ');
+                          '${ConditionDebugPrint('2:initModel() afewrt#3 working_driver.create() error: ')}');
                       // this will local_id on a local - if fails it will do it until it will success that the conde will execute further
                       await _updateLocalId(working_driver);
                       debugPrint(
-                          '2:initModel() afewrt#4 working_driver.create() error: ');
+                          '${ConditionDebugPrint('2:initModel() afewrt#4 working_driver.create() error: ')}');
 
                       if (this
                           is ConditionModelIdAndOneTimeInsertionKeyModelServer) {
                         debugPrint(
-                            '2:initModel() afewrt#5 working_driver.create() error: ');
+                            '${ConditionDebugPrint('2:initModel() afewrt#5 working_driver.create() error: ')}');
                         _doDirectCreateOnGlobalServer(working_driver,
                             conditionModelAppInstance as ConditionModelApp);
                         debugPrint(
-                            '2:initModel() afewrt#6 working_driver.create() error: ');
+                            '${ConditionDebugPrint('2:initModel() afewrt#6 working_driver.create() error: ')}');
                       }
                     }
                   }
@@ -6145,20 +6734,21 @@ abstract class ConditionModel extends ConditionMap {
                   _inited = true;
 
                   debugPrint(
-                      '2:initModel() working_driver.create() also the created Model has just been inited it\'s id of ${this['id']} has been set. _inited==true and the model looks like this');
-                  debugPrint(toString());
+                      '${ConditionDebugPrint('2:initModel() working_driver.create() also the created Model has just been inited it\'s id of ${this['id']} has been set. _inited==true and the model looks like this')}');
+                  debugPrint('${ConditionDebugPrint(toString())}');
                 }).catchError((error) {
-                  debugPrint('catchError flag #cef11');
+                  debugPrint(
+                      '${ConditionDebugPrint('catchError flag #cef11')}');
 
                   debugPrint(
-                      '2:initModel() working_driver.create() error result: $error');
+                      '${ConditionDebugPrint('2:initModel() working_driver.create() error result: $error')}');
                   _completerInitModel.completeError(
                       'T1 The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure creating a db record: $error');
                 });
               });
             } else {
               debugPrint(
-                  'initModel() working_driver.read() is a Map so a model is not new and existed in the db now let\'s validate and set each value to the model: ${result.toString()}');
+                  '${ConditionDebugPrint('initModel() working_driver.read() is a Map so a model is not new and existed in the db now let\'s validate and set each value to the model: ${result.toString()}')}');
 
               try {
                 // server_key of ConditionModelApp from !!!read() only!!! will be set up differently
@@ -6177,15 +6767,16 @@ abstract class ConditionModel extends ConditionMap {
                   skipSettingUpLocalServerKey = true;
                 }
                 debugPrint(
-                    '50A1initModel() validate and set key: columnNamesAndTheirModelFields.keys == ${columnNamesAndTheirModelFields.keys}');
+                    '${ConditionDebugPrint('50A1initModel() validate and set key: columnNamesAndTheirModelFields.keys == ${columnNamesAndTheirModelFields.keys}')}');
 
                 for (final String key in columnNamesAndTheirModelFields.keys) {
-                  debugPrint('50A1initModel() validate and set key: $key');
+                  debugPrint(
+                      '${ConditionDebugPrint('50A1initModel() validate and set key: $key')}');
                   if (skipSettingUpLocalServerKey && key == 'server_key') {
                     continue;
                   }
                   debugPrint(
-                      '50A1initModel() validate and set key: $key and value ${result[key].toString()}');
+                      '${ConditionDebugPrint('50A1initModel() validate and set key: $key and value ${result[key].toString()}')}');
                   // each value read from the db is to be validated and set up, or will be thrown exception if a value is not valid. Possible rather only in case of manually changing values in the db or in a malicious attempt.
                   //this[key].value = result[key];
                   if (dontInitIdValueAgain == true && key == 'id') {
@@ -6196,23 +6787,25 @@ abstract class ConditionModel extends ConditionMap {
                   }
 
                   try {
-                    debugPrint('50A1 setup value');
+                    debugPrint('${ConditionDebugPrint('50A1 setup value')}');
                     //this[key] = result[key];
                     columnNamesAndFullyFeaturedValidateAndSetValueMethods[key]!(
                         result[key], true, false);
-                    debugPrint('50A1 after setup value');
+                    debugPrint(
+                        '${ConditionDebugPrint('50A1 after setup value')}');
                   } catch (e) {
-                    debugPrint('Before 50A2nitModel() error e == $e');
+                    debugPrint(
+                        '${ConditionDebugPrint('Before 50A2nitModel() error e == $e')}');
                     rethrow;
                   }
                   debugPrint(
-                      '50A2nitModel() validate and set key: $key and value ${result[key].toString()}');
+                      '${ConditionDebugPrint('50A2nitModel() validate and set key: $key and value ${result[key].toString()}')}');
                 }
 
                 debugPrint(
-                    'With no exception thrown model\'s values has been restored from the db and the model look like this:');
+                    '${ConditionDebugPrint('With no exception thrown model\'s values has been restored from the db and the model look like this:')}');
 
-                debugPrint(toString());
+                debugPrint('${ConditionDebugPrint(toString())}');
 
                 // setter for _inited in the right order does
                 // temporaryInitialData = {};
@@ -6225,12 +6818,12 @@ abstract class ConditionModel extends ConditionMap {
                     _doDirectCreateOnGlobalServer(working_driver,
                         conditionModelAppInstance as ConditionModelApp);
                   } else {
-                    _completerInitModelGlobalServer.complete(this);
+                    _completerInitModelGlobalServer.complete();
                   }
                 }
               } catch (e) {
                 debugPrint(
-                    'The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure during validating and setting each field received from a db record. One field failed not passing validation or setting it\'s value');
+                    '${ConditionDebugPrint('The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure during validating and setting each field received from a db record. One field failed not passing validation or setting it\'s value')}');
                 _completerInitModel.completeError(
                     'The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure during validating and setting each field received from a db record. One field failed not passing validation or setting it\'s value');
                 rethrow;
@@ -6239,16 +6832,16 @@ abstract class ConditionModel extends ConditionMap {
               //_completerInitModel.complete(true);
             }
           }).catchError((error) {
-            debugPrint('catchError flag #cef12');
+            debugPrint('${ConditionDebugPrint('catchError flag #cef12')}');
 
             debugPrint(
-                'initModel() of [${runtimeType.toString()}] working_driver.read() error result: ${error.toString()}');
+                '${ConditionDebugPrint('initModel() of [${runtimeType.toString()}] working_driver.read() error result: ${error.toString()}')}');
             debugPrint(
-                '====================================================================================');
+                '${ConditionDebugPrint('====================================================================================')}');
             debugPrint(
-                '====================================================================================');
+                '${ConditionDebugPrint('====================================================================================')}');
             debugPrint(
-                '!!!!!!!!!! Is the future complete? ${_completerInitModel.isCompleted.toString()}');
+                '${ConditionDebugPrint('!!!!!!!!!! Is the future complete? ${_completerInitModel.isCompleted.toString()}')}');
             _completerInitModel.completeError(
                 'The model of class ${runtimeType.toString()} couldn\'t has been read from the db - an db engine error occured. The error result: ${error.toString()}');
           });
@@ -6268,7 +6861,7 @@ abstract class ConditionModel extends ConditionMap {
 
             working_driver.create(this).future.then((result) async {
               debugPrint(
-                  '1:initModel() working_driver.create() success result: ${result.toString()}');
+                  '${ConditionDebugPrint('1:initModel() working_driver.create() success result: ${result.toString()}')}');
 
               if (this is! ConditionModelApp) {
                 if (result[0] != null && result[0]! > 0) {
@@ -6310,39 +6903,44 @@ abstract class ConditionModel extends ConditionMap {
               // ??? So at the moment we have no exception
               // ??? So we can play with the db. But first some debugPrint
               debugPrint(
-                  '1:initModel() working_driver.create() also the created Model has just been inited it\'s id of ${this['id']} has been set. _inited==true and the model looks like this');
-              debugPrint(toString());
+                  '${ConditionDebugPrint('1:initModel() working_driver.create() also the created Model has just been inited it\'s id of ${this['id']} has been set. _inited==true and the model looks like this')}');
+              debugPrint('${ConditionDebugPrint(toString())}');
             }).catchError((error) {
-              debugPrint('catchError flag #cef13');
+              debugPrint('${ConditionDebugPrint('catchError flag #cef13')}');
 
               debugPrint(
-                  '1:initModel() working_driver.create() error result: ${error.toString()}');
+                  '${ConditionDebugPrint('1:initModel() working_driver.create() error result: ${error.toString()}')}');
               _completerInitModel.completeError(
                   'T2 The model of class ${runtimeType.toString()} couldn\'t has been inited because of failure creating a db record. The error result: ${error.toString()}');
             });
           });
         }
 
-        debugPrint('=================================');
         debugPrint(
-            'Let\'s repeat all the debug prints for the same model after the changes that has just been performed');
+            '${ConditionDebugPrint('=================================')}');
+        debugPrint(
+            '${ConditionDebugPrint('Let\'s repeat all the debug prints for the same model after the changes that has just been performed')}');
 
         debugPrint(
-            'Now we have the Map of the defined columnNames with their ConditionModelField objects - of the newly created model:');
+            '${ConditionDebugPrint('Now we have the Map of the defined columnNames with their ConditionModelField objects - of the newly created model:')}');
         debugPrint(
-            'The column names alone are: ${columnNamesAndTheirModelFields.keys.toString()}');
+            '${ConditionDebugPrint('The column names alone are: ${columnNamesAndTheirModelFields.keys.toString()}')}');
         debugPrint(
-            'all the columnNamesAndTheirModelFields map is like this:${columnNamesAndTheirModelFields.toString()}');
-        debugPrint('The current model looks like this:');
-        debugPrint('this.runtimeType==$runtimeType');
-        debugPrint('this.toString()==${toString()}');
-        debugPrint('jsonEncode==${jsonEncode(this)}');
-        debugPrint('And it is fully iterable first for(var i...):');
+            '${ConditionDebugPrint('all the columnNamesAndTheirModelFields map is like this:${columnNamesAndTheirModelFields.toString()}')}');
+        debugPrint(
+            '${ConditionDebugPrint('The current model looks like this:')}');
+        debugPrint('${ConditionDebugPrint('this.runtimeType==$runtimeType')}');
+        debugPrint('${ConditionDebugPrint('this.toString()==${toString()}')}');
+        debugPrint('${ConditionDebugPrint('jsonEncode==${jsonEncode(this)}')}');
+        debugPrint(
+            '${ConditionDebugPrint('And it is fully iterable first for(var i...):')}');
         for (var key in keys) {
           try {
-            debugPrint('key==$key, value==${this[key]}');
+            debugPrint(
+                '${ConditionDebugPrint('key==$key, value==${this[key]}')}');
           } catch (e) {
-            debugPrint('Handled debug Exception $key: ${e.toString()}');
+            debugPrint(
+                '${ConditionDebugPrint('Handled debug Exception $key: ${e.toString()}')}');
           }
         }
 
@@ -6362,21 +6960,21 @@ abstract class ConditionModel extends ConditionMap {
   _updateLocalId(ConditionDataManagementDriver working_driver) async {
     try {
       debugPrint(
-          '2:initModel() working_driver.update() Before the new model is inited (_inited=true) we need to set up the property local_id = id (or server_id in global server context (TO DO !!!!)) async/await waiting... :');
+          '${ConditionDebugPrint('2:initModel() working_driver.update() Before the new model is inited (_inited=true) we need to set up the property local_id = id (or server_id in global server context (TO DO !!!!)) async/await waiting... :')}');
       await working_driver.update(this, columnNames: {'local_id'});
       debugPrint(
-          '2:initModel() the property of a new model has been updated successfully');
+          '${ConditionDebugPrint('2:initModel() the property of a new model has been updated successfully')}');
     } catch (e) {
       debugPrint(
-          '2:initModel() ERROR the property local_id (or server_id in global server context [To do!!!]) of a new model hasn\'t been updated the model cannot be used in synchronizing in both directions using local and global server let\'s try to update the property cyclically using Timer.preriodic error thrown: e = $e');
+          '${ConditionDebugPrint('2:initModel() ERROR the property local_id (or server_id in global server context [To do!!!]) of a new model hasn\'t been updated the model cannot be used in synchronizing in both directions using local and global server let\'s try to update the property cyclically using Timer.preriodic error thrown: e = $e')}');
       var synchronizingIdUpdateCompleter = Completer<bool>();
       Timer.periodic(Duration(seconds: 3), (timer) async {
         try {
           debugPrint(
-              '2:initModel() cyclical working_driver.update() Before the new model is inited (_inited=true) we need to set up the property local_id = id (or server_id in global server context (TO DO !!!!)) async/await waiting... :');
+              '${ConditionDebugPrint('2:initModel() cyclical working_driver.update() Before the new model is inited (_inited=true) we need to set up the property local_id = id (or server_id in global server context (TO DO !!!!)) async/await waiting... :')}');
           await working_driver.update(this, columnNames: {'local_id'});
           debugPrint(
-              '2:initModel() cyclical the property of a new model has been updated successfully');
+              '${ConditionDebugPrint('2:initModel() cyclical the property of a new model has been updated successfully')}');
           // it probably might be that the method will be called one time too much
           if (timer.isActive) {
             timer.cancel();
@@ -6384,7 +6982,7 @@ abstract class ConditionModel extends ConditionMap {
           }
         } catch (e) {
           debugPrint(
-              '2:initModel() ERROR of cyclical invokation the property local_id (or server_id in global server context [To do!!!]) of a new model hasn\'t been updated the model cannot be used in synchronizing in both directions using local and global server error thrown: e = $e');
+              '${ConditionDebugPrint('2:initModel() ERROR of cyclical invokation the property local_id (or server_id in global server context [To do!!!]) of a new model hasn\'t been updated the model cannot be used in synchronizing in both directions using local and global server error thrown: e = $e')}');
         }
       });
 
@@ -6410,20 +7008,20 @@ abstract class ConditionModel extends ConditionMap {
     // it never to complete or being _inited == true properly.
     // WE HAVE ALSO THIS ONE hangOnWithServerCreateUntilParentAllows = true by default
     debugPrint(
-        '_inited setter of this.runtimetype == $runtimeType and value == $value');
+        '${ConditionDebugPrint('_inited setter of this.runtimetype == $runtimeType and value == $value')}');
     __inited = value;
 
     // THE ORDER OF THIS STUFF BELOW MATTERS:
     temporaryInitialData = {};
-    _completerInitModel.complete(this);
+    _completerInitModel.complete();
     // If during validation process no Exception was thrown:
 
     // -----------------------------------
     // ??? So at the moment we have no exception
     // ??? So we can play with the db. But first some debugPrint
     debugPrint(
-        '1:initModel() "set _inited()" setter also the read or created Model has just been inited it\'s id of ${this['id']} has been set. _inited==true');
-    debugPrint(toString());
+        '${ConditionDebugPrint('1:initModel() "set _inited()" setter also the read or created Model has just been inited it\'s id of ${this['id']} has been set. _inited==true')}');
+    debugPrint('${ConditionDebugPrint(toString())}');
     _changesStreamController.add(
         ConditionModelInfoEventModelInitingAndReadinessModelHasJustBeenInitedLocalServer(
             this));
@@ -6440,38 +7038,38 @@ abstract class ConditionModel extends ConditionMap {
 
   @protected
   bool get inited {
-    debugPrint('_inited getter of this.runtimetype == $runtimeType');
+    debugPrint(
+        '${ConditionDebugPrint('_inited getter of this.runtimetype == $runtimeType')}');
     try {
       return __inited; // of course exception will be thrown if the property hasn't been inited yet thetn catch will return "false" value;
     } catch (e) {
       debugPrint(
-          '_inited error error getter of this.runtimetype == $runtimeType');
+          '${ConditionDebugPrint('_inited error error getter of this.runtimetype == $runtimeType')}');
       return false;
     }
   }
 
   /// See the [__init] property description
-  Future<ConditionModel> getModelOnModelInitComplete() =>
-      _completerInitModel.future;
+  Future<void> getModelOnModelInitComplete() => _completerInitModel.future;
 
   @protected
   set _initedGlobalServer(bool value) {
     // the value should be always true or nothing else should happen _completerInitModelGlobalServer additionally should complete with completeError() on errors along the road causing it never complete or being _inited == true properly.
     debugPrint(
-        '_initedGlobalServer setter of this.runtimetype == $runtimeType and value == $value');
+        '${ConditionDebugPrint('_initedGlobalServer setter of this.runtimetype == $runtimeType and value == $value')}');
     __initedGlobalServer = value;
 
     // THE ORDER OF THIS STUFF BELOW MATTERS:
     // not needed temporaryInitialData = {};
-    _completerInitModelGlobalServer.complete(this);
+    _completerInitModelGlobalServer.complete();
     // If during validation process no Exception was thrown:
 
     // -----------------------------------
     // ??? So at the moment we have no exception
     // ??? So we can play with the db. But first some debugPrint
     debugPrint(
-        '1:initModel() "set _initedGlobalServer()" setter. _initedGlobalServer==true');
-    debugPrint(toString());
+        '${ConditionDebugPrint('1:initModel() "set _initedGlobalServer()" setter. _initedGlobalServer==true')}');
+    debugPrint('${ConditionDebugPrint(toString())}');
     _changesStreamController.add(
         ConditionModelInfoEventModelInitingAndReadinessModelHasJustBeenInitedGlobalServer(
             this));
@@ -6489,23 +7087,23 @@ abstract class ConditionModel extends ConditionMap {
   @protected
   bool get initedGlobalServer {
     debugPrint(
-        '_initedGlobalServer getter of this.runtimetype == $runtimeType');
+        '${ConditionDebugPrint('_initedGlobalServer getter of this.runtimetype == $runtimeType')}');
     try {
       return __initedGlobalServer;
     } catch (e) {
       debugPrint(
-          '_inited error error getter of this.runtimetype == $runtimeType');
+          '${ConditionDebugPrint('_inited error error getter of this.runtimetype == $runtimeType')}');
       return false;
     }
   }
 
   /// See the [__initGlobalServer] property description
-  Future<ConditionModel> getModelOnModelInitCompleteGlobalServer() =>
+  Future<void> getModelOnModelInitCompleteGlobalServer() =>
       _completerInitModelGlobalServer.future;
 
   @override
   void operator []=(key, value) {
-    debugPrint('yerttttt1____' + key);
+    debugPrint('${ConditionDebugPrint('yerttttt1____' + key)}');
 
     // To remind you: DON'T REMOVE THE SWITCH, it throws exception which means children who
     // implemented the operator haven't found any property on the list and it shouldn't
@@ -6619,14 +7217,14 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModel
       // this is called on top: f.e ConditionModelMessage: validateInitialData(this); // not implemented, maybe done with little delay
       _createAndSetOneTimeInsertionKey(temporaryInitialData);
       debugPrint(
-          '%%%%%55555 IS NULL ${temporaryInitialData['id'].runtimeType.toString()}');
+          '${ConditionDebugPrint('%%%%%55555 IS NULL ${temporaryInitialData['id'].runtimeType.toString()}')}');
     } else {
       debugPrint(
-          '%%%%%55555 IS NOT NULL ${temporaryInitialData['id'].runtimeType.toString()}');
+          '${ConditionDebugPrint('%%%%%55555 IS NOT NULL ${temporaryInitialData['id'].runtimeType.toString()}')}');
     }
     if (this is ConditionModelContact) {
-      debugPrint('%%%%%55555Letsee what we have');
-      debugPrint(temporaryInitialData.toString());
+      debugPrint('${ConditionDebugPrint('%%%%%55555Letsee what we have')}');
+      debugPrint('${ConditionDebugPrint(temporaryInitialData.toString())}');
     }
     a_user_id.init();
     a_id.init();
@@ -6649,7 +7247,7 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModel
 
   @override
   void operator []=(key, value) {
-    debugPrint('yerttttt1____' + key);
+    debugPrint('${ConditionDebugPrint('yerttttt1____' + key)}');
 
     switch (key) {
       case 'user_id':
@@ -6847,11 +7445,13 @@ abstract class ConditionModelParentIdModel
       // to avoid endless loop for now in this debug stage
       if (this is ConditionModelContact) {
         //ConditoinModelBelongingToContact
+        //???earlier used ...1, ...3 for mail, depending on initDbStage
+        // WE want to sent to user global id= 3 (email with nr 1 and it's local server id = 1) that in the default profile and everyghing is revolving around the default profile, the rest is helping profiles
         var subcontact = ConditionModelContact(
             conditionModelApp,
             conditionModelUser,
             <String, dynamic>{
-              'contact_e_mail': 'adfafaasdfasfafaasfasfsf2@gmail.com.debug',
+              'contact_e_mail': 'adfafaasdfasfafaasfasfsf1@gmail.com.debug',
               //'user_id': //id, is it// allowed when hangOnWithServerCreateUntilParentAllows: true see addChild?
             },
             hangOnWithServerCreateUntilParentAllows: true,
@@ -6892,32 +7492,32 @@ abstract class ConditionModelParentIdModel
 
         addChild(message);
 
-        message.getModelOnModelInitComplete().then((model) {
+        message.getModelOnModelInitComplete().then((voidparam) {
           debugPrint(
-              'B] We are in [ConditionModelParentIdModel]\'s restoreTreeTopLevelModelsOrMostRecentMessagesModels() in then() of getModelOnModelInitComplete() method of a ConditionModelParentIdModel model. the model just has been inited and is ready to use. Let\'s debug-update a field/property of the model. Each time the value will be different - timestamp');
+              '${ConditionDebugPrint('B] We are in [ConditionModelParentIdModel]\'s restoreTreeTopLevelModelsOrMostRecentMessagesModels() in then() of getModelOnModelInitComplete() method of a ConditionModelParentIdModel model. the model just has been inited and is ready to use. Let\'s debug-update a field/property of the model. Each time the value will be different - timestamp')}');
           message.description =
               ConditionModelApp.getTimeNowMillisecondsSinceEpoch()
                   .time
                   .toString();
           debugPrint(
-              'B] And the value now is message.description == ${message.description}');
+              '${ConditionDebugPrint('B] And the value now is message.description == ${message.description}')}');
         }).catchError((error) {
-          debugPrint('catchError flag #cef14');
+          debugPrint('${ConditionDebugPrint('catchError flag #cef14')}');
 
           debugPrint(
-              'B] Error of: We are in [ConditionModelParentIdModel]\'s restoreTreeTopLevelModelsOrMostRecentMessagesModels() in then() of getModelOnModelInitComplete() method of a ConditionModelParentIdModel model, the error message ${error.toString()}');
+              '${ConditionDebugPrint('B] Error of: We are in [ConditionModelParentIdModel]\'s restoreTreeTopLevelModelsOrMostRecentMessagesModels() in then() of getModelOnModelInitComplete() method of a ConditionModelParentIdModel model, the error message ${error.toString()}')}');
         });
 
         debugPrint(
-            'P] restoreTreeTopLevelModelsOrMostRecentMessagesModels(): let\'s get into a loop creating top lever models for later rendering widgets.');
+            '${ConditionDebugPrint('P] restoreTreeTopLevelModelsOrMostRecentMessagesModels(): let\'s get into a loop creating top lever models for later rendering widgets.')}');
         debugPrint(
-            'P]restoreTreeTopLevelModelsOrMostRecentMessagesModels() conditionModelApp.currently_active_user_id ${conditionModelApp.currently_active_user_id} and currently processed user id is $id');
-        if (conditionModelApp.currently_active_user_id == id) {
+            '${ConditionDebugPrint('P]restoreTreeTopLevelModelsOrMostRecentMessagesModels() conditionModelApp.currently_active_user_id ${conditionModelApp!.currently_active_user_id} and currently processed user id is $id')}');
+        if (conditionModelApp!.currently_active_user_id == id) {
           debugPrint(
-              'P]the currently processed user IS active and some of it\'s models are going to be restored now. Some other stuff yet may be done.');
+              '${ConditionDebugPrint('P]the currently processed user IS active and some of it\'s models are going to be restored now. Some other stuff yet may be done.')}');
         } else {
           debugPrint(
-              'P]the currently processed user is NOT active and it\'s models are not going to be restored now. Some other stuff yet may be done.');
+              '${ConditionDebugPrint('P]the currently processed user is NOT active and it\'s models are not going to be restored now. Some other stuff yet may be done.')}');
         }
       }
     }
@@ -6934,7 +7534,7 @@ abstract class ConditionModelParentIdModel
 
       try {
         debugPrint(
-            'restoreMyChildren() method non-ConditionModelUser method. We are going to call local server driver.readAll() method to restore top level contacts.');
+            '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. We are going to call local server driver.readAll() method to restore top level contacts.')}');
         // add constructor param that the object is fully restored from a full the map, thanks to it we wont make two requests to a db
         // add educational info on that here that an object can be fully created from a map or just you pass an id.
         // at the same time what if someone created an object with fake data but right id? hence think how hermetize itf
@@ -6955,14 +7555,14 @@ abstract class ConditionModelParentIdModel
         );
 
         debugPrint(
-            'restoreMyChildren() method non-ConditionModelUser method. . A result of local server driver.readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :');
+            '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. . A result of local server driver.readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :')}');
 
         if (conditionMapList == null || conditionMapList.isEmpty) {
           debugPrint(
-              'restoreMyChildren() method non-ConditionModelUser method. It is null or empty :( but it is NOT a db error! A new key will be obtained in a while or later');
+              '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. It is null or empty :( but it is NOT a db error! A new key will be obtained in a while or later')}');
         } else {
           debugPrint(
-              'restoreMyChildren() method non-ConditionModelUser method. result: It is not null :) so we recreate the contact objects if fly');
+              '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. result: It is not null :) so we recreate the contact objects if fly')}');
 
           // fix the below;
 
@@ -7014,9 +7614,9 @@ abstract class ConditionModelParentIdModel
             switch (className) {
               case 'ConditionModelContact':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelContact');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelContact')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
                 // Only contacts can have subcontacts, if this case is run we are in contact model object (assumed db data was never changed manually)
                 addChild(ConditionModelContact(
                         conditionModelApp,
@@ -7037,9 +7637,9 @@ abstract class ConditionModelParentIdModel
                 break;
               case 'ConditionModelMessage':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
 
                 try {
                   addChild(ConditionModelMessage(
@@ -7064,7 +7664,7 @@ abstract class ConditionModelParentIdModel
                       );
                 } catch (e) {
                   debugPrint(
-                      'restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e');
+                      '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e')}');
                   rethrow;
                 }
 
@@ -7072,9 +7672,9 @@ abstract class ConditionModelParentIdModel
 
               case 'ConditionModelVideoConference':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
 
                 try {
                   addChild(ConditionModelMessage(
@@ -7099,16 +7699,16 @@ abstract class ConditionModelParentIdModel
                       );
                 } catch (e) {
                   debugPrint(
-                      'restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e');
+                      '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e')}');
                   rethrow;
                 }
 
                 break;
               case 'ConditionModelTask':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
 
                 try {
                   addChild(ConditionModelMessage(
@@ -7133,16 +7733,16 @@ abstract class ConditionModelParentIdModel
                       );
                 } catch (e) {
                   debugPrint(
-                      'restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e');
+                      '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e')}');
                   rethrow;
                 }
 
                 break;
               case 'ConditionTripAndFitness':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
 
                 try {
                   addChild(ConditionModelMessage(
@@ -7167,16 +7767,16 @@ abstract class ConditionModelParentIdModel
                       );
                 } catch (e) {
                   debugPrint(
-                      'restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e');
+                      '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e')}');
                   rethrow;
                 }
 
                 break;
               case 'ConditionModelURLTicker':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
 
                 try {
                   addChild(ConditionModelMessage(
@@ -7201,7 +7801,7 @@ abstract class ConditionModelParentIdModel
                       );
                 } catch (e) {
                   debugPrint(
-                      'restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e');
+                      '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e')}');
                   rethrow;
                 }
 
@@ -7209,9 +7809,9 @@ abstract class ConditionModelParentIdModel
 
               case 'ConditionModelReadingRoom':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
 
                 try {
                   addChild(ConditionModelMessage(
@@ -7236,7 +7836,7 @@ abstract class ConditionModelParentIdModel
                       );
                 } catch (e) {
                   debugPrint(
-                      'restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e');
+                      '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e')}');
                   rethrow;
                 }
 
@@ -7244,9 +7844,9 @@ abstract class ConditionModelParentIdModel
 
               case 'ConditionModelWebPage':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
 
                 try {
                   addChild(ConditionModelMessage(
@@ -7271,7 +7871,7 @@ abstract class ConditionModelParentIdModel
                       );
                 } catch (e) {
                   debugPrint(
-                      'restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e');
+                      '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e')}');
                   rethrow;
                 }
 
@@ -7279,9 +7879,9 @@ abstract class ConditionModelParentIdModel
 
               case 'ConditionModelShop':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
 
                 try {
                   addChild(ConditionModelMessage(
@@ -7306,16 +7906,16 @@ abstract class ConditionModelParentIdModel
                       );
                 } catch (e) {
                   debugPrint(
-                      'restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e');
+                      '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e')}');
                   rethrow;
                 }
 
                 break;
               case 'ConditionModelProgramming':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
 
                 try {
                   addChild(ConditionModelMessage(
@@ -7340,16 +7940,16 @@ abstract class ConditionModelParentIdModel
                       );
                 } catch (e) {
                   debugPrint(
-                      'restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e');
+                      '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e')}');
                   rethrow;
                 }
 
                 break;
               case 'ConditionModelPodcasting':
                 debugPrint(
-                    'restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}');
+                    '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${Map<String, dynamic>.from(conditionMapList[i])}')}');
                 debugPrint(
-                    'flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}');
+                    '${ConditionDebugPrint('flag #owfan7iru293u5pfiuds : description runtimeType ${conditionMapList[i]['description'].runtimeType} , value = ${conditionMapList[i]['description']}')}');
 
                 try {
                   addChild(ConditionModelMessage(
@@ -7374,7 +7974,7 @@ abstract class ConditionModelParentIdModel
                       );
                 } catch (e) {
                   debugPrint(
-                      'restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e');
+                      '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method exception. we are restoring a child, which class is ConditionModelMessage, conditionMapList[i] == ${conditionMapList[i]} the error message $e')}');
                   rethrow;
                 }
 
@@ -7390,7 +7990,7 @@ abstract class ConditionModelParentIdModel
       } catch (e) {
         // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
         debugPrint(
-            'restoreMyChildren() method non-ConditionModelUser method. checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) Predefined error message, rather throw Excepthion custom class, There was a db_error,error $e');
+            '${ConditionDebugPrint('restoreMyChildren() method non-ConditionModelUser method. checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) Predefined error message, rather throw Excepthion custom class, There was a db_error,error $e')}');
         // now in debug it rethrows but it should seek a way for the app to recover itself from this situation?
         // normally it should never throw and catch here.
         rethrow;
@@ -7444,423 +8044,10 @@ abstract class ConditionModelParentIdModel
   bool get retireModelWhenWhenRemovedFromTheModelTree =>
       _retireModelWhenWhenRemovedFromTheModelTree;
 
-  // ---------------------------------------------------------------------------------------------------------------- //
-  // SYNCHRONOUS PART ----------- //
-  // ---------------------------------------------------------------------------------------------------------------- //
-
-  /// See the [lastRetireModelProcessStart] which is not the same. Each call of retire uptates this property with timestamp.
-  ConditionTimeNowMillisecondsSinceEpoch? _lastRetireMethodCall;
-  ConditionTimeNowMillisecondsSinceEpoch? get lastRetireMethodCall =>
-      _lastRetireMethodCall;
-
-  ConditionTimeNowMillisecondsSinceEpoch?
-      _retireMethodItsBodyCodeExecutionLastStart;
-
-  /// important - always updated when [_retireMethodItsBodyCodeExecutionLastStart] updated, even when synchronous body exception is thrown
-  ConditionTimeNowMillisecondsSinceEpoch?
-      _retireMethodItsBodyCodeExecutionLastFinish;
-
-  /// Means synchronous aspect of the [retire] method body, read more: With [isRetirementProcessPending] you can use the both properties features as you need (use public getters). Check out if some stuff is performed even befor this property is set at the top or the [retire] method. The [retire] method is executed synchronously but apart from [isRetirementProcessPending] is not everything we need to know if the method is being executed right know which is not the same as [isRetirementProcessPending] which may last after the body or the [retire] method was executed.
-  bool _isRetireMethodBodyAlreadyBeingExecuted = false;
-  bool get isRetireMethodBodyAlreadyBeingExecuted =>
-      _isRetireMethodBodyAlreadyBeingExecuted;
-
-  // ---------------------------------------------------------------------------------------------------------------- //
-  // ASYNCHRONOUS PART ----------- //
-  // ---------------------------------------------------------------------------------------------------------------- //
-
-  /// Use getter - this is internal stuff, Not the same as [lastRetireMethodCall] (if both properties are changed in the same [retire] method called they have the same time) where each call on retire() method updates the the [lastRetireMethodCall] while [lastRetireModelProcessStart] is updated when we start an actual retire process. this See also properties here starting from "retire..." and the retire method. When [retire]() is called this value is updated ConditionModelApp.getTimeNowMillisecondsSinceEpoch(); When retire is called unsuccessfuly a conditoinModelApp may monitor the model for some time by calling the retire method cyclically; if [conditionModelApp] detects that f.e. model has been reattached to the model tree it stops cyclically calling the retire method. Other factors may have impact if the retire method is called on a model or not. And after the model is retired it is unlinked from the app models or similar ? app property - 2 properties are for this.
-  ConditionTimeNowMillisecondsSinceEpoch? _lastRetireModelProcessStart;
-  ConditionTimeNowMillisecondsSinceEpoch? get lastRetireModelProcessStart =>
-      _lastRetireModelProcessStart;
-
-  /// Use the public getter of [_lastRetireModelProcessStart], but see the desc of [_lastRetireModelProcessStart]
-  ConditionTimeNowMillisecondsSinceEpoch? _lastRetireModelProcessFinish;
-  ConditionTimeNowMillisecondsSinceEpoch? get lastRetireModelProcessFinish =>
-      _lastRetireModelProcessFinish;
-
-  /// Do not change it, only reading purposes, this is managed by [conditionModelApp] conditionModelApp property, this is used byt it's [hangOnModelOperationIfNeeded] and is related to model retiring system ([retire] method) allowing to release resources taken by unused models. if a completer is not completed it means a model will not start a particular operation until the completer completes (related future finishes) which allows to retire method safely most probably not interrupting a possibly long global server operation. When we can prevent such an operation or other from starting we can retire model and release it's resources or possibly resume all model to fully active state if in the meantime a model was restored to the model tree, read more. conditionModelApp will monitor models that are removed from children list (removeChild method) if their resources can be released by unlinking from _allAppModels or so Set. It can be assumed that if conditions are met no link is left to the model after retire() method was called successfuly, etc. quite a number of factors involved.
-  final Map<ConditionModelClassesTypeOfSucpendableOperation, Completer?>
-      _conditionModelAppHangOnModelOperationsCompleters = {};
-
-  /// only if non-null completer.isCompleted == false the retirement process is being in progress now. All important retire stuff depend on it, like public [isRetired], [isRetirementProcessPending], [pendingRetirementProcessFuture], or [retire] method if not more. If non-null completer.isCompleted == true, the model is retired. The [retire]() method updates this completer. The retirement may be completely cancelled. Maybe pending already for f.e. 10 seconds, may be created new, etc. So retire() methods updates it and you use the Future getter only in normal circumstances.
-  Completer<bool>? _pendingRetirementProcessCompleter = null;
-
-  /// Read used here [_pendingRetirementProcessCompleter] desc.
-  Future<bool>? get pendingRetirementProcessFuture =>
-      _pendingRetirementProcessCompleter?.future;
-
-  /// Read used here [_pendingRetirementProcessCompleter] desc.
-  bool get isRetirementProcessPending =>
-      _pendingRetirementProcessCompleter != null &&
-              !_pendingRetirementProcessCompleter!.isCompleted
-          ? true
-          : false;
-
-  /// ! Use getter [isRetired] got a reason!. The value can be set once and bee true; The code setting up the up-to-date value is in [retire]() method at the top of it probably. Verify this desc - is older a bit. Used in connection with retire() method and [ConditionModelApp] managing all the models connected to the [ConditionModelApp] object. the property is set internally, use getter isRetired. The property can be set once and be true if set, getter will return false if this property is not initialized (the getter catches exception and correctly returns false)
-  late final _isRetired;
-  bool get isRetired {
-    try {
-      return _isRetired;
-      //exception when not inited - its fine this is to prevent from setting-up this twice or more and to detect any incorrect modifications to this library
-    } catch (e) {
-      return false;
-    }
-  }
-
-  // Probably universal but this is called by retire method just before _isRetired = true;. Must be before the retire is finished, it is to trigger possible retirement process for children also where possible, it may be that at this stage any exception will be catched in the method
-  removeAllChildren() {
-    // you cannot remove elements from an iterable ? when now it being iterated - we need a copy of the set
-    Set<ConditionModelParentIdModel> childrenSetCopy = Set.from(
-        _children); // the variable is destroyed after the method finished
-    for (ConditionModelParentIdModel child in childrenSetCopy) {
-      // remove child triggers retirement process on child automatically - it will be successful or not - which is fine bet the child 100% will be removed from the model too.
-      // and important: when removed from the tree an event is sent to conditionModelApp and cyclically it will be checked if the child can be removed from _allApp scheduled for unlinking etc. Set
-      // Monitor the synchronous apsect.
-      removeChild(child);
-    }
-  }
-
-  /// Never returns null - null for compatibility with the [retire] return method. As with the [retire] method body must be performed synchronous even if it returns the future. Used by the [retire] method couple of times so the need to put it into a separate method
-  Future<bool>? _retireRealSynchronousCodeExecutionFinish() {
-    _retireMethodItsBodyCodeExecutionLastFinish =
-        ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
-    _isRetireMethodBodyAlreadyBeingExecuted = false;
-    _changesStreamController.add(
-        ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustFinishedItsSynchronousAspectOfBodyCodeExecution(
-            this));
-
-    /// It must be not null. At the time of writing the only situation null was allowed or the retire method when _isRetireMethodBodyAlreadyBeingExecuted was already called
-    return _pendingRetirementProcessCompleter!.future;
-  }
-
-  /// Synchronously returns null probably only when [_isRetireMethodBodyAlreadyBeingExecuted] == true. Warnings: One retirement process triggered by the retire method (information about it taken from the future) must and "decides" how long it can last but it should be designed in a way it doesn't last for too long. [retireModelWhenWhenRemovedFromTheModelTree] == false (value can be changed) is to be used by conditionModelApp internally to prevent model from removing from internal list/s, also can be used in custom code, but here retire does it's job; Public and synchronous body on purpose. Returns future of [_pendingRetirementProcessCompleter] ".future" property. It is public because you may create a model object outside this library and when it is independent of the main tree you may want to retire it on your own. Important if this synchronous-body method returns the completer which is is already completed .isCompleted == true, you may use it in a regular synchronous if (completer.isCompleted == true) function body you don't need to use in async await method but you can ofcourse do the await completer.future anytime you want when you wait for the completer to complete. Sometimes it is needed to have the information right now. You can call the method any time you want, true = retired, false = not - it is as it was. If you use models customarily then after the future is complete you can set any remaining pointer to it to null. If however a model is in the model tree. The retire method will not work and will throw an asynchronous exception (completeError). May be in Readme more desc. This must be somehow implemented however difficult it might be. Not going here into details here but there may be model removed from the model tree, there may be no other reference active to the model except for a special List of models in the ConditionModelApp class. When a model is nowhere else except for this list it must be removed. It could be implemented with some delay - if it is not in the tree and no property change induced by app user has taken place, the model can be detached and send some locking if accidentally it is suprisingly linked somewhere, and in the development process such places will be gradually corrected, some log messages, errors (no exceptions - wrongly constructed piece of code). No unused link to the model can be left
-  Future<bool>? retire() {
-    // READ AND KEEP IT AT THE TOP
-    // READ - ONE ASYNC RETIRE PROCESS MUST NOT LAST FOR TWO LONG TO ABOUT 30 SECODS FOR EXAMPLE.
-    // THIS IS BECAUSE ConditionModelApp or maybe more in the future is depending on the workings of this method
-    // To achieve that there is need for efficient finishing or locking global server operations
-    // by setting timeouts on the remote url servers and timeouts defined in the app
-    // WHERE ALL OF THIS IS ALREADY TAKEN INTO ACCOUNT BUT NEEDS REVISION.
-
-    // READ AND KEEP IT AT THE TOP
-    // READ! NO ASYNC HERE, See why in the method description. return true if retired, or false if not it is assumed that if false it the model is fully functional as it was
-    // HOWEVER, at some point there was scheduleMicrotask() which is a slightly delayed separate piece of code execution
-    // and in this and as i assume possible other cases it is documented why this async separate call won't work on a changed variables/properties values and why
-    // SO KEEP IN MIND THE ABOVE WHEN YOU WANT TO MESS UP THIS METHOD ! :)
-
-    // Review event, timestamps, some other, not all stuff in the right order of occuring:
-    // Important, again and again all related to reaction to synchronous aspect of retire call
-    // ---------------
-    // _lastRetireMethodCall
-    // ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustBeenCalledOnModel
-    // ---------------
-    //
-    // _retireMethodItsBodyCodeExecutionLastStart
-    // _isRetireMethodBodyAlreadyBeingExecuted == true;
-    // ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustStartedItsSynchronousAspectOfBodyCodeExecutionJustAfterItHadBeenCalled
-    // --------------------
-    // _retireMethodItsBodyCodeExecutionLastFinish // important - always updated when _retireMethodItsBodyCodeExecutionLastStart updated, even when synchronous body exception is thrown
-    // _isRetireMethodBodyAlreadyBeingExecuted == false;
-    // ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustFinishedItsSynchronousAspectOfBodyCodeExecution
-
-    if (isModelInTheTreeOrInsideAParentLinkModel()) {
-      throw Exception(
-          'retire() method exception: You cannot retire a model that is in the main model tree as a child or as as a model in it\'s parent/container that is a link model. Using removeChild() method and/or removeParentLinkModel() on all models will trigeer retirement process automatically when conditions are met.');
-    }
-
-    final ConditionTimeNowMillisecondsSinceEpoch commonTimestampNow =
-        ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
-
-    _lastRetireMethodCall = commonTimestampNow;
-
-    _changesStreamController.add(
-        ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustBeenCalledOnModel(
-            this));
-
-    if (_isRetireMethodBodyAlreadyBeingExecuted) {
-      return null;
-    } else {
-      _retireMethodItsBodyCodeExecutionLastStart = commonTimestampNow;
-      _isRetireMethodBodyAlreadyBeingExecuted = true;
-      _changesStreamController.add(
-          ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustStartedItsSynchronousAspectOfBodyCodeExecutionJustAfterItHadBeenCalled(
-              this));
-    }
-
-    /// We have to make sure that if an exception is thrown by the SYNCHRONOUS PART OF THE METHOD we call _retireRealSynchronousCodeExecutionFinish(); but probably rethrow;
-    try {
-      if (isRetired) {
-        // WARNING BELOW CONDITOIN IS NOT TO BE THE SAME AS isRetirementProcessPending GETTER so it is not
-        if (_pendingRetirementProcessCompleter == null ||
-            !_pendingRetirementProcessCompleter!.isCompleted) {
-          throw Exception(
-              'retire() method. Closer to a debug exception. It is assumed that by design it is not going to be thrown. While the model is alread retired for some reason it\'s completer is null or is not completed ');
-        }
-        return _retireRealSynchronousCodeExecutionFinish();
-      } else if (isRetirementProcessPending) {
-        // it is understood that previous retire() call is still working so we don't change _lastRetireModelProcessStart
-        // it is important that this is synchronous body of a method that synchronously returns future, not value, after finishing the body
-        // so in no way on the event loop something should have changed and we can return the future now
-        return _retireRealSynchronousCodeExecutionFinish();
-      } else if (_pendingRetirementProcessCompleter ==
-              null // can be so because isRetirementProcessPending has just been checked
-          ) {
-        _lastRetireModelProcessStart = commonTimestampNow;
-
-        // is not retired so:
-        _pendingRetirementProcessCompleter = Completer<bool>();
-
-        _pendingRetirementProcessCompleter!.future.catchError((e) {
-          debugPrint(
-              'internal retire() method body catchError (method non async body syntax exception) the completer will be completed with false value anyway: $e');
-        });
-      } else {
-        // it IS completed and NOT null and NOT retired // OLD DESC: it is not retired but also it is completed isCompleted == true,
-        // SO we need update "the" timestamp a new completer object
-        _lastRetireModelProcessStart = commonTimestampNow;
-        _pendingRetirementProcessCompleter = Completer<bool>();
-      }
-
-      // Interesting syntax anyway now dart cast this as thisAsConditionModelParentIdModel automatically
-      // ConditionModelParentIdModel thisAsConditionModelParentIdModel = this;
-
-      // FIRST PART/TYPE OF CHECKING CAREFULLY CHECK OUT IF SOMETHING IS MISSING
-      // !!! yeah i found one missing and working (models added/removed not tested in real life):
-      // ConditionModelEachWidgetModel get hasModelParentLinkModels of the private _....
-      // IS IT TO BE PERFORMED HERE OR IN THE CONDITION MODEL APP? I THINK HERE BUT...
-      // First we won't retire model that is not in the main tree a a child or in any model as link child
-      // also there is param or more params that tell - the model cannot be retired automatically seek the params
-      if (
-          // isModel... may be called two times - one time on conditionmodelapp however it is not an expensive operation
-          isModelInTheTreeOrInsideAParentLinkModel() // it utilises probably now two properties updated correctly
-          // WARNING retireModelWhenWhenRemovedFromTheModelTree == true // removed part: this is to be used by conditionModelApp that just won't call retire at all
-          ) {
-        // if model is prepared to be removed when retire() called and model is not in the tree/etc and retireModelWhenWhenRemovedFromTheModelTree == true
-        // if model is successfuly retired or before that it must remove it's children - unlink so that they can be automatically retired too if conditions are met
-        // is not retired so:
-        // we have:
-        // new _pendingRetirementProcessCompleter, updated _lastRetireModelProcessStart (and as always updated _lastRetireMethodCall)
-
-        _lastRetireModelProcessFinish = commonTimestampNow;
-        _pendingRetirementProcessCompleter!.complete(false);
-        return _retireRealSynchronousCodeExecutionFinish();
-      } // no else we can go ahead with the code below
-
-      /// SECOND PART/TYPE OF CHECKING
-
-      // !!!! ARE THE COMMENTS HERE UP TO DATE ??? !!!!
-      // -----------------------------------------------------------
-      // YOU NEED TO ANALYSE ALL THE PROCES OF INITING, CREATING, UPDATING ETC. TO MODIFY IT TO OR ALIGN IT WITH RETIRE METHOD.
-      // - NOT A ONE MINUTE MATTER
-      // problem: global server may not be working so this will prevent the model from retirement.
-      // so we will have to change the the uptate for the global server
-      // something like:
-      // one update cycle failed
-      // we have time windows to retire model if we want to.
-      // we can retire model
-      // if not we try the update cycle to make sure model cant be retired in the meantime.
-      // so global server update cycle cannot last too long
-      //
-      // but basically it is assumed that update cycle for local serve is always successful because it is on disk and "fast" like in memory.
-      // --------------------------------------
-      // there is a need to retire model any way but wait until ome timeout ends
-      // when the timeout ends it will
-      // so you add isModelLocked but not yet retired because you are sure the model will be retired - all neccessary conditoins are met.
-      // you think over if some regular or finalizing events in the changes stream are allowed and which ones
-      // global singular operation cannot be interupted but also must be prevented from repeating
-      // when model is removed from ConditionModelApp it will be recreated periodically as standalone, added to conditionmodelapp
-      // then removed when synchronisation, update is finished, etc.
-      // when any model is created when it exists on the conditionmodelapp list exception should be thrown.
-      // so if a model is in the tree get it or create new. However if you get a now retiring object it's a big problem.
-      // !!! you then need to wait or a mechanism of possible replacement of two such objects if needed should be implemented
-      // model may need time to be inited locally but it's on hard disk - 30 seconds and must be inited, for retire() purposes
-      // so you need another mechanism.
-
-      // THIS condition if true as a starting point doesn't retire the model,
-      // however we will try to seek if we can do something about it, has some additional information - analyse please the belo code
-
-      bool localServerRetireConditionSet = _modelIsBeingUpdated ||
-          _fieldsToBeUpdated.isNotEmpty ||
-          _fieldsNowBeingInTheProcessOfUpdate.isNotEmpty;
-
-      if (!__inited || localServerRetireConditionSet) {
-        // REMINDER inited is local server so it is considered "immediate" operation you don't wait long as if from RAM So we don't care and finish quickly with false;
-        // is not retired so:
-        // we have:
-        // new _pendingRetirementProcessCompleter, updated _lastRetireModelProcessStart (and as always updated _lastRetireMethodCall)
-
-        _lastRetireModelProcessFinish = commonTimestampNow;
-        _pendingRetirementProcessCompleter!.complete(false);
-        return _retireRealSynchronousCodeExecutionFinish();
-      } else if (
-          // we know is is false==localServerRetireConditionSet HOWEVER THE VARIABLE MUST BE UPDATED AGAIN IN ASYNC schedule scheduleMicrotask() BECAUSE OF THE DELAY SCHEDULEMICROTASK IS CALLED ON THE EVENT LOPP. It is not impossible some values to changed in the meantime
-          _modelIsBeingUpdatedGlobalServer // !!! read below we will focus on to determine if we can retire the model anyway
-              ||
-              _fieldsToBeUpdatedGlobalServer
-                  .isNotEmpty // possible this one can allow for retirement if possible see later
-              ||
-              _fieldsNowBeingInTheProcessOfUpdateGlobalServer
-                  .isNotEmpty // possible this one can allow for retirement if possible see later
-          ) {
-        // is not retired so:
-        // we have:
-        // new _pendingRetirementProcessCompleter, updated _lastRetireModelProcessStart (and as always updated _lastRetireMethodCall)
-
-        // SEE PLEASE, if the below list of variables play any important role here or in the conditoin above:
-        // any model must be inited quickly from local storage so inited must be in the main condition
-        // __inited, _completerInitModel, __initedGlobalServer, _completerInitModelGlobalServer, _isModelInTheModelTree
-        // i found also this _hasModelParentLinkModels
-        // has Future?: hangOnWithServerCreateUntilParentAllows, _hangOnWithServerCreateUntilParentAllowsCompleter,
-        // autoRestoreMyChildren
-
-        // IMPORTANT EDUCATIONAL: This absolutely could be done synchronously and the return of the retire method might be bool not Completer
-        // However it takes into account possible longer period actions to be performed to retire the model
-
-        // here we attempt to retire. CAUTION! Maybe better With no async/await you have one piece of code in the event loop executed at once; any stop may cause change to some property values in the meantime
-        scheduleMicrotask(() {
-          // READ this body is also somewhat educative, NOT necessary the MOST EFFICIENT NOW!
-          // f.e. this if there is an exception it should be handled
-          // in such a way we are sure the retire process didn't finish correctly and can be started again from now
-          // basically when the exception is catched in the catch body
-          try {
-            // If you are going to be successfull complete true if not: false; false means the model is active as it was
-            // EXPECTED KEY EFFECTS:
-            // 1.
-            //_pendingRetirementProcessCompleter!.complete(false);
-            // ---- OR ------
-            // 2. In the order presented here
-            // _isRetired=true;
-            //_pendingRetirementProcessCompleter!.complete(true);
-
-            // to siimplify for now
-
-            // As mentioned earlier we will focus now if we can retire the model if _modelIsBeingUpdatedGlobalServer is true
-
-            // what can be made of "Completer hangOnModelOperationIfNeeded("
-            // 1. We can retire the model if _modelIsBeingUpdatedGlobalServer but
-            // SYNCHRONOUSLY - IT MEANS ALL ON THE EVENT LOOP BUT IN ONE FULL SYNC CODE FRAGMENT TO BE EXECUTED SO THAT NO CHANGES IN THE MODEL STATE ARE DONE IN BETWEEN ASYNC/AWAIT CALLS NO ASYNC AWAIT NOW
-            // 2. Synronously During code execution hangOnModelOperationIfNeeded was called and the code STOPPED (!isCompleted) and RIGHT NOW is waiting in suspension
-            //    f.e. !this._conditionModelAppHangOnModelOperationsCompleters[ConditionModelClassesTypeOfSucpendableOperation.globalServerCreate].isCompleted
-            // 3. After that synchronously We _isRetired=true; conditionModelApp never cannot finish the future or change it withing it's list/set, etc.
-            // 4. We complete the completer the future with true
-
-            // As mentioned earlier this value must be assigned again i quote from the condition block we are in as it is/was: "HOWEVER THE VARIABLE MUST BE UPDATED AGAIN IN ASYNC schedule scheduleMicrotask() BECAUSE OF THE DELAY SCHEDULEMICROTASK IS CALLED ON THE EVENT LOPP. It is not impossible some values to changed in the meantime"
-            localServerRetireConditionSet = _modelIsBeingUpdated ||
-                _fieldsToBeUpdated.isNotEmpty ||
-                _fieldsNowBeingInTheProcessOfUpdate.isNotEmpty;
-
-            /// !!! CAUTION! We are sure that in this synchronous code block the _pendingRetirementProcessCompleter will be completed with this date
-            _lastRetireModelProcessFinish =
-                ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
-
-            if (localServerRetireConditionSet) {
-              _pendingRetirementProcessCompleter!.complete(false);
-            } else if (
-                // checking if the global server code has been locked right now - prevented from STARTING data operation it is not in the middle
-                (
-                        // This means a situation where global server possibly longer action event-loop code execution has stopped and is suspended
-                        // and normally it would be unlocked in another place also on the event-loop synchronous code block
-                        // "normally" is not now because we are going to retire the method with this condition met and the model
-                        // will never have it's lock code unlocked
-                        // TODO: // [To do: #dlkj2fhpeg8nqxwpiu]
-                        // TODO: to // do: around line 8127
-                        // TODO: So // add in conditionmodelapp to never complete (no error so no completeError needed) for all of completers the completer belong to this model so they will be unlinked automatically when model has no link. Make sure there no accident before the model is removed from modelsscheduledforunlinking list
-                        // TODO: Also // [ok but user and conditionmodelapp addchild need another approach?] models in the retirement process or when at the moment their retire method body is synchronously called cannot be added via addchild nor add parent link methods or something like that
-                        // TODO: also// [ok] you can call on the retire method only if a model is not in the main model tree, it works this way when child is removed (again review) but not sure if it is allowed or no
-                        // TODO: Forgot // [ok just before _isRetired == true done whats needed] about removing all children from the model when the model hasretired or possibly just before (which exactly pinpointed moment is the best?). Is 100% any process triggered just after the removal? Should they be retired too? Or first checked for getter retireModelWhenWhenRemovedFromTheModelTree ?
-                        // TODO: Unfortunately // i need to rethink ConditionModelApp and at least and especially ConditionModelUser in tree and retirement process for now user probably can be retired but maybe it never should, because it takes not much memory and is too much work. But user can be excluded from many actions and exceptions should be thrown.
-                        // TODO: !!!! SUMMING UP
-                        // TODO: ! ALL APP AND USER MODELS ARE IRREMOVABLE AND URETIRABLE
-                        // TODO: ! FOR APP MODELS WE HAVE STATIC SET ConditionModelApps
-                        // TODO: ! FOR USERS we have isLogged to block any submodels/children global operations if == false but not local
-                        // TODO: ! if for each app + users falss 100 usual models in memory the 1-5 typical models is 1000 other in RAM
-                        // TODO: ! SO NO NEED TO CARE FOR PERMANENT STORAGE OF APP AND USER MODELS IN RAM
-                        // TODO: ! IF IT WAS TO CHANGE SOMEONE HAS TO PAY BILLIONS TO IMPLEMENT NEEDLESS STUFF.
-                        // TODO: ! SnappApps: BUT YOU CAN BYPASS IT BY ADDING TO app constructor option doNotAddToTheGlobalAppList = true (DEFAULT FALSE), by doing this you are ready to pay the price of possible unfinished operations which is fine, databases may be removed after session time out, etc., there may be global/local server apps like this - snap apps, removing any last link to the app would cause cascadingly submodels destructdion with reasonable expectations no data will be left in memory
-                        // TODO: !!! Reject duplicate apps (throw the first already existing app in Exception like in parentidmodels and method to checkout like it too) you sniff especially by db/table prefixes, filename for sqlite, host/login/password for mysql, but global server settings can be ignored - we may have many objects connecting to the global server
-                        // TODO: !!! For this you need for local driver to add required sort of interface method isDriverDuplicate() or operator == that calls the method mentioned. It is easier just method, less confusing
-                        // TODO: EDIT: got to a conslusion no need to care but you make test if a future ends with error when pointer is lost or what else happens ! //some methods may be suspended now so we need to finish them by completing completers! so in retire() we need to complete them with errors and modify the code to react properly. Curious how unlinked futures/completers finish? with an error? They should!
-                        _conditionModelAppHangOnModelOperationsCompleters[
-                                    ConditionModelClassesTypeOfSucpendableOperation
-                                        .globalServerCreate] !=
-                                null &&
-                            !_conditionModelAppHangOnModelOperationsCompleters[
-                                    ConditionModelClassesTypeOfSucpendableOperation
-                                        .globalServerCreate]!
-                                .isCompleted) ||
-                    (
-                        // This means a situation where global server possibly longer action event-loop code execution has stopped and is suspended
-                        // and normally it would be unlocked in another place also on the event-loop synchronous code block
-                        // "normally" is not now because we are going to retire the method with this condition met and the model
-                        // will never have it's lock code unlocked
-                        _conditionModelAppHangOnModelOperationsCompleters[
-                                    ConditionModelClassesTypeOfSucpendableOperation
-                                        .globalServerUpdate] !=
-                                null &&
-                            _conditionModelAppHangOnModelOperationsCompleters[
-                                    ConditionModelClassesTypeOfSucpendableOperation
-                                        .globalServerUpdate]!
-                                .isCompleted)) {
-              // Must be before the retire is finished, it is to trigger possible retirement process for children also where possible, it may be that at this stage any exception will be catched in the method
-              removeAllChildren();
-              //
-              _isRetired = true;
-              // Now, this is key thing to remember that this is synchronous issue of event so it is handled internally right away by conditionModelApp object
-              // Also the order is important, before the async completer is completed, just after this stream event handled synchronously
-              _changesStreamController.add(
-                  ConditionModelInfoEventConditionModelAppModelSetsManagementModelHasJustRetired(
-                      this));
-
-              _pendingRetirementProcessCompleter!.complete(true);
-            } else {
-              _pendingRetirementProcessCompleter!.complete(false);
-            }
-
-            // already completed no need again _pendingRetirementProcessCompleter!.complete(false);
-          } catch (e) {
-            // !!! READ the debug print message.
-            debugPrint(
-                'retire() method exception: the retire async part of the retirement process excpressed in the retire method mainly, couldn\'t had finished the retirement of the model correctly, so it hasnt retired yet. Now a new retirement process can be started by the new call of the retire method. Additionally. There should be no exception like this, because of the design of the retirement process where any issues should be intercepted and fully handled earlier. If an exception like this is thrown it might hypothetically mean that some settings of the model has been irreversibly changed causing possible malfunction of the model. The exception message: $e');
-            _lastRetireModelProcessFinish =
-                ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
-            _pendingRetirementProcessCompleter!.complete(false);
-          }
-        });
-
-        return _retireRealSynchronousCodeExecutionFinish();
-
-        //_triggerServerUpdatingProcessRetrigerAfterFinish
-        //_triggerServerUpdatingProcessRetrigerAfterFinishGlobalServer
-      } else {
-        // is not retired so:
-        // we have:
-        // new _pendingRetirementProcessCompleter, updated _lastRetireModelProcessStart (and as always updated _lastRetireMethodCall)
-
-        // The model can be retired now
-        // if _isRetired == true; all operations on the model are locked assigning to the properties, local and global server updates and more
-
-        // Must be before the retire is finished, it is to trigger possible retirement process for children also where possible, it may be that at this stage any exception will be catched in the method
-        removeAllChildren();
-        //
-        _isRetired = true;
-        _lastRetireModelProcessFinish = commonTimestampNow;
-        _changesStreamController.add(
-            ConditionModelInfoEventConditionModelAppModelSetsManagementModelHasJustRetired(
-                this));
-        _pendingRetirementProcessCompleter!.complete(true);
-        return _retireRealSynchronousCodeExecutionFinish();
-      }
-    } catch (e) {
-      _retireRealSynchronousCodeExecutionFinish();
-      rethrow;
-    }
-  }
-
   @override
   initCompleteModel() async {
     debugPrint(
-        '!!We\'ve entered the initCompleteModel() of ConditionModelParentIdModel runtimeType == $runtimeType');
+        '${ConditionDebugPrint('!!We\'ve entered the initCompleteModel() of ConditionModelParentIdModel runtimeType == $runtimeType')}');
     bool restoreSomeUsersWidgetModels = false;
     //The // exception should never occur (local server is assumed to always work) so any
     // exception maybe shouldn't be catched - redesign it better
@@ -7871,11 +8058,11 @@ abstract class ConditionModelParentIdModel
       // not a catched exception. To redesign?
       // bool isInited = true;
       debugPrint(
-          'initCompleteModel() of ConditionModelParentIdModel Custom implementation of initCompleteModel(): runtimeType == $runtimeType Model of [ConditionModelParentIdModel] has been inited. Now we can restore all tree tree top-level widget models belonging to the currently logged AND FRONT SCREEN ACTIVE user models like contacts, messages, probably not rendering anything yet. Possibly some other users related stuff is going to be performed ');
+          '${ConditionDebugPrint('initCompleteModel() of ConditionModelParentIdModel Custom implementation of initCompleteModel(): runtimeType == $runtimeType Model of [ConditionModelParentIdModel] has been inited. Now we can restore all tree tree top-level widget models belonging to the currently logged AND FRONT SCREEN ACTIVE user models like contacts, messages, probably not rendering anything yet. Possibly some other users related stuff is going to be performed ')}');
       restoreSomeUsersWidgetModels = true;
     } catch (e) {
       debugPrint(
-          'Custom implementation of initCompleteModel() exception: runtimeType == $runtimeType Model of [ConditionModelParentIdModel] hasn\'t been inited. The error of a Future (future.completeError()) thrown is ${e.toString()}');
+          '${ConditionDebugPrint('Custom implementation of initCompleteModel() exception: runtimeType == $runtimeType Model of [ConditionModelParentIdModel] hasn\'t been inited. The error of a Future (future.completeError()) thrown is ${e.toString()}')}');
       // ARE WE GOING TO USE NOT ENDLESSLY INVOKED TIMER TO invoke initModel() again with some addons if necessary? Some properties might has been set already.
     }
 
@@ -7889,7 +8076,7 @@ abstract class ConditionModelParentIdModel
   _performValidatingSettingUnlockingSendingEvent(
       ConditionModelParentIdModel childModel) {
     debugPrint(
-        'ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B1');
+        '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B1')}');
 
     //childModel['parent_id']=this['id'];
 
@@ -7923,7 +8110,7 @@ abstract class ConditionModelParentIdModel
       } else if (!childModel.isAllModelDataProvidedViaConstructor &&
           childModel['owner_contact_id'] == null) {
         debugPrint(
-            'ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B2');
+            '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B2')}');
         // earlier it is throwing exception (or method already finished for other positive reason) if it would be a user model or app model
         // to stop here to do:
         // owner_contact_id is not the same as parent_id - it is the same as parenNode owner_contact_id or if parentNode is a contact then its id id
@@ -7952,7 +8139,7 @@ abstract class ConditionModelParentIdModel
     } else if (!childModel.isAllModelDataProvidedViaConstructor &&
         childModel['user_id'] == null) {
       debugPrint(
-          'ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B3 this[\'id\'] = ${this['id']}, this[\'user_id\'] = ${this['user_id']},');
+          '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B3 this[\'id\'] = ${this['id']}, this[\'user_id\'] = ${this['user_id']},')}');
       childModel.a_user_id._fullyFeaturedValidateAndSetValue(
           this is ConditionModelUser ? this['id'] : this['user_id'],
           true,
@@ -7975,11 +8162,11 @@ abstract class ConditionModelParentIdModel
 
     if (childModel.hangOnWithServerCreateUntilParentAllows) {
       debugPrint(
-          'ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B4');
+          '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B4')}');
       childModel._hangOnWithServerCreateUntilParentAllowsCompleter!.complete();
     }
     debugPrint(
-        'ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B5');
+        '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #B5')}');
     childModel._changesStreamController.add(
         ConditionModelInfoEventModelInitingAndReadinessModelHasJustBeenUnlockedByParentModel(
             this));
@@ -7987,7 +8174,7 @@ abstract class ConditionModelParentIdModel
 
   _performAddingChildToParentModel(ConditionModelParentIdModel childModel) {
     debugPrint(
-        'ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #C1');
+        '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #C1')}');
     _children.add(childModel);
     // Warning !!! Don't change the order of stream events (_changesStreamController) because
     // the conditionModelApp object have all models streams and it reacts synchronously to
@@ -8003,7 +8190,7 @@ abstract class ConditionModelParentIdModel
     // the [ConditionModelInfoEventModelTreeOperationModelHasJustBeenAddedToTheModelTree]
     // that is just above in this method
     debugPrint(
-        'ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #C1A1');
+        '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method called _performValidatingSettingUnlockingSendingEvent(): info: point #C1A1')}');
     //return; WHY WAS IT HERE???!!! THE RETURN OFCOURSE
     _changesStreamController.add(
         ConditionModelInfoEventModelTreeOperationModelHasJustReceivedChildModel(
@@ -8015,7 +8202,7 @@ abstract class ConditionModelParentIdModel
   @protected
   bool addChild(ConditionModelParentIdModel childModel) {
     debugPrint(
-        'ConditionModelParentIdModel addChild() method: we\'ve just entered the method');
+        '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method: we\'ve just entered the method')}');
 
     // !!!here // Most probably you must compare if childModel has the same conditionModelApp
     // as _parentModel you don't need it for removeChild the child was ok when it was added
@@ -8151,7 +8338,7 @@ abstract class ConditionModelParentIdModel
     }
 
     debugPrint(
-        'ConditionModelParentIdModel addChild() method: info: control point #L1; childModel.hangOnWithServerCreateUntilParentAllows = ${childModel.hangOnWithServerCreateUntilParentAllows}, childModel = $childModel ;');
+        '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method: info: control point #L1; childModel.hangOnWithServerCreateUntilParentAllows = ${childModel.hangOnWithServerCreateUntilParentAllows}, childModel = $childModel ;')}');
 
     if (childModel.hangOnWithServerCreateUntilParentAllows == true &&
         (childModel['parent_id'] != null ||
@@ -8170,6 +8357,8 @@ abstract class ConditionModelParentIdModel
     } else if (childModel.hangOnWithServerCreateUntilParentAllows == false &&
         this is ConditionModelUser &&
         childModel['parent_id'] != 0) {
+      // TODO: Solved where reasonably needed, but was proble so left for analysis later. It Was thrown in one case when compeletely new model is created and the id is not passed - convenience solution, however the exception will be thrown if someone passes incorrect id manually. It threw once and then was solved/decided that if new contact with parent_id not set up has silently set to 0. Thinking it is ok, the todo is left for some time.
+      // TODO: It is important to verify it broader, whether or not to require some properties to be set up when certain models are created. This time it seems ok, but is this fully consistent, has such a consistency patter been created fully?
       throw Exception(
           'ConditionModelParentIdModel addChild method: if parentModel is ConditionModelUser, child model parent_id must == 0 (zero).');
     } else if (this is! ConditionModelUser &&
@@ -8221,7 +8410,7 @@ abstract class ConditionModelParentIdModel
     // only after it is inited first with proper setter "[_inited]"
     if (this is ConditionModelUser /* || this is ConditionModelApp*/) {
       debugPrint(
-          'ConditionModelParentIdModel addChild() method: info: this is user model');
+          '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method: info: this is user model')}');
 
       //DUPLICATE, SEE ERALIER
       //if (childModel['parent_id'] != 0) {
@@ -8254,12 +8443,12 @@ abstract class ConditionModelParentIdModel
       //            ? false
       //            : true);
       //  } catch (e) {
-      //    debugPrint(
-      //        'ConditionModelParentIdModel addChild method after if (this is ConditionModelUser || this is ConditionModelApp) == true: Catched exception, parent_id cannot be set up twice');
+      //    debugPrint('${ConditionDebugPrint(
+      //        'ConditionModelParentIdModel addChild method after if (this is ConditionModelUser || this is ConditionModelApp) == true: Catched exception, parent_id cannot be set up twice')}');
       //  }
       //}
       debugPrint(
-          'ConditionModelParentIdModel addChild() method: info: point #A1');
+          '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method: info: point #A1')}');
 
       _performValidatingSettingUnlockingSendingEvent(childModel);
       _performAddingChildToParentModel(childModel);
@@ -8267,13 +8456,13 @@ abstract class ConditionModelParentIdModel
     } else {
       if (childModel['parent_id'] == null) {
         debugPrint(
-            'ConditionModelParentIdModel addChild() method: info: control point #2 just about to happen: _performValidatingSettingUnlockingSendingEvent(childModel)');
+            '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method: info: control point #2 just about to happen: _performValidatingSettingUnlockingSendingEvent(childModel)')}');
         if (inited) {
           _performValidatingSettingUnlockingSendingEvent(childModel);
         } else {
           debugPrint(
-              'ConditionModelParentIdModel addChild() method: info: control point #2 just about to happen: getModelOnModelInitComplete() and then _performValidatingSettingUnlockingSendingEvent(childModel)');
-          getModelOnModelInitComplete().then((parentModel) {
+              '${ConditionDebugPrint('ConditionModelParentIdModel addChild() method: info: control point #2 just about to happen: getModelOnModelInitComplete() and then _performValidatingSettingUnlockingSendingEvent(childModel)')}');
+          getModelOnModelInitComplete().then((voidparam) {
             //parentModel the same as "this" object
             _performValidatingSettingUnlockingSendingEvent(childModel);
           });
@@ -8422,7 +8611,7 @@ abstract class ConditionModelParentIdModel
 
   @override
   void operator []=(key, value) {
-    debugPrint('yerttttt1____' + key);
+    debugPrint('${ConditionDebugPrint('yerttttt1____' + key)}');
 
     switch (key) {
       case 'parent_id': // see [id_protected] setter, this is set internally but the property must be enlisted so that no exception can be thrown.
@@ -8522,27 +8711,33 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
     super.autoRestoreMyChildren,
     super.isAllModelDataProvidedViaConstructor,
   }) {
-    debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1');
+    debugPrint(
+        '${ConditionDebugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1')}');
     if (null == temporaryInitialData['id']) {
-      debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1A1');
+      debugPrint(
+          '${ConditionDebugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1A1')}');
       // id is possibly set in the class extending but here
       temporaryInitialData['to_be_synchronized'] = 1;
       try {
         throw Exception(
             'ConditionModelIdAndOneTimeInsertionKeyModelServer constructor Catched exception: For some reason if you do "1" instead of int 1 the #b1a2 debugPrint is not showing and the rest of the code is not processed. Like a hidden error.');
       } catch (e) {
-        debugPrint("$e");
+        debugPrint('${ConditionDebugPrint("$e")}');
       }
       // this is called on top: f.e ConditionModelMessage: validateInitialData(this); // not implemented, maybe done with little delay
       //  _createAndSetOneTimeInsertionKeyServer();
-      debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1A2');
+      debugPrint(
+          '${ConditionDebugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1A2')}');
     } else {
-      debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1A3');
+      debugPrint(
+          '${ConditionDebugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1A3')}');
       temporaryInitialData['local_id'] = temporaryInitialData['id'];
-      debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1A4');
+      debugPrint(
+          '${ConditionDebugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B1A4')}');
     }
 
-    debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B2');
+    debugPrint(
+        '${ConditionDebugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B2')}');
     a_local_id.init();
     a_server_user_id.init();
     a_app_id.init();
@@ -8558,7 +8753,8 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
       throw Exception(
           'ConditionModelBelongingToContact constructor exception: To my humble knowledge condition if (hangOnWithServerCreateUntilParentAllows==true&&temporaryInitialData[\'id\']!=null cannot be true');
     }
-    debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B3');
+    debugPrint(
+        '${ConditionDebugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B3')}');
 
     // Based on [To do id:#sf3fq7pnj86rc#^ creation_date:2023.05.31] in README.md
     // childModel cares to get its server_id or if needed server_owner_contact_id.
@@ -8571,7 +8767,8 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
             !temporaryInitialData.containsKey(
                 'server_parent_id') // it is final can be set once, can be null, condition means it's been not set-up yet
         )) {
-      debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B4');
+      debugPrint(
+          '${ConditionDebugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B4')}');
       // now this model is not attached as child yet, we are waiting for it
       // and then wait until the parentModel is global server inited
       // so that the childModel can init itself on the global server
@@ -8607,10 +8804,10 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
           //Think over and Add // a top_owner_contact_id - server_top_owner_contact_id - top_parent_id and server_top_parent_id too? It is preliminary assumed it will help searching the tree in the db from top to bottom or at least it will allow render all contact tree even if you subgroup is somewhere in the middle.
 
           debugPrint(
-              'ConditionModelBelongingToContact constructor : A model has been attached to the tree, we are now waiting for parentModel to be inited on the global server (it might has happened already for couple of different reasons.) ; parentModel is ${event.parentModel!.runtimeType} and childModel is ${event.childModel.runtimeType} compare child: ${runtimeType}');
+              '${ConditionDebugPrint('ConditionModelBelongingToContact constructor : A model has been attached to the tree, we are now waiting for parentModel to be inited on the global server (it might has happened already for couple of different reasons.) ; parentModel is ${event.parentModel!.runtimeType} and childModel is ${event.childModel.runtimeType} compare child: ${runtimeType}')}');
           await event.parentModel!.getModelOnModelInitCompleteGlobalServer();
           debugPrint(
-              'ConditionModelBelongingToContact constructor : A parentModel has been inited as previous debugPrint was saying so now we can assign the server_id value this[\'server_parent_id\'] == ${this['server_parent_id']} , event.parentModel![\'server_id\'] == ${event.parentModel!['server_id']};');
+              '${ConditionDebugPrint('ConditionModelBelongingToContact constructor : A parentModel has been inited as previous debugPrint was saying so now we can assign the server_id value this[\'server_parent_id\'] == ${this['server_parent_id']} , event.parentModel![\'server_id\'] == ${event.parentModel!['server_id']};')}');
 
           // old code actually was good
           // code seems to be correct i suppose automatic temporary assignement might somewhere iterate through keys and set up null
@@ -8620,8 +8817,8 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
               ? 0
               : event.parentModel!['server_id'];
           //} catch (e) {
-          //  debugPrint(
-          //      'flag #va!4ndAS4pqh8 this : assignement-times counter is $ccccccccounter runtimeType == $runtimeType , a_server_parent_id._isThisFirstValueAssignement = ${a_server_parent_id._isThisFirstValueAssignement} a_server_parent_id._firstValueAssignementCompleter.isCompleted == ${a_server_parent_id._firstValueAssignementCompleter.isCompleted} this : $this, the error is: $e');
+          //  debugPrint('${ConditionDebugPrint(
+          //      'flag #va!4ndAS4pqh8 this : assignement-times counter is $ccccccccounter runtimeType == $runtimeType , a_server_parent_id._isThisFirstValueAssignement = ${a_server_parent_id._isThisFirstValueAssignement} a_server_parent_id._firstValueAssignementCompleter.isCompleted == ${a_server_parent_id._firstValueAssignementCompleter.isCompleted} this : $this, the error is: $e')}');
           //  rethrow;
           //}
           // server_user_id - you cannot take from parent - new widget may have different user
@@ -8638,7 +8835,8 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
         }
       });
     } else {
-      debugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B5');
+      debugPrint(
+          '${ConditionDebugPrint('ConditionModelIdAndOneTimeInsertionKeyModelServer #B5')}');
       if (temporaryInitialData['server_id'] != null) {
         // ok, do nothing, however some stricter validation, it cannot be wrongly coded.
         if (temporaryInitialData['server_id'] < 1) {
@@ -8704,7 +8902,7 @@ abstract class ConditionModelIdAndOneTimeInsertionKeyModelServer
 
   @override
   void operator []=(key, value) {
-    debugPrint('yerttttt1____' + key);
+    debugPrint('${ConditionDebugPrint('yerttttt1____' + key)}');
 
     switch (key) {
       case 'local_id':
@@ -8925,7 +9123,7 @@ abstract class ConditionModelWidget extends ConditionModelCreationDateModel {
 
   @override
   void operator []=(key, value) {
-    debugPrint('yerttttt1____' + key);
+    debugPrint('${ConditionDebugPrint('yerttttt1____' + key)}');
 
     switch (key) {
       case 'url_alias':
@@ -9487,6 +9685,18 @@ class ConditionModelContact extends ConditionModelEachWidgetModel
     super.autoRestoreMyChildren,
     super.isAllModelDataProvidedViaConstructor,
   }) : super(conditionModelApp, conditionModelUser, null, defValue) {
+    // in add child is a condition that thrown once and this is to solve the problem - convenience solutions where possible.
+    if (hangOnWithServerCreateUntilParentAllows == false &&
+        temporaryInitialData['id'] == null &&
+        temporaryInitialData['parent_id'] == null) {
+      debugPrint(
+          '${ConditionDebugPrintErrorTrace('We are here ConditionModelContact constructor 1')}');
+      temporaryInitialData['parent_id'] = 0;
+    }
+    debugPrint(
+        '${ConditionDebugPrintErrorTrace('We are here ConditionModelContact constructor 2')}');
+    debugPrint('${ConditionDebugPrintErrorTrace('$temporaryInitialData')}');
+
     a_contact_user_id.init();
     a_server_contact_user_id.init();
     a_contact_accepted_invitation.init();
@@ -9986,6 +10196,450 @@ class ConditionModelAppExceptionDuplicateSettingsConditionDataManagementDriverLo
   String toString() => msg;
 }
 
+enum ConditionIsolateNoParallelFunctionCallsFunctionRestriction {
+  mustCallTheSameIdenticalFuncitonObject,
+  whateverFunctionButWithProperReturnedValue,
+}
+
+/// By convention the body of the function must be sync (no async {}) but the function returns future that must be finished with sucess or error not in a too long time. You can bypass the rule, but this is designed in a way that best used is the rule given here.
+typedef ConditionIsolateNoParallelFunctionCallsFunctionF<T> = Future<T>
+    Function();
+
+/// You cannot add expando on int value see the [Expando] docs. So the need for a class container holding the int value in v.
+/// This class is so that not to expand simple types like [int] in this case but to use wrapper and use it in Expando object.
+/// The generic fullfills only an informative role that it is related to the [ConditionIsolateNoParallelFunctionCallsFunctionF] typedef Function type, and that the class here is used in [Expando]
+//class ConditionIsolateNoParallelFunctionCallsFunctionFUniqueId<
+//    ConditionIsolateNoParallelFunctionCallsFunctionF> {
+//  final int v;
+//  ConditionIsolateNoParallelFunctionCallsFunctionFUniqueId(this.v);
+//}
+
+/// Future having .value or .isFinished similar as with Completer. Couldn't extend future - while it is abstract it allows instantiation - strange? It requires extending too much so [SynchronousFuture] of the foundation standard library is used which is 100% perfect for the need - nothing more or less is needed. This is not recommended to create use such Future. And alligned with this rule is the class [ConditionIsolateNoParallelFunctionCalls] for which this class is indended for use, which allows you for synchronous code executions returning finished future with value if you really want to do it this way. This works in await/async syntax also.
+/// Btw, having problems with extending Future class if your really want to use it asynchronously (event lopp) you can use some workarounds like (not tested) await Future(() => ConditionSynchronousFutureWithInfo(() {...})); or more custom stuff like scheduleMicrotask() {} or a Timer(); using the main constructor for example. Also there is Completer.sync constructor (now SynchronousCompleter) but not needed here you can't also extend the class with no trouble.
+class ConditionSynchronousFutureWithInfo<T> extends SynchronousFuture<T> {
+  T? _value;
+  T? get value => _value;
+
+  bool _isFinished = false;
+  bool get isFinished => _isFinished;
+
+  ConditionSynchronousFutureWithInfo(super.computation) {
+    super.then((value) {
+      _value = value;
+      _isFinished = true;
+    }).catchError((e) {
+      throw "ConditionSynchronousFutureWithInfo class exception: $e";
+    });
+  }
+}
+
+/// Stub: based on retire() method experiences doing something standarized and reusable so that no two calls can be made on a function/method/closure when another earlier call hasn't been finished both synchronically and asynchronically with Furure<T>? return when returned null means (?) another method call was not entirely finished. Different varieties of this class can exist.
+/// The plan is that you send a method/function to this class to call it.
+/// WARNINGS! Make sure that you method you send to be called finishes it's returned Future<T>? with a value or error in reasonable amount of time, not f.e. after one hour, but f.e. 1 minute or better 20 seconds. Why? Your method may contain reference to an object that also may have [Finalizer]s. If you not finish your Future/async aspect at all it will cause the object not to loose it's possible last reference to it that is still left in the async function and that in turn won't allow any [Finalizer] to be triggered f.e. after Garbage Collector starts it's work, the Garbage Collector won't start it's work for the object. It will be a source of kind of memory "leak", and some resources taken by the object (f.e. 100 MB of RAM) will never be released.
+/// For now F is function sygnature to indicate what type of function an object will call, The T method means what Future<T>? will be returned by tle class.
+/// Copied from [functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync] property. The class has the [funcitonF] method which by default return null in case when the last future returned by the method has not finished with success or error. if set to false (true is default) null is returned only when the sync aspect is another call of the same method being executed right now (an old, not fihished yet [_pendingFunctionFAsyncAspectCompleter].future is returned in such a case) which is exptected to possible only in running in an isolate (through the [compute] function, web uses the same function but as of now it is run on the "curent" event loop, but in the near future, only but not only on the WASM flutter compilation this was indicated somewhere to work for web also).
+/// TODO: Not immediate need possibly. There is Pool class from pool package of dart team (more with some code: https://stackoverflow.com/questions/75628641/dart-how-to-prevent-concurrent-calls-to-async-function). This offers similar features but i know of them very late when much is implemented with some own "standard". General rule is not o import unnecessary packages but it's worh of investigating it further and possible mingle it with current solutions or implement solution like not one but more than one pending sync or async aspect of a function. Also if i forgot there is a request() method of the Pool class - what does it do in terms of the current class' similar solutions.
+/// Use ConditionIsolateNoParallelFunctionCalls.singleton constructor to get and use globally used instance of this class, created using default settings probably (because as of now it is so) entirely working on the main event loop not using isolates. Not recommended in "high traffic" usage environment without additional management using some outside queue/priority system.
+/// TODO: TODO: ? Like with singleton, implement (think over) maybe two other singletones for two different isolates each working in a similar way to the event loop. The first one for custom usage. Probably in the future will be used for global and local driver - all read/write operations of models to relief the models - however only if when an operation being performed on an isolate prevents f.e. the main event loop from changing something important on the same model. Now it is assured on the event loop, but to investigate if it is possible with isolates. And the second event loop like isolate for library internal work especially related to streaming audio/video if ever implemented. Maybe the design of this class could take into account third party programmer isolate. However take note that the default constructor and functionF call uses separate isolate. So for this could be used either new isolate for each functionF call or the so called custom event loop as option in the constructor
+/// TODO: Another to do could be implementing locking an object especially model so that no action is called on it. So whatever you do a Future? is returned.
+/// TODO: As mentioned somewhere some queue system for this class could be nice with that takes this class instance. Again some singletons could be possible and i wouldn possibly take into account creating non-queue custorm constructor. Maybe this mentioned third-party custom event-loop isolate
+/// TODO: For this all for queue there may be however needed a feedback call - is this awaiting function call still valid and in the opposite direction dropping awaiting call from the awaiting list - because a queue may be jammed and resources may be strained. And all with an information when another adding the function to the awaiting list can be still possible.
+class ConditionIsolateNoParallelFunctionCalls<T> {
+  /// See [_functionFWeakReference] desc.
+  late final ConditionIsolateNoParallelFunctionCallsFunctionF<T> _functionF;
+
+  /// Fot the class instance based on [keepFunctionFAsWeakReference] (True by default to make it easy to perform garbage collection of the parent owner of the functionF object) either [_functionF] or [_functionFWeakReference] instance is used. Not both and it cannot change.
+  /// if this.conditionIsolateNoParallelFunctionCallsFunctionRestriction == ConditionIsolateNoParallelFunctionCallsFunctionRestriction.mustCallTheSameIdenticalFuncitonObjectDepending then depending on: when _useWeakReference == true the value will be stored permanently in this object and will not be GCed until this last it's last pointer to itself in the program. In case of == false a WeakReference will be used which is a default option.             See [_functionF] desc. This class programmatically (not lints) ensures that to a BigInt object representing a unique id of a function object/instance there is a function attached.
+  /// But if this.conditionIsolateNoParallelFunctionCallsFunctionRestriction != ConditionIsolateNoParallelFunctionCallsFunctionRestriction.mustCallTheSameIdenticalFuncitonObjectDepending a method will be used only on functionF() method call and any sort of reference to it will be maintained until both the functionF method and functionF param both will finish their sync/async code execution.
+  late final WeakReference<ConditionIsolateNoParallelFunctionCallsFunctionF<T>>
+      _functionFWeakReference;
+
+  /// Read [_functionFWeakReference] desc. True by default to make it easy to perform garbage collection.
+  final bool keepFunctionFAsWeakReference;
+
+  /// FIXME SOLVED - WeakReference does the job well, no need for Expando - the code left educationally for me: To be honest WeakReference to Function will do the same. when function kept here is not running it can easily be removed and garbage collected. BUT at the same time when pointer to object that is also in expando but in the form of weak reference then it is set to null and GC-ed. So Expando gives you automatic removal especially if you increase the functionality of the class by allowing adding more than one method. But probably the weak reference is the best and not int is created for this - you decide. you may leave it here.
+  /// You MUST KNOW IT: You have to do test like for expando if method with this are GCed as fantastically in WeakReference as in Expando - or maybe you already now it.
+  //final Expando<int> _functionFExpando = Expando<int>();
+
+  /// See also [_counterOfUniqueFunctionObjects] desc.
+  final ConditionIsolateNoParallelFunctionCallsFunctionRestriction
+      conditionIsolateNoParallelFunctionCallsFunctionRestriction;
+
+  /// Warning! If (functionF is passed into the constructor [_funtionFUniqueId] is set for the functionF, and it's unique identity hashcode is taken then. Otherwize (if functionF is null) the id and the hashcode will be set up on the first functionF method call) For unique identity [_funtionFIdentityHashcode] comparison the counter must be used with identity hashcode checking - the most core version of it. Also [_funtionFUniqueId] (extension/Expando applied, don't remember the terminology now) must be used it is to assure full uniqueness with no bypassing of the method. with [conditionIsolateNoParallelFunctionCallsFunctionRestriction] this is to assure that the same [Function] object is allowed to be called which is required when in the class constructor you set conditionIsolateNoParallelFunctionCallsFunctionRestriction = [ConditionIsolateNoParallelFunctionCallsFunctionRestriction].mustCallTheSameIdenticalFuncitonObject which is by default. Because identical() requires an object that would have to be stored on a separate property which we don't won't to do because this may cause secondary memory leaks because in the function there may be references to other 1GB RAM objects, etc. Also identity hashcode is not expected to return unique value. Howerver, identity hashcode is required for comparison also, because this class feature might otherwise be bypassed adding the same number related to some different function object.
+  ///static int _counterOfUniqueFunctionObjects = 0;
+
+  /// See [_counterOfUniqueFunctionObjects] Can duplicate so ureliable, see also _funtionFUniqueId desc. _functionFExpando id used instead. Property left for educational purposes.
+  @Deprecated(
+      'Can duplicate, see also _funtionFUniqueId desc. _functionFExpando id used instead. Property left for educational purposes.')
+  late final int _funtionFIdentityHashcode;
+
+  /// if this.conditionIsolateNoParallelFunctionCallsFunctionRestriction == ConditionIsolateNoParallelFunctionCallsFunctionRestriction.mustCallTheSameIdenticalFuncitonObject then _funtionFUniqueId is set up and logically == 1 used when absolutely first functionF to be called by this class is passed either in the constructor or at the first ever this. [_functionFExpando] assigne the id to the functionF that is used in the expando (something like _functionFExpando[functionF]=_funtionFUniqueId). Property left for educational purposes.
+  ///late final int _funtionFUniqueId;
+
+  /// Use getter for custom usages. Default 0 (f.e. zero milliseconds). Also related to [functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync] property when counting something, see desc. Private but could be changed during the life-time of this object. This is the time that must elaps between the functionF finished it's last future (that was created during the last successful functionF call) with sucess or error (constructor functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync == true) or only it's sync aspect/funcion body (functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync == false) and another functionF call (the time that must elaps).
+  /// There is no reason to implement synchronous gap calls because there possibly might be 1 synchronous call pending but 20 or 500 Futures unfinished. Better to try to implement sort of synchonous finished Future with a value already available. Still not needed probably such a feature at all.
+  Duration? _gapBetweenFinishedFunctionFCallAndAnotherCall;
+  Duration? get gapBetweenFinishedFunctionFCallAndAnotherCall =>
+      _gapBetweenFinishedFunctionFCallAndAnotherCall;
+
+  /// The class has the [funcitonF] method which by default return null in case when the last future returned by the method has not finished with success or error, and this is the strongly recommended settings that [functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync] == true because otherwise tyou might have in an imaginary "worst" case scenario 100 fihished functionF method calls (synchronous aspect) but f.e 50 not finished futures of the functionF method - what if it was 100000 such future objects with some code still being executed and consuming a lot of processor power?. if set to false (true is default) null is returned only when the sync aspect is another call of the same method being executed right now (an old, not fihished yet [_pendingFunctionFAsyncAspectCompleter].future is returned in such a case) which is exptected to possible only in running in an isolate (through the [compute] function, web uses the same function but as of now it is run on the "curent" event loop, but in the near future, only but not only on the WASM flutter compilation this was indicated somewhere to work for web also).
+  /// Additionally to this property the null may still be even returned when the time based on [_gapBetweenFinishedFunctionFCallAndAnotherCall] hasn't elapsed yet (works with async and synd, default is async (this property here [functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync] == true) which means when last futureF finished the time taken from [_gapBetweenFinishedFunctionFCallAndAnotherCall] must pass then you can call functionF again and start another [functionF] method call)
+  final bool functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync;
+
+  /// Default true; Because of the precise nature of [functionF] method (not Function "functionF" param of the functionF method) with measuring and the necessity of performing some quicker sync aspect of the method (+ async treated and measured separately) on the current event loop but is true (default) then the method itself is tried to be called on isolate when available (probably with some directly involved async aspect of the functionF method). Simply speaking for web isolates were not yet available at the time of writing with planned flutter to WASM implementation. And more broaden meaning of this property is that on low resources this object may possibly use one isolate, on more more than one, etc. For now it just calls compute function and leave it to dart to decide how to do it.
+  /// TODO: Some annotation about it is also in the functionF method body. It went: "So monitor how the the work of compute is changing (web assembly?) or check out if some new [Isolate]-like stuff have come up".
+  final bool useIsolateNotEventLoop;
+
+  /// This is a global instance of this class. Wherever you construct an object using ConditionIsolateNoParallelFunctionCalls.singleton() factory constructor you get always pointer to exactly this object. However when using it remember that if you have 100 "constructed" this way objects the functionF method call on them may be jammed, when many places in your program try to call it at the same tame and at the moment of writing no queue of functions to be called was implemented and event them could need to be cancelled if waiting for too long. Look around if some sophisticated queue class hasn't poped up in the meatime here.
+  /// Good to remember, this object is not going to be ever GC-ed.
+  static final ConditionIsolateNoParallelFunctionCalls<dynamic> _singleton =
+      ConditionIsolateNoParallelFunctionCalls<dynamic>();
+
+  /// Returns always the same global instance awailable for the entire programe for it's entire life cycle. The singleton instance is intended to run in default settings, and exists as convenience constructor; you can create your own single ton container classes with a singleton custom instance of this class available globally in your program. When this constructor is called for the first time it returns always the same object pointer to [_singleton] (see property desc).
+  /// Because of lint error must have moved getting the _singleton object to a method [_globalInstanceGetter]. Seems like unperfect lint rule, maybe logical but still unperfect.
+  factory ConditionIsolateNoParallelFunctionCalls.singleton() {
+    return _globalInstanceGetter();
+  }
+
+  /// See the ConditionIsolateNoParallelFunctionCalls.singleton() desc and [_singleton] desc.
+  static _globalInstanceGetter() {
+    return _singleton;
+  }
+
+  /// Unlike [ConditionIsolateNoParallelFunctionCalls].singleton factory this constructor, construct and returns always a fully independent object. See [ConditionIsolateNoParallelFunctionCalls].singleton for something available globally, and read it's desc for possible non-practicalality usage warning.
+  ConditionIsolateNoParallelFunctionCalls(
+      {this.conditionIsolateNoParallelFunctionCallsFunctionRestriction =
+          ConditionIsolateNoParallelFunctionCallsFunctionRestriction
+              .mustCallTheSameIdenticalFuncitonObject,
+      this.keepFunctionFAsWeakReference = true,
+      this.functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync =
+          true,
+      ConditionIsolateNoParallelFunctionCallsFunctionF<T>?
+          theOnlyAllowedfunctionFObject,
+      this.useIsolateNotEventLoop = true,
+      Duration? gapBetweenFinishedFunctionFCallAndAnotherCall})
+      : _gapBetweenFinishedFunctionFCallAndAnotherCall =
+            gapBetweenFinishedFunctionFCallAndAnotherCall {
+    if (theOnlyAllowedfunctionFObject != null) {
+      if (keepFunctionFAsWeakReference) {
+        _functionFWeakReference = WeakReference(theOnlyAllowedfunctionFObject);
+      } else {
+        _functionF = theOnlyAllowedfunctionFObject;
+      }
+      //if (this.conditionIsolateNoParallelFunctionCallsFunctionRestriction ==
+      //    ConditionIsolateNoParallelFunctionCallsFunctionRestriction
+      //        .mustCallTheSameIdenticalFuncitonObject) {
+      //}
+    }
+
+    // conditionIsolateNoParallelFunctionCallsFunctionRestriction;
+    // ConditionIsolateNoParallelFunctionCalls._counterOfUniqueFunctionObjects
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------- //
+  // SYNCHRONOUS PART ----------- //
+  // ---------------------------------------------------------------------------------------------------------------- //
+
+  /// See the [lastRetireModelProcessStart] which is not the same. Each call of retire uptates this property with timestamp.
+  ConditionTimeNowMillisecondsSinceEpoch? _lastFunctionFCall;
+  ConditionTimeNowMillisecondsSinceEpoch? get lastFunctionFCall =>
+      _lastFunctionFCall;
+
+  // Linter orange notification that the property isn't ued but actually the property is used in the class.
+  /// FIXME: where is description? Some is [_retireMethodItsBodyCodeExecutionLastFinish];
+  ConditionTimeNowMillisecondsSinceEpoch?
+      _functionFItsBodyCodeExecutionLastStart;
+
+  // Linter orange notification that the property isn't ued but actually the property is used in the class.
+  /// important - always updated when [_retireMethodItsBodyCodeExecutionLastStart] updated, even when synchronous body exception is thrown
+  ConditionTimeNowMillisecondsSinceEpoch?
+      _functionFItsBodyCodeExecutionLastFinish;
+
+  /// Means synchronous aspect of the [retire] method body, read more: With [isRetirementProcessPending] you can use the both properties features as you need (use public getters). Check out if some stuff is performed even befor this property is set at the top or the [retire] method. The [retire] method is executed synchronously but apart from [isRetirementProcessPending] is not everything we need to know if the method is being executed right know which is not the same as [isRetirementProcessPending] which may last after the body or the [retire] method was executed.
+  bool _isFunctionFBodyAlreadyBeingExecuted = false;
+  bool get isFunctionFBodyAlreadyBeingExecuted =>
+      _isFunctionFBodyAlreadyBeingExecuted;
+
+  // ---------------------------------------------------------------------------------------------------------------- //
+  // ASYNCHRONOUS PART ----------- //
+  // ---------------------------------------------------------------------------------------------------------------- //
+
+  /// Use getter - this is internal stuff, Not the same as [lastFunctionFCall] (if both properties are changed in the same FunctionF method called they have the same time) where each call on retire() method updates the the [lastFunctionFCall] while [lastFunctionFAsyncAspectStart] is updated when we start an actual retire process. this See also properties here starting from "retire..." and the retire method. When [retire]() is called this value is updated ConditionModelApp.getTimeNowMillisecondsSinceEpoch(); When retire is called unsuccessfuly a conditoinModelApp may monitor the model for some time by calling the retire method cyclically; if [conditionModelApp] detects that f.e. model has been reattached to the model tree it stops cyclically calling the retire method. Other factors may have impact if the retire method is called on a model or not. And after the model is retired it is unlinked from the app models or similar ? app property - 2 properties are for this.
+  ConditionTimeNowMillisecondsSinceEpoch? _lastFunctionFAsyncAspectStart;
+  ConditionTimeNowMillisecondsSinceEpoch? get lastFunctionFAsyncAspectStart =>
+      _lastFunctionFAsyncAspectStart;
+
+  /// Use the public getter of [lastFunctionFAsyncAspectFinish], but see the desc of [_lastFunctionFAsyncAspectStart]
+  ConditionTimeNowMillisecondsSinceEpoch? _lastFunctionFAsyncAspectFinish;
+  ConditionTimeNowMillisecondsSinceEpoch? get lastFunctionFAsyncAspectFinish =>
+      _lastFunctionFAsyncAspectFinish;
+
+  /// only if non-null completer.isCompleted == false the retirement process is being in progress now. All important retire stuff depend on it, like public [isRetired], [isRetirementProcessPending], [pendingRetirementProcessFuture], or [retire] method if not more. If non-null completer.isCompleted == true, the model is retired. The [retire]() method updates this completer. The retirement may be completely cancelled. Maybe pending already for f.e. 10 seconds, may be created new, etc. So retire() methods updates it and you use the Future getter only in normal circumstances.
+  Completer<T>? _pendingFunctionFAsyncAspectCompleter = null;
+
+  /// Read used here [_pendingFunctionFProcessCompleter] desc.
+  Future<T>? get pendingFunctionFAsyncAspectFuture =>
+      _pendingFunctionFAsyncAspectCompleter?.future;
+
+  /// Read used here [_pendingFunctionFProcessCompleter] desc.
+  bool get isFunctionFAsyncAspectPending =>
+      _pendingFunctionFAsyncAspectCompleter != null &&
+              !_pendingFunctionFAsyncAspectCompleter!.isCompleted
+          ? true
+          : false;
+
+  /// Never returns null - null for compatibility with the [retire] return method. As with the [retire] method body must be performed synchronous even if it returns the future. Used by the [retire] method couple of times so the need to put it into a separate method
+  Future<T>? _functionFRealSynchronousCodeExecutionFinish(
+      [Future<T>? returnDifferentFuture]) {
+    _functionFItsBodyCodeExecutionLastFinish =
+        ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+    _isFunctionFBodyAlreadyBeingExecuted = false;
+
+    /// It must be not null. At the time of writing the only situation null was allowed or the retire method when _isRetireMethodBodyAlreadyBeingExecuted was already called
+    return returnDifferentFuture ??
+        _pendingFunctionFAsyncAspectCompleter!.future;
+  }
+
+  //The // class not tested and where and implementing it took so long that: Where was it to be used?
+  /// Warning! if this.conditionIsolateNoParallelFunctionCallsFunctionRestriction == ConditionIsolateNoParallelFunctionCallsFunctionRestriction.mustCallTheSameIdenticalFuncitonObject then theOnlyAllowedfunctionFObject is compared with functionF param - it is technically solved. But the warning is that for this class instance settings the functionF function param must not be a some class's regular method, so if you have to keep the method in the class property you must create a final property to which you assign a function you can pass here to this [functionF] method as [functionF] argument. This is because an anonymous function object is assigned only to the class instance and has unchangeable identity (which can be 100% unfailingly checked by identical() operator and visibly checked by the 99.9% identityHashcode method which only once per 50000 objects can return the same value for comlitely different objects). the ConditionIsolateNoParallelFunctionCalls<void> functionF for the object's some constructor settings can check if two functionF objects are identical. If you pass an object as separate object (not directly this.somenormalmethod) the objects will be the same - identical and a function can be called and no exception will be thrown. But if you pass a regular meethod defined like "somemethod() {}" my understanding is it would be passed to the functionF method as a brand new object each time the functionF is called so it wouldn't be identical() and the identityHascode()s would be different, an exception would be thrown the functionF function argument won't be even called.
+  /// FIXME: This method was moved from other class, the old retire changed its name some code, docs need to be updated
+  /// FIXME: For example when _isFunctionFBodyAlreadyBeingExecuted the retire() returns null, here also_isFunctionFAsyncAspectPending return null;
+  /// Warning! the method is understood to work correctly when functionF is always called from the same event loop, but depending on this class constructor param [useIsolateNotEventLoop] == true, the functionF function param of the [functionF] method will be called in an isolate if available (at the time of writing available for all platforms except for web). Apart from that you can "enter" another isolate and as i imageine you are in a different second event loop i'll call it the second (there can be third, fourth...); in the second isolate and by this second event loop you can call functionF method entirely in the loop with the same general rules like presented here already. And also there was one a problem/issue described somewhere that up to "only" 16 isolates could be run smoothely - i don't know if it is true but even isolates are run within some limitations and if you don't know much more you just imagine to have 100, 1000 "correctly working" isolates and not to bother much about more subtle issues that in my opinion don't affect the entire. But you have to be remember that if you change important variables during calling functionF method exactly at the same time from two different isolates but on the same object, this may cause malfunction of this [ConditionIsolateNoParallelFunctionCallsFunctionF]. So as a rule if you don't know what to do just use this class here on one isolate/event loop event if it is secondary, third, or the main event loop. And remember that web didn't have isolates at the time of writing it - even compute function was run on the event loop.
+  /// if [isSynchronous] == true the functionF function param is expected to be fully synchronous function returning  synchronous future which is instance of [ConditionSynchronousFutureWithInfo]<T> class.
+  /// if [isSynchronous] == true and [ifIsSynchronousIsTrueUseSynchronousPendingFunctionFAsyncAspectCompleterForNewSuccesfulFunctionFCallStart] == true then for [_pendingFunctionFAsyncAspectCompleter] synchronous Completer.sync() [Completer] class constructor will be used. Due to technical implementation issues when [ifIsSynchronousIsTrueUseSynchronousPendingFunctionFAsyncAspectCompleterForNewSuccesfulFunctionFCallStart] == true this [functionF] method doesn't return [_pendingFunctionFAsyncAspectCompleter].future as it does normally but creates and returns separate synhchronous [ConditionSynchronousFutureWithInfo]<T> future (with synchronously accessible and finished isFinished property and value property with the value T of the finished future). Because it is also just a [Future] instance it can also be used asynchronously in the async/await syntax for example. At the same for the non-standard mentioned settings, the separately treated [_pendingFunctionFAsyncAspectCompleter] object returns it's value but it is an instance of Future<T> not "enhanced" [ConditionSynchronousFutureWithInfo]<T> instance. Only for these settings. The need for maintaining two Completer/Future objects is because as with [Future] you cannot extend easily [Completer] class, and unlike the [Future] class don't have an easily extendable [SynchronousFuture] class for the [Completer] class, like SynchronousCompleter.
+  /// FIXME: IMPROVE THIS LINE: If param isSynchronous == false returned value is Future<T>, otherwise for true returned value is <T> because entire code is done synchronously.
+  /// TODO: Warning! Some implementation topics that may change the code in the future not changing the functionality. As for now the class and functionF is designed in a way that although the functionF method body is executed on the current event loop but depending on the constructor settings only the method itself can be executed in an isolate. It is a reasonable balance in no absolutely custorm-client-heavy-resources situations, requiring not only a better class like this but also vast knowledge and more thorought approach of processor managing - this is simpler solution that can handle heavy resources tasks with gap (to free a bit the event loop) property between calls to be implemented maybe later (for now the gap is abandoned, because is not necessary now). If all the functionF method was executed in an isolate. You would have to retrace the entire functionF method code to make sure that tere is not a situation something has happened in the especially synchronous aspect of the code that normally wouldn't on the event loop. F.e. you set a property _a = Object(); then you set _a = null then synchronously you check if (a == null) but it is not null because a separate isolate set it up to non-null value in the meantime; As for now the functionF method code doesn't seem to be too much processor expensive so to spare some development time the synchronous part of the method is left as it is.
+  /// Warning! A super.retire() may require to be called when this.retire() is 100% successfully right now. Read any super/super.super...super.retire() descriptions.
+  /// The super.retire() returns future, but its code is synchronically finished successfully even if the future it's value is not yet available because Future result is available after some asynchronical time. So after the super.retire() call you may synchronically do other stuff knowing all in super classes was retired synchronically.
+  /// Synchronously returns null probably only when [_isRetireMethodBodyAlreadyBeingExecuted] == true. Warnings: One retirement process triggered by the retire method (information about it taken from the future) must and "decides" how long it can last but it should be designed in a way it doesn't last for too long. [retireModelWhenWhenRemovedFromTheModelTree] == false (value can be changed) is to be used by conditionModelApp internally to prevent model from removing from internal list/s, also can be used in custom code, but here retire does it's job; Public and synchronous body on purpose. Returns future of [_pendingRetirementProcessCompleter] ".future" property. It is public because you may create a model object outside this library and when it is independent of the main tree you may want to retire it on your own. Important if this synchronous-body method returns the completer which is is already completed .isCompleted == true, you may use it in a regular synchronous if (completer.isCompleted == true) function body you don't need to use in async await method but you can ofcourse do the await completer.future anytime you want when you wait for the completer to complete. Sometimes it is needed to have the information right now. You can call the method any time you want, true = retired, false = not - it is as it was. If you use models customarily then after the future is complete you can set any remaining pointer to it to null. If however a model is in the model tree. The retire method will not work and will throw an asynchronous exception (completeError). May be in Readme more desc. This must be somehow implemented however difficult it might be. Not going here into details here but there may be model removed from the model tree, there may be no other reference active to the model except for a special List of models in the ConditionModelApp class. When a model is nowhere else except for this list it must be removed. It could be implemented with some delay - if it is not in the tree and no property change induced by app user has taken place, the model can be detached and send some locking if accidentally it is suprisingly linked somewhere, and in the development process such places will be gradually corrected, some log messages, errors (no exceptions - wrongly constructed piece of code). No unused link to the model can be left
+  /// Copied from [functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync] property. The class has the [funcitonF] method which by default return null in case when the last future returned by the method has not finished with success or error. if set to false (true is default) null is returned only when the sync aspect is another call of the same method being executed right now (an old, not fihished yet [_pendingFunctionFAsyncAspectCompleter].future is returned in such a case) which is exptected to possible only in running in an isolate (through the [compute] function, web uses the same function but as of now it is run on the "curent" event loop, but in the near future, only but not only on the WASM flutter compilation this was indicated somewhere to work for web also).
+  /// Warning! By convention the body of this method and the functionF parameter function must be sync (no async {}) but the function returns future that must be finished with sucess or error not in a too long time. You can bypass the rule, but this is designed in a way that best used is the rule given here.
+  Future<T>? functionF(
+      ConditionIsolateNoParallelFunctionCallsFunctionF<T> functionF,
+      [bool isSynchronous = false,
+      bool ifIsSynchronousIsTrueUseSynchronousPendingFunctionFAsyncAspectCompleterForNewSuccesfulFunctionFCallStart =
+          false]) {
+    final ConditionTimeNowMillisecondsSinceEpoch commonTimestampNow =
+        ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+
+    // to be alligned with the  code in the constructor that not not necessarily be the same.
+    if (conditionIsolateNoParallelFunctionCallsFunctionRestriction ==
+        ConditionIsolateNoParallelFunctionCallsFunctionRestriction
+            .mustCallTheSameIdenticalFuncitonObject) {
+      try {
+        // throws when not inited yet
+        if (keepFunctionFAsWeakReference) {
+          _functionFWeakReference;
+        } else {
+          _functionF;
+        }
+      } catch (e) {
+        if (keepFunctionFAsWeakReference) {
+          _functionFWeakReference = WeakReference(functionF);
+        } else {
+          _functionF = functionF;
+        }
+      }
+
+      bool bothFunctionFAreNotIdentical = false;
+      if (keepFunctionFAsWeakReference) {
+        // Do not change: to avoid setting to null in the meantime which may happen once per 100000000000000000000000000000000 calls.
+        ConditionIsolateNoParallelFunctionCallsFunctionF<T>?
+            functionFWeakReferenceTarget = _functionFWeakReference.target;
+        if (_functionFWeakReference.target == null) {
+          throw 'ConditionIsolateNoParallelFunctionCalls functionF method error: At this stage of code execution is not allowed to have _functionFWeakReference.target == null. Because of the nature of the [WeakReference]s this may happen you just need to handle the issue. If you know what you are doing, change [keepFunctionFAsWeakReference] to false in the constructor body. Just handle the Exception.';
+        }
+        // functionFWeakReferenceTarget is 100% not null now.
+        if (!identical(functionFWeakReferenceTarget, functionF)) {
+          bothFunctionFAreNotIdentical = true;
+        }
+      } else {
+        if (!identical(_functionF, functionF)) {
+          bothFunctionFAreNotIdentical = true;
+        }
+      }
+
+      if (bothFunctionFAreNotIdentical) {
+        throw 'ConditionIsolateNoParallelFunctionCalls functionF method error: an incoming functionF function is not the same object as required based on property conditionIsolateNoParallelFunctionCallsFunctionRestriction == ConditionIsolateNoParallelFunctionCallsFunctionRestriction.mustCallTheSameIdenticalFuncitonObject. The original functionF object that is matched again if it is [identical]() (operator identica()) the was supplied either in the constructor or in the first [functionF]() method call. Just handle the Exception. Some helpful data: hashcodes of compared functions: ${identityHashCode(keepFunctionFAsWeakReference ? _functionFWeakReference.target : _functionF)}, ${identityHashCode(functionF)}}';
+      }
+    }
+
+    _lastFunctionFCall = commonTimestampNow;
+
+    // The logic in this if is similar to the retire() method but it is enhacned - as already said in the doc for the method this is change to retire() pattern
+    // FIXME:, [Edit: analysed, not tested] analyse this condition and test it - for errors only, it was designed properly
+    if ((functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync &&
+            (isFunctionFAsyncAspectPending ||
+                (!isFunctionFAsyncAspectPending &&
+                    _gapBetweenFinishedFunctionFCallAndAnotherCall != null &&
+                    _gapBetweenFinishedFunctionFCallAndAnotherCall!
+                            .inMilliseconds >
+                        0 &&
+                    _lastFunctionFAsyncAspectFinish != null &&
+                    commonTimestampNow.time -
+                            _lastFunctionFAsyncAspectFinish!.time <=
+                        _gapBetweenFinishedFunctionFCallAndAnotherCall!
+                            .inMilliseconds))) ||
+        (!functionFReturnsNullNotOnlyOnSyncCodeBeingExecutedButAlsoOnAsync &&
+            (_isFunctionFBodyAlreadyBeingExecuted ||
+                (!_isFunctionFBodyAlreadyBeingExecuted &&
+                    _gapBetweenFinishedFunctionFCallAndAnotherCall != null &&
+                    _gapBetweenFinishedFunctionFCallAndAnotherCall!
+                            .inMilliseconds >
+                        0 &&
+                    _functionFItsBodyCodeExecutionLastFinish != null &&
+                    commonTimestampNow.time -
+                            _functionFItsBodyCodeExecutionLastFinish!.time <=
+                        _gapBetweenFinishedFunctionFCallAndAnotherCall!
+                            .inMilliseconds)))) {
+      /// FIXME: This basic async, default, aspect has been quickly, naturally tested in one configuration with gap, and frequency call and it returns null. Async (no-sync aspect, no-sync extended future class), gap,
+      debugPrint(
+          '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #20, null will be returned, not an error, it\'s fine, the functionF will not be called because, depending on the ConditionIsolateNoParallelMethodCalls<T>, either the required aspect of the previous ConditionIsolateNoParallelMethodCalls<T>.functionF method call hasn\'t finished yet or if _gapBetweenFinishedFunctionFCallAndAnotherCall... is > 0 the additional gap time hasn\'t elapsed yet. Check out the full if condition that led to this debug print whether or not something is missing in this desc.')}');
+      return null;
+    } else {
+      _functionFItsBodyCodeExecutionLastStart = commonTimestampNow;
+      _isFunctionFBodyAlreadyBeingExecuted = true;
+    }
+
+    /// We have to make sure that if an exception is thrown by the SYNCHRONOUS PART OF THE METHOD we call _retireRealSynchronousCodeExecutionFinish(); but probably rethrow;
+    try {
+      if (isFunctionFAsyncAspectPending) {
+        // it is understood that previous retire() call is still working so we don't change _lastRetireModelProcessStart
+        // it is important that this is synchronous body of a method that synchronously returns future, not value, after finishing the body
+        // so in no way on the event loop something should have changed and we can return the future now
+        debugPrint(
+            '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #1, now will be called _functionFRealSynchronousCodeExecutionFinish()')}');
+        return _functionFRealSynchronousCodeExecutionFinish();
+      } else if (_pendingFunctionFAsyncAspectCompleter ==
+              null // can be so because isRetirementProcessPending has just been checked
+          ) {
+        _lastFunctionFAsyncAspectStart = commonTimestampNow;
+
+        if (isSynchronous &&
+            ifIsSynchronousIsTrueUseSynchronousPendingFunctionFAsyncAspectCompleterForNewSuccesfulFunctionFCallStart) {
+          debugPrint(
+              '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #2')}');
+          _pendingFunctionFAsyncAspectCompleter = Completer<T>.sync();
+        } else {
+          debugPrint(
+              '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #3')}');
+          _pendingFunctionFAsyncAspectCompleter = Completer<T>();
+        }
+
+        _pendingFunctionFAsyncAspectCompleter!.future.catchError((e) {
+          debugPrint(
+              '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method exception body catchError (method non async body syntax exception) the completer will be completed with false value anyway: $e')}');
+        });
+      } else {
+        // it IS completed and NOT null and NOT retired // OLD DESC: it is not retired but also it is completed isCompleted == true,
+        // SO we need update "the" timestamp a new completer object
+        debugPrint(
+            '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #4')}');
+        _lastFunctionFAsyncAspectStart = commonTimestampNow;
+        _pendingFunctionFAsyncAspectCompleter = Completer<T>();
+      }
+
+      /// put in async f.e. to make sure the code execution won't slow down or block something.
+      /// This function accept a param to be compatible with compute syntax
+      _computationallyExpensiveTask(someobligatoryvariable) async {
+        /// WARNING! THIS HAS EQUIVALENT FOR SYNCHRONOUS CALL BELOW AND BOTH MUST BE SORT OF THE SAME, KEPT COMPATIBLE
+        try {
+          // FIXME: HERE WE SOPPED https://stackoverflow.com/questions/52196555/flutter-compute-method
+          // The problem is that compute must call top level function or static method of a class, etc.
+          // CAN WE INCORPORATE COMPUTE HERE????????
+          debugPrint(
+              '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #5')}');
+          Future<T> functionFReturnedValue = functionF();
+          await functionFReturnedValue;
+          _lastFunctionFAsyncAspectFinish =
+              ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+          debugPrint(
+              '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #6')}');
+
+          _pendingFunctionFAsyncAspectCompleter!
+              .complete(functionFReturnedValue);
+        } catch (e) {
+          debugPrint(
+              '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #7')}');
+          _lastFunctionFAsyncAspectFinish =
+              ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+          _pendingFunctionFAsyncAspectCompleter!.completeError(
+              'ConditionIsolateNoParallelMethodCalls<T> class functionF method, the recommended async or isolate functionF function param call, and it\'s param functionF function that has been called exception: $e');
+        }
+      }
+
+      Future<T>? functionFReturnedValue;
+      if (isSynchronous) {
+        /// WARNING! THIS HAS EQUIVALENT FOR ASYNCHRONOUS CALL ABOVE computationallyExpensiveTaskw local function AND BOTH MUST BE SORT OF THE SAME, KEPT COMPATIBLE
+        try {
+          debugPrint(
+              '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #8')}');
+          functionFReturnedValue = functionF();
+          debugPrint(
+              '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #9')}');
+          if (functionFReturnedValue
+              is! ConditionSynchronousFutureWithInfo<T>) {
+            throw "ConditionIsolateNoParallelMethodCalls<T> class functionF method exception: if functionF method functionF method param on call returned a class that is not [ConditionSynchronousFutureWithInfo] class instance. The is a class extending [SynchronousFuture] (from foundation library) containing additional convenience properties [isFinished] and [value] properties helping to get to the value in an synchronous body syntax, not using async/await syntax, because the Future is finished immediately, synchronously. However you can use the normal async/await syntax also. See more in the functionF method description.";
+          } else if (!functionFReturnedValue.isFinished) {
+            throw 'ConditionIsolateNoParallelMethodCalls<T> class functionF method exception: Because this is synchronous call the Future at this point must be finished and as it is a [SynchronousFuture] extending class named [ConditionSynchronousFutureWithInfo]<T> and it\'s isFinish property automatically should has been set to true.';
+          } else {
+            // As for now, including what is below all should has been done synchronously entirely
+            _lastFunctionFAsyncAspectFinish =
+                ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+
+            _pendingFunctionFAsyncAspectCompleter!
+                .complete((functionFReturnedValue.value));
+          }
+        } catch (e) {
+          debugPrint(
+              '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #10')}');
+          _lastFunctionFAsyncAspectFinish =
+              ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+          _pendingFunctionFAsyncAspectCompleter!.completeError(
+              'ConditionIsolateNoParallelMethodCalls<T> class functionF method, the recommended async or isolate functionF function param call, and it\'s param functionF function that has been called exception: $e');
+        }
+
+        // isSynchronous ConditionSynchronousFutureWithInfo<T>
+        // ifIsSynchronousIsTrueUseSynchronousPendingFunctionFAsyncAspectCompleterForNewSuccesfulFunctionFCallStart
+        //tricky // to implement as there is _pending... completer you have to understanc what you can do about it
+        //// and if https://api.flutter.dev/flutter/dart-async/Completer/Completer.sync.html helps
+        ////
+        // //
+        // //
+      } else if (useIsolateNotEventLoop) {
+        debugPrint(
+            '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #11')}');
+        // TODO: To remind you, at the time of writing native=isolate, web=event loop. Read more int [useIsolateNotEventLoop] desc.
+        // So monitor how the the work of compute is changing (web assembly?) or check out if some new [Isolate]-like stuff have come up
+        compute(_computationallyExpensiveTask, 1);
+      } else {
+        debugPrint(
+            '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #12')}');
+        scheduleMicrotask(() {
+          debugPrint(
+              '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #13')}');
+          // This function accept a param to be compatible with compute syntax
+          _computationallyExpensiveTask(1);
+        });
+      }
+      debugPrint(
+          '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #14')}');
+
+      // Warning! Keep in mind, functionFReturnedValue is never expected to be used for isSynchronous == false and be null if it is false. If true it is for sure Future of class [ConditionSynchronousFutureWithInfo]<T> that is cast to the class.
+      return _functionFRealSynchronousCodeExecutionFinish(
+          functionFReturnedValue == null
+              ? null
+              : functionFReturnedValue
+                  as ConditionSynchronousFutureWithInfo<T>);
+    } catch (e) {
+      debugPrint(
+          '${ConditionDebugPrint('ConditionIsolateNoParallelMethodCalls<T> class functionF method, flag #15')}');
+      _functionFRealSynchronousCodeExecutionFinish();
+      rethrow;
+    }
+  }
+}
+
 /// Used especially in [ConditionModelApp] class' [hangOnModelOperationIfNeeded]() method and with connetion with with model retire() method (and more) which all is related to releasing resources taken by not used models and See comnments in the enum definition body. The most important may be globalServerWrite or more precise ...Create/Update/Delete while these operations may last long and prevent model from being retired while local server or other operations seems kind of immediate even if asynchronous on event loop, Some of the items may never be used this is initial list. See what uses it in [ConditionModelApp] class and relevant descriptions
 enum ConditionModelClassesTypeOfSucpendableOperation {
   any,
@@ -10002,38 +10656,64 @@ enum ConditionModelClassesTypeOfSucpendableOperation {
 }
 
 /// Used used by [_addAppCycleMethod], [_removeAppCycleMethod] and [_cyclicalActionsOfAppModelsTimer] of [ConditionModelApps]
+/// The list may change and some burden of handling different situations may be moved from one class to another not even utilising such information contained in the enum. So monitor changes to the approach.
+/// These may not be used by all platforms, which is fine. F.e. web have no ConditionModelCycleCallEvent.deviceInSleepingMode option but the all-platforms compatible code may use it.
 enum ConditionModelCycleCallEvent {
   slowInternetConnection,
   globalServerNotResponding,
   globalServerOverloadedAndSlowResponding,
+  deviceOverallOverload,
+  deviceProcessorPowerOverload,
+  deviceDiscUsageOverload,
+  lowDiscSpace,
+  noDiscSpace,
+  deviceInTheBackgroundMode,
+  deviceInSleepingMode
 }
 
 /// A function Sygnature used by [_addAppCycleMethod] method or [_removeAppCycleMethod] of [CondiitionModelApps], skipThisCycle param (probably cannot be ignored but it is a developing story) is a strong request that the app doesn't perform any new cyclical action, especially that related to the global server operations; cycleCallEvents contain additional information not dependent on skipThisCycle, the information is like a stream event but without stream. The information may be that the internet connection is slow, or the global server not available or is overloaded, etc.
 /// For now it returns future to imply possibly that another call is allowed when the future is completed.
 /// TODO: Make sure the planned future is completed with error when app object looses it's last pointer.
-typedef ConditionModelAppAppCycleFunction = Future<void> Function(
-    bool skipThisCycle, Set<ConditionModelCycleCallEvent>? cycleCallEvents);
+//typedef ConditionModelAppAppCycleFunction = Future<void> Function(
+//    bool skipThisCycle, Set<ConditionModelCycleCallEvent>? cycleCallEvents);
 
-// [To do or done:] not part of /// doc warning : doNotAddAppToTheGlobalAppList == true would allow for two separate app objets which is not allowed, alternatively you could register some standard settings table prefixes at the core because you cannot use two separate yet twin apps
-// [To do or done:] not part of /// doc to do: stream never stop existing when it has subscriber, and possibly more so stream = null won't destroy the stream object ant won't release any data. The same is with future you must address this in the retire method SYNCHRONOUSLY.
+// TODO: [To do or done:] [Edit: ConditionIsolateNoParallelFunctionCalls class with supporting classes, types exists] not part of /// doc warning : doNotAddAppToTheGlobalAppList == true would allow for two separate app objets which is not allowed, alternatively you could register some standard settings table prefixes at the core because you cannot use two separate yet twin apps
+// TODO: [To do or done:] not part of /// doc to do: stream never stop existing when it has subscriber, and possibly more so stream = null won't destroy the stream object ant won't release any data. The same is with future you must address this in the retire method SYNCHRONOUSLY.
 /// Important info is in the [ConditionModelApp] class [doNotAddAppToTheGlobalAppList] property, read also about comparing two driver objects in [ConditionDataManagementDriver] class description. By the way: Interesting idea: SnapApps. To the point: This stores links to the non-removable app model and each app model is added automatically when Constructor has its default param [doNotAddAppToTheGlobalAppList] = false. Thanks to this option when there is sort of "last" pointer/variable to the app model lost in the entire general applicatoin code the permanent acutal last link is stored using this static [permanentAppsHolder] property. While models are added internally you can also notice that models are added using [addApp] method of the [permanentAppsHolder] property and cannot be removed. No more advanced solution is needed in like-99,5% of possible usage. So if you need a permantently removable apps you just need to set [doNotAddAppToTheGlobalAppList] = true. If the sort-of "last" link is lost it is at the same time the last actual link. this should cascadingly remove and destroy all related models and objects attached to the [conditionModelApp] instance. So sucha a permanently removable app needs to work with some custom databases both global and local server, that are ready to hold some non-permanent data and remove them permanently after a short period of time like day or time of current session. While non-permanent app solution is best for only reading data from the global server some problems while interrupting writing data to the global server might have to be taken under condideration when the last link to the "snap" app is lost
 /// Important info is in the [ConditionModelApp] [doNotAddAppToTheGlobalAppList] property. This class is a helper class to the [ConditionModelApps] which in unremovable static property holds this object with unremovable _apps property to which you can only add, not remove [ConditionModelApp] models.
+/// /// Also interesting info related to GC is in [_appNotInTheAllAndUniqueAppsFinalizer] desc about how finally objects are GC-ed in stages.
 class ConditionModelApps {
   /// Good to read the class description so not to repeat itself. A unique app means that there isn't another app object with the same local server [ConditionDataManagement] driver settings object.
   static final Set<ConditionModelApp> _allAndUniqueApps = {};
 
+  /// Maintained internally for internal reasons. The key parameter is the unique app id.
+  /// All aps that don't go to [_allAndUniqueApps] Set but whose drivers go to [_uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps]. The deeper reasons for that are described in the properties and in the entire class description. The advantage of the weak reference to an object that it will be collected automatically at the right time; once an app is added you will never have to care it here but possibly have acces to it.
+  /// Here go apps but in the form of a weak reference for GC stuff. It means that in the entire general application when all custom pointers to an app object or pointers like in [_allAndUniqueApps] are lost only then the GB will collect the apps.
+  static final Set<WeakReference<ConditionModelApp>>
+      _allAndUniqueAppsWeakReferrenced = {};
+
   // issue if not more of them: each item has    ConditionModelApp? conditionModelApp, which makes there is always last pointer left here in this property and no finalizer is triggered and the local driver of the no app object not belonging to _allAndUniqueApps is never removed. You probably must try to remove the app property and from possible other used objects there that might store them permanently.
   /// You can create completely independent driver object but is not recommended to use have it outside app object to keep data integrity withing models. Good to read the class description so not to repeat itself. This property is for situations where you want a [ConditionModelApp] object not to be in [_allAndUniqueApps] and to be destroyed when the last known to you pointer to it turns f.e. to null. However only one app and one local server driver is allowed in the entire app code. So in this property drivers of the apps not in the [_allAndUniqueApps] are stored. When the last pointer to such an app is lost a [Finalizer] starts playing it's role and removes the driver from the list. When a unique app or "independent/free" driver is removed a new driver with it's settings can be created in this or other way. A unique app means that there isn't another local [ConditionDataManagement] driver object with the same local server settings.
-  static final Set<ConditionDataManagementDriver>
-      _uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps = {};
+  /// Also interesting info related to GC is in [_appNotInTheAllAndUniqueAppsFinalizer] desc about how finally objects are GC-ed in stages.
+//  static final Set<ConditionDataManagementDriver>
+//      _uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps = {};
 
-  // READ THIS ONE FIRST The point is you don't want two duplicate apps (two different app objects with the same driver settings)
-  // And some exclamation point comments seem to forget about it. So two the SAME SETTING DRIVERS means TWO THE DUPLICATE APPS.
+  /// TODO: based on here and chats from discord make conlusions and add to my github project containing tips available at hand.
+  /// READ THIS ONE FIRST and [_uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps] desc. The point is you don't want two duplicate apps (two different app objects with the same driver settings)
+  /// And some exclamation point comments seem to forget about it. So two the SAME SETTING DRIVERS means TWO THE DUPLICATE APPS.
   /// Apps like in [ConditionDataManagementDriver] class or drivers can be stored making imposible to unlink them
-  static final Finalizer<ConditionDataManagementDriver>
-      _appNotInTheAllAndUniqueAppsFinalizer = Finalizer((localServerDriver) {
-    _uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps.remove(localServerDriver);
-  });
+  /// Another important info based on the Flutter devtools available on web when you "flutter run --debug" you have two links one is to the Flutter devtools
+  /// 1. if you lost the last pointer the an app object it still exists in memory
+  /// 2. Then manually or by dart "engine" whent it wats, GC is triggered.
+  /// 3. app dissappears from memody
+  /// 4. but f.e. drives need to be callected when another GC is triggered manually or by dart engine
+//  static final Finalizer<ConditionDataManagementDriver>
+//      _appNotInTheAllAndUniqueAppsFinalizer = Finalizer((localServerDriver) {
+//    debugPrint('${ConditionDebugPrint(
+//        'ConditionModelApps _appNotInTheAllAndUniqueAppsFinalizer static property finalizer method has starterd running.')}');
+//
+//    _uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps.remove(localServerDriver);
+//  });
 
   /// See also [maxId]. Try to establish a multiplatform int for IDs of regular models and possibly app models. For now it is based on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER
   static const int minId = -9007199254740991;
@@ -10047,11 +10727,11 @@ class ConditionModelApps {
   static int _increaseByOneAppModelUniqueIdCounterAndGetItsValue() =>
       ++_appModelUniqueIdCounter;
 
-  /// Similar to [_appModelUniqueIdCounter] and this property also doc-described there too.
-  static int _driverUniqueIdCounter = ConditionModelApps.minId;
-  static int get driverUniqueIdCounter => _driverUniqueIdCounter;
-  static int _increaseByOneDriverUniqueIdCounterAndGetItsValue() =>
-      ++_driverUniqueIdCounter;
+  //  /// Similar to [_appModelUniqueIdCounter] and this property also doc-described there too.
+  //  static int _driverUniqueIdCounter = ConditionModelApps.minId;
+  //  static int get driverUniqueIdCounter => _driverUniqueIdCounter;
+  //  static int _increaseByOneDriverUniqueIdCounterAndGetItsValue() =>
+  //      ++_driverUniqueIdCounter;
 
   // ==================================================================================
   // START TO MANAGEMENT ON SOME CYCLICAL ASPECTS OF APP MODEL OBJECTS THAT MIGHT HAVE IMPACT ON "SECONDARY" MEMORY "LEAKS"
@@ -10081,40 +10761,45 @@ class ConditionModelApps {
   // The separate class object would perform unleaking actions on it's properties. Still much to think over.
   // Probably similar for non-ConditionModelApp but those regular ConditionModel objects.
 
+  /// FIXME: IMPROVE DOCS FOR RELATED STUFF TO THIS PROPERTY
   /// Read the [_addAppCycleMethod] description.
-  static final Set<ConditionModelAppAppCycleFunction> _appCycyleMethods = {};
+//  static final Set<ConditionModelAppAppCycleFunction> _appCycleMethods = {};
 
-  /// FIXME: Stupid question and do a thorough research: if an app lost last pointer to it is it's method here [_appCycyleMethods] causing any hidden pointer to be kept? Logically should be: no. The method might be or not in a property of the app - whatever (not means created on spot as anonymous function).
-  static final Finalizer<ConditionModelAppAppCycleFunction>
-      _appCyclicalCallFinishFinalizer =
-      Finalizer((conditionModelAppAppCycleFunction) {
-    debugPrint(
-        'conditionModelAppAppCycleFunction is to be removed from _appCycyleMethods (now ${_appCycyleMethods.length} these methods in total) info from toString:. $conditionModelAppAppCycleFunction');
-    ConditionModelApps._appCycyleMethods
-        .remove(conditionModelAppAppCycleFunction);
-    debugPrint(
-        'conditionModelAppAppCycleFunction has been removed now the number of these methods is:. now ${_appCycyleMethods.length} methods in total');
-  });
+  /// FIXME: Stupid question and do a thorough research: if an app lost last pointer to it is it's method here [_appCycleMethods] causing any hidden pointer to be kept? Logically should be: no. The method might be or not in a property of the app - whatever (not means created on spot as anonymous function).
+//  static final Finalizer<ConditionModelAppAppCycleFunction>
+//      _appCyclicalCallFinishFinalizer =
+//      Finalizer((conditionModelAppAppCycleFunction) {
+//    debugPrint('${ConditionDebugPrint(
+//        'conditionModelAppAppCycleFunction is to be removed from _appCycleMethods (now ${_appCycleMethods.length} these methods in total) info from toString:. $conditionModelAppAppCycleFunction')}');
+//    ConditionModelApps._appCycleMethods
+//        .remove(conditionModelAppAppCycleFunction);
+//    debugPrint('${ConditionDebugPrint(
+//        'conditionModelAppAppCycleFunction has been removed now the number of these methods is:. now ${_appCycleMethods.length} methods in total')}');
+//  });
 
   /// Added on [ConditionModelApp] object construction quite independent from [_allAndUniqueApps] Set which is among other things to avoing having two the same settings app instances and similar [Set] for driver objects. This must be removed when app looses it's pointer or other solution is needed to be found to avoid next finalizers
-  static _addAppCycleMethod(
-      ConditionModelApp app, ConditionModelAppAppCycleFunction method) {
-    debugPrint(
-        '_addAppCycleMethod called by app of app.appUniqueId ${app.appUniqueId}');
-    _appCycyleMethods.add(method);
-    _appCyclicalCallFinishFinalizer.attach(app, method);
-  }
+//  static _addAppCycleMethod(
+//      ConditionModelApp app, ConditionModelAppAppCycleFunction method) {
+//    debugPrint('${ConditionDebugPrint(
+//        '_addAppCycleMethod called by app of app.appUniqueId ${app.appUniqueId}')}');
+//    _appCycleMethods.add(method);
+//    _appCyclicalCallFinishFinalizer.attach(app, method);
+//  }
 
-  /// Not needed - finalizer [_appCyclicalCallFinishFinalizer] is to remove the method. Read the [_addAppCycleMethod] description.
-  @Deprecated('Left to remember for a while. See the desc of the method.')
-  static _removeAppCycleMethod(ConditionModelAppAppCycleFunction method) {}
+//  /// Not needed - finalizer [_appCyclicalCallFinishFinalizer] is to remove the method. Read the [_addAppCycleMethod] description.
+//  @Deprecated('Left to remember for a while. See the desc of the method.')
+//  static _removeAppCycleMethod(ConditionModelAppAppCycleFunction method) {}
 
   /// Warning! It is set up by this class' static _initConditionModelAppsClass]() see desc - so do not use it - it is done by the library. The timer can be set up here on spot, for some reason it start working only when or after the main() function started running - we don't want to set up the value by placing something in the main file which a programmer would have to remember, but it is set up first when the first [ConditionModelApp] object is created. So this is the global Timer that is to call cyclically [ConditionModelAppAppCycleFunction] (see desc - important) methods belonging to all existing [ConditionModelApp] app models in the global scope of the application event those not in the [_allAndUniqueApps] [Set] which probably as of now involves apps related to [_uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps] [Set]. registered with [_addAppCycleMethod].
   /// Each call of a registered method can trigger cyclical actions performed by on a global server especially, possibly other actions too as may be implied in [ConditionModelCycleCallEvent] enum function param.
   /// This timer is to avoid any other timer and secondary/higher-level-programming memory leaks. (higher doesn't mean better)
   static late final Timer _cyclicalActionsOfAppModelsTimer;
 
+  //  static int _counterForCyclicalChecking = 0;
+
   /// Warning! Managed automatically internally by the library - so do not call it!. This sets up [_cyclicalActionsOfAppModelsTimer] property. This is called once when first [ConditionModelApp] object is created, the reason can be seen in the [_cyclicalActionsOfAppModelsTimer] description. This triggers a timer that will never cease to its method cyclically.
+  /// [Similar info in the _appCycleMethod desc] Good to remember that when the [_appCycleMethod] of [ConditionModelApp] object is called, an implementation of it may perform an operation or not based on if an operation from a previous call was finished and additional time gap can be applied like From [ConditionConfiguration].[gapBetweenLastFullyFinishedCheckingOutTheGlobalServerForChanges] or others depending on how the code looks right now. In at least one case this is easily achieved by [_oneCycleOfGettingUpdatesFromOrToTheGlobalServerNoParallelFunctionCalls] property object that allows for calling f.e. functionF([_oneCycleOfGettingUpdatesFromOrToTheGlobalServer]) method with with a time gap taken from [ConditionConfiguration] settings; So to summarize based on ConditionConfiguration actual settings you can call [_appCycleMethod] once per second, _oneCycleOfGettingUpdatesFromOrToTheGlobalServer will be called but will finish after 1200 ms so after a second another _appCycleMethod call arrives but _oneCycleOfGettingUpdatesFromOrToTheGlobalServer will not accept the call until finishes plus the mentioned time gap defined must elaps then another call will start succesfully. Which is intended to release some processor resources and will be modified in teh future with possible additional [ConditionModelApp] constructor custom options related to this aspect.
+  /// TODO: FIXME: not fixme :)  you may introduce some granularity for gaps - some random value f.e. 100 means randomly generated value from 0 to 100 ms. The granularity would be a simple tool for avoing many calls at the same time like 100 method calls now ten we are waiting 10 seconds and again 100 methods now. And this would be before something more advanced, related to queues, etc arrives if whenever.
   static _initConditionModelAppsClass() {
     Timer.periodic(
         const Duration(
@@ -10122,12 +10807,37 @@ class ConditionModelApps {
                 .globalBaseFrequencyForCyclicalStuffInMilliseconds), (timer) {
       // example implementation - maybe should be more asynchronous.
       debugPrint(
-          '_cyclicalActionsOfAppModelsTimer timer cyclically calling its method that calls methods registered via _addAppCycleMethod (${_appCycyleMethods.length} methods will be called with the current library design restrictions).');
+          '${ConditionDebugPrint('[ConditionModelApps] class _initConditionModelAppsClass static method body has Timer.periodic and this is a single call now of the timer method. The method will try to call app._appCycleMethod on each app object registered in [ConditionModelApps] class. Read the class code and descriptions.')}');
 
-      for (final ConditionModelAppAppCycleFunction appCycyleMethod
-          in _appCycyleMethods) {
-        appCycyleMethod(false, null);
+      for (final ConditionModelApp app in _allAndUniqueApps) {
+        app._appCycleMethod(false, null);
       }
+
+      ///??? FIXME: With WeakReferences probably no need to register ConditionModelAppAppCycleFunction into _appCycleMethods. Trace it and think it over.
+
+      //_counterForCyclicalChecking=_counterForCyclicalChecking>11?0:_counterForCyclicalChecking+1;
+      // Let's, every 3-rd time, try to do some cleanup of weak references to apps having .target property == null; To every 3-rd time to avoing calling it too often.
+      //if (_counterForCyclicalChecking/3==1) {
+      Set<WeakReference<ConditionModelApp>>
+          _allAndUniqueAppsWeakReferrencedCopy =
+          Set.from(_allAndUniqueAppsWeakReferrenced);
+      for (int i = 0; i < _allAndUniqueAppsWeakReferrencedCopy.length; i++) {
+        final ConditionModelApp? app =
+            _allAndUniqueAppsWeakReferrencedCopy.elementAt(i).target;
+        if (app == null) {
+          debugPrint(
+              '${ConditionDebugPrint('[ConditionModelApps] _initConditionModelAppsClass(). Wait for the next info just right after this message. Before that. The current number of apps in the property [_allAndUniqueAppsWeakReferrenced] is ${_allAndUniqueAppsWeakReferrenced.length}.')}');
+          _allAndUniqueAppsWeakReferrenced
+              .remove(_allAndUniqueAppsWeakReferrencedCopy.elementAt(i));
+          debugPrint(
+              '${ConditionDebugPrint('[ConditionModelApps] _initConditionModelAppsClass() and timer defined there: A [A weak referenced app in [_allAndUniqueAppsWeakReferrenced] static property has just been removed as expected because it\'s the weak reference\'s target property has been set to null since the timer\'s last periodic call]. The current number of apps in the property is ${_allAndUniqueAppsWeakReferrenced.length}.')}');
+        } else {
+          debugPrint(
+              '${ConditionDebugPrint('[ConditionModelApps] _initConditionModelAppsClass() and timer defined there: A [A weak referenced app in [_allAndUniqueAppsWeakReferrenced] static  ${_allAndUniqueAppsWeakReferrenced.length}.')}');
+          app._appCycleMethod(false, null);
+        }
+      }
+      //}
     });
   }
 
@@ -10142,16 +10852,23 @@ class ConditionModelApps {
 
   /// _addDriver() method was removed not for no reason, [addTheAppLocalServerDriverOnly] = true is not recommended or creating local driver objects not attached to any app may cause possibly instability if you try to save data independently of app main model tree update/save sistem. but the option == true is allowed to give you more freedom - an app may loose unexpectedly it's last pointer to it and the object may dissappear which can be fine if it is an app object read only, also it prevents from existing more than one the same settings local server driver. Uses [isThisAppUniqueAndCanBeUsed] method we want to throw excteption with the duplicate app, found as in some class elsewhere
   static _addApp(ConditionModelApp app,
-      [bool addTheAppLocalServerDriverOnly = false]) {
+      [bool addTheAppAsWeakReference = false]) {
     (bool, ConditionModelApp?) result = isThisAppUniqueAndCanBeUsed(app);
     if (result.$1 == true) {
-      if (addTheAppLocalServerDriverOnly) {
-        _uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps.add(app.driver);
-        _appNotInTheAllAndUniqueAppsFinalizer.attach(app, app.driver);
+      if (addTheAppAsWeakReference) {
+        debugPrint(
+            '${ConditionDebugPrint('ConditionModelApps _addApp adding just driver not app')}');
+        //_uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps.add(app.driver);
+        _allAndUniqueAppsWeakReferrenced
+            .add(WeakReference<ConditionModelApp>(app));
+//        _appNotInTheAllAndUniqueAppsFinalizer.attach(app, app.driver);
       } else {
+        debugPrint(
+            '${ConditionDebugPrint('ConditionModelApps _addApp adding app not just driver')}');
         _allAndUniqueApps.add(app);
       }
     } else {
+      // FIXME: Possibly this exception remembers previous approach for non-duplicates. Revise the topis - should it stay here like this?
       throw ConditionModelAppExceptionAnotherConditionModelAppWithDuplicateConditionDataManagementLocalServerDriverSettingsIsHowCanIPutItPolitelyAlreadyOnTheConditionModelAppsClassStaticSetIsntIt(
           result.$2!);
     }
@@ -10201,23 +10918,47 @@ class ConditionModelApps {
       }
     }
 
-    for (final ConditionDataManagementDriver uniqueDriver
-        in _uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps) {
-      if (uniqueDriver.isDriverDuplicate(driver)) {
-        return (false, null, uniqueDriver);
+    for (final WeakReference<ConditionModelApp> uniqueAppWeakReferrence
+        in _allAndUniqueAppsWeakReferrenced) {
+      if (uniqueAppWeakReferrence.target == null) continue;
+      if (uniqueAppWeakReferrence.target!.driver.isDriverDuplicate(driver)) {
+        return (false, uniqueAppWeakReferrence.target, null);
       }
     }
+    //for (final ConditionDataManagementDriver uniqueDriver
+    //    in _uniqueLocalDriversOfAppsNotInTheAllAndUniqueApps) {
+    //  if (uniqueDriver.isDriverDuplicate(driver)) {
+    //    return (false, null, uniqueDriver);
+    //  }
+    //}
 
     return (true, null, null);
   }
 }
 
+/// For compatibility with [ConditionModelFinalObjectContainer]<T> (see desc of it for reason why it is) this is non-final container.
+class ConditionModelObjectContainer<T> {
+  T v;
+  ConditionModelObjectContainer(this.v);
+}
+
+/// Initially this was used in ConditionModelApp for _singleton to solve some issues related to static nature of a class property that dind't allow for late keyword. However there may be different usage examples.
+class ConditionModelFinalObjectContainer<T> {
+  late final T v;
+  ConditionModelFinalObjectContainer();
+}
+
+/// For the easiest way use ConditionModelApp.singleton() constructor with no params. This will create a default instance of the app because the 95% of custom (some other developer) usage of this library is possibly supposed to be on app object per application.
 /// App Configuration (also see [_driver] property). Among others it tells what users are logged preserving their ids in the app (not in the server). Tells what id can be assigned to a new user
-@Stub()
 class ConditionModelApp extends ConditionModel
     with ConditionModelOneDbEntryModel
     implements ConditionModelCompleteModel, ConditionModelOneDbEntryModel {
-  late final ConditionWidgetBase /*ConditionAppBase*/ widget;
+  //late final ConditionWidgetBase /*ConditionAppBase*/ widget;
+
+  /// If you assign the result of this getter to a pointer - remember to set the pointer to null when the result is never going to be used. This will release resources and prevent from memory "leaks"
+  /// Please read the [ConditionModelApp] overriden getter and [_conditionModelApp] desc because you should try to avoid assigning the result of this getter to a pointer and then not to use it and then to forget to set the pointer to null. See the original getter definition.
+  @override
+  ConditionModelApp? get conditionModelApp => this;
 
   // For now local server driver (among others the app local storage but http server at the same time see the read.me) - this must be set up. Read to the end!!! about caching webpage and reload! Drivers are simply String key, String? value - no other types, but strings are json encoded and they have integers, strings, etc. and [ConditionModel] models help to validate variables as to their type, range of values, etc. [_driver] gives you all widgets, and tree structure info when you start the app or reload the page, when all data is synchronized with the backend, for web there will be another driver for this - read only - technically reading data from javascript variable after full page reload. For all platforms all new data, new widgets, moving a model/widget elsewhere, model removal, whatever goes first to [_driver_temp]. For all platforms except web it will be a reference the exact same object as _driver (don't be worrying about namaspace stuff), but for web it will be the localStorage driver which can only contain up to 5MB (yet to confirm if encoding can increase the amount of data). 5MB - now you understand the reason of the two variables architecture. It is not bad anyway [_driver_temp] keeps clearly separaged data before it is updated in the backend. Simplifying: After the update for all platform except for web we update the main data managed by the [_driver] and clear the data [_driver_temp] manages but in case of the web only reload updates the data managed by [_driver] in a way that full data is loaded to the js variable (or html tag whatever), and only now localStorage can be cleared of temporary data. The idea is and important thing: if you f.e. lost internet connection but you created a div with data of _driver_temp - you could possibly exceed localStorage 5MB capacity, and if you next turn of the browser and turn on and the page loads from casche with the just mentioned div or something like that it should work, it would be wonderfull if it worked. Abandoned idea altarnatively you could read with AJAX all data for the [_driver] put it to a div for example and a page after reading from cashe would read it from the div. Also some browsers allow for saving page to the disk offline if the div with data from ajax was saved correctly you can pretty much work offline for some time. The point is can you store data to div or the app to disk so that it is loaded from cashe always ALSO I JUST RECALLED: when server ordered you to casche the page. YOU COULD also STORE files like IMAGES in the div!!! Finally: initially in the initial development period all drivers also for temp form browsers, probably for backend too are instances of the same class using [Hive] key-value database.
   // Each model belongs to a late final ConditionDataManagementDriver _driver;
@@ -10232,13 +10973,13 @@ class ConditionModelApp extends ConditionModel
       'Probably _driver_backend will reside in local server [ConditionDataManagementDriver] and then will be used if set up to synchronize data with global server')
   late final /*ConditionDataManagementDriverBackend*/ ConditionDataManagementDriver?
       _driver_backend;
-*/
+  */
 
   // See also [_ids_of_model_class_names] Each [ConditionModel] instance needs this variable to get prefix when saving - i don't place a prefix property in a data driver because a couple of apps can use one driver. BUT! Instead A driver will read [ConditionModelApp] of a model and set prefix from the model's [ConditionModelApp] object
   //final String prefix;
 
   //final List<ConditionModelUser> loggedUsers = [];
-  ConditionModelUser? activeUser;
+  WeakReference<ConditionModelUser>? activeUser;
 
   /*
   /// See [_ids_of_model_class_names], See [Type] class in doc, expecially "Type type = o.runtimeType;" - it implies i could do new type(); based on String (!) name of a given class. If possible things should be done automatically, and flexibly, in some cases you want to save data like in localStorage - for now you can find a widget by key like this: "appprefixu2t1w4" for appprefix you have the [prefix] property u means user the number after it means user id in the app not on the server, the "t" means the number in this [_ids_of_model_class_names] property, and finally you have "w" which means widget id
@@ -10304,7 +11045,7 @@ class ConditionModelApp extends ConditionModel
       return _serverKeyHelperContainer;
     } catch (e) {
       debugPrint(
-          'catched error ConditionModelApp serverKeyHelperContainer getter _serverKeyHelperContainer not initialized original exception message: $e');
+          '${ConditionDebugPrint('catched error ConditionModelApp serverKeyHelperContainer getter _serverKeyHelperContainer not initialized original exception message: $e')}');
       return null;
     }
   }
@@ -10342,12 +11083,14 @@ class ConditionModelApp extends ConditionModel
               ConditionModelFieldDatabaseSynchronisationType.app_only);
 
   /// All this app models [changesStreamController] streams (stream are added in the [ConditionModel] constructors - see the [changesStreamController] property description)
+  /// As of now this [StreamController] is broadcast so that event are not buffered as we can read in https://api.dart.dev/stable/3.1.5/dart-async/StreamController/StreamController.broadcast.html : "Broadcast streams do not buffer events when there is no listener." This helps to prevent memory leaks and some other related locking GarbageCollector actions. The controller is also @protected and not listened to make it more difficult to use it non-necessarily and possibly prevent memory leaks as of some events have pointers to models that should be with no pointers and retire()-ed when not used.
   @protected
   final StreamController<ConditionModelInfoStreamEvent>
       changesStreamControllerAllAppModelsChangesControllers =
-      StreamController<ConditionModelInfoStreamEvent>();
+      StreamController<ConditionModelInfoStreamEvent>.broadcast();
 
-  /// All this app models [_changesStreamController] streams (stream are added in the [ConditionModel] constructors - see the [changesStreamController] property description)
+  /// All this app models [_changesStreamController] (see it's desc also for memory leaks, gc) streams (stream are added in the [ConditionModel] constructors - see the [changesStreamController] property description)
+  /// Because this Stream Controller is listened to it is not needed to make it broadcast to prevent memory leaks. the [changesStreamControllerAllAppModelsChangesControllers] (see it's desc about GC and memory "leaks") is broadcast for the reason it was not listened to.
   final SynchronousStreamController<ConditionModelInfoStreamEvent>
       _changesStreamControllerAllAppModelsChangesControllers =
       StreamController<ConditionModelInfoStreamEvent>(sync: true)
@@ -10382,6 +11125,47 @@ class ConditionModelApp extends ConditionModel
   final int appUniqueId =
       ConditionModelApps._increaseByOneAppModelUniqueIdCounterAndGetItsValue();
 
+  /// Strictly related to ConditionModelApp.singleton() constructor. For custom usage use [_singleton] to get the existing [ConditionModelApp] main, default, never removable global instance. This is a global instance of this class. Wherever you construct an object using ConditionIsolateNoParallelFunctionCalls.singleton() factory constructor you get always pointer to exactly this object. However when using it remember that if you have 100 "constructed" this way objects the functionF method call on them may be jammed, when many places in your program try to call it at the same tame and at the moment of writing no queue of functions to be called was implemented and event them could need to be cancelled if waiting for too long. Look around if some sophisticated queue class hasn't poped up in the meatime here.
+  /// Good to remember, this object is not going to be ever GC-ed.
+  static final ConditionModelFinalObjectContainer<ConditionModelApp>
+      _singletonContainer =
+      ConditionModelFinalObjectContainer<ConditionModelApp>();
+
+  /// See [_singletonContainer] desc.
+  ConditionModelApp? get _singleton {
+    try {
+      _singletonContainer;
+    } catch (e) {
+      return null;
+    }
+    return _singletonContainer.v;
+  }
+
+  /// This factory constructor exists, because normally just one app objects is needed. But the library was planned to be ready for all-scenarios with many apps. Returns always the same global instance awailable for the entire programe for it's entire life cycle. The singleton instance is intended to run in default settings, and exists as convenience constructor; you can create your own single ton container classes with a singleton custom instance of this class available globally in your program. When this constructor is called for the first time it returns always the same object pointer to [_singleton] (see property desc).
+  /// Because of lint error must have moved getting the _singleton object to a method [_globalInstanceGetter]. Seems like unperfect lint rule, maybe logical but still unperfect.
+  factory ConditionModelApp.singleton() {
+    try {
+      _singletonContainer.v;
+    } catch (e) {
+      _singletonContainer.v = ConditionModelApp();
+    }
+
+    /// Warning! Use [_singleton] getter in normal situations; here is faster version.
+    return _singletonContainer.v;
+  }
+
+  /// TODO: isolate or not? gap == from Default settings or different?
+  late final ConditionIsolateNoParallelFunctionCalls<void>
+      _oneCycleOfGettingUpdatesFromOrToTheGlobalServerNoParallelFunctionCalls =
+      ConditionIsolateNoParallelFunctionCalls<void>(
+    theOnlyAllowedfunctionFObject:
+        _oneCycleOfGettingUpdatesFromOrToTheGlobalServer,
+    useIsolateNotEventLoop: false,
+    gapBetweenFinishedFunctionFCallAndAnotherCall: const Duration(
+        milliseconds: ConditionConfiguration
+            .gapBetweenLastFullyFinishedCheckingOutTheGlobalServerForChangesMethodAndItsAnotherCall),
+  );
+
   ConditionModelApp({
     // As an exception to the rule this widget must be created immediatelly in setter after this object creation (widget property in ConditionModel) - no asynchronous waiting like Future
     // this piece of code is ok for frontend app only not for the server, different approach must be used
@@ -10412,10 +11196,19 @@ class ConditionModelApp extends ConditionModel
                         ConditionConfiguration.initDbStage != null &&
                         ConditionConfiguration.initDbStage! >= 1
                 ? <String, dynamic>{
-                    'currently_logged_users_ids': '1,3',
-                    'currently_active_user_id': 1,
-                    'users_counter': 5,
-                    'users_ids': '4,3,1',
+                    //ConditionConfiguration.inidDbStageContactUser
+                    'currently_logged_users_ids':
+                        ConditionConfiguration.profileUser == null
+                            ? '1,3'
+                            : '1',
+                    'currently_active_user_id':
+                        ConditionConfiguration.profileUser == null ? 1 : 1,
+                    'users_counter': ConditionConfiguration.profileUser == null
+                        ? 5
+                        : ConditionConfiguration.profileUser ?? 2,
+                    'users_ids': ConditionConfiguration.profileUser == null
+                        ? '2,3,1'
+                        : '1',
                   }
                 : {},
             driver ??
@@ -10427,13 +11220,13 @@ class ConditionModelApp extends ConditionModel
     try {
       // if not yet initialized an exception will be thrown. It is fine. We will catch it and init the [ConditionModelApps] class
       debugPrint(
-          'ConditionModelApp constructor: if not yet initialized an exception will be thrown. It is fine. We will catch it and init the [ConditionModelApps] class.');
+          '${ConditionDebugPrint('ConditionModelApp constructor: if not yet initialized an exception will be thrown. It is fine. We will catch it and init the [ConditionModelApps] class.')}');
       ConditionModelApps._cyclicalActionsOfAppModelsTimer;
       debugPrint(
-          'ConditionModelApp constructor: it is initialized already so it is the second or more [ConditionModelApp] app model object in the entire application running.');
+          '${ConditionDebugPrint('ConditionModelApp constructor: it is initialized already so it is the second or more [ConditionModelApp] app model object in the entire application running.')}');
     } catch (e) {
       debugPrint(
-          'ConditionModelApp constructor: Catched exception. it is not initialized yet. Let\'s initialise it, and it is the first or more [ConditionModelApp] app model object in the entire application running.');
+          '${ConditionDebugPrint('ConditionModelApp constructor: Catched exception. it is not initialized yet. Let\'s initialise it, and it is the first or more [ConditionModelApp] app model object in the entire application running.')}');
       ConditionModelApps._initConditionModelAppsClass();
     }
 
@@ -10444,6 +11237,10 @@ class ConditionModelApp extends ConditionModel
     // You can catch an exception if thrown and use app from the exception (possibly a driver can be returned but not sure if it will be so in the future or it could be reused somehow - one local driver for one unique app rule
     // This is going add or to throw appropriate exception with app object or driver depending on the method that was invoked in this condition:
     //if (doNotAddAppToTheGlobalAppList) {
+    //_vsyncSubscription =
+    //    ConditionModelApps._getStreamEventForNewAppInstance(appUniqueId)
+    //        .listen((event) {});
+    //
     ConditionModelApps._addApp(this,
         doNotAddAppToTheGlobalAppList); // May throw useful exception - seek to read more
     //} else {
@@ -10452,21 +11249,10 @@ class ConditionModelApp extends ConditionModel
     //}
 
     // Now when nothing was thrown - see the above:
-    ConditionModelApps._addAppCycleMethod(this, (bool skipThisCycle,
-        Set<ConditionModelCycleCallEvent>? cycleCallEvents) {
-      // TODO: IMPLEMENT THIS HERE YOU PERFORM ESPECIALLY GLOBAL SERVER OPERATIONS OF:
-      // 1. READING FROM GLOBAL SERVER
-      // 2. ALSO OF SENDING F.E. NEW MESSAGES THAT HAVE NO EXISTING MODEL OBJECT RIGHT NOW
-      // WARNING !!! if an old operation is not finished no new it to be started. For this you have 2 options:
-      // one is: old returned future is not finished yet, the second you just don't take action and return a finished future.
+    // FIXME: IS THIS USED AS SOME STUFF JUST REJPLACED?
 
-      // We get a record from the global server, seek for proper model object or create one with changing data and retiring it and removing pointer to it of course if any pointer to it was not "seazed"(used in two or more different places) by the app model in the meantime in an independent way
-
-      debugPrint(
-          'ConditionModelApp constructor: We are in the registered anonymous method that should be unnatached from the finalizer in ConditionModelApps class when this ConditionModelApp object looses the last pointer to it.');
-
-      return Future.value();
-    });
+    // in a while we need to avoid using this in a closure appUniqueId is in fact this.appUniqueId - no this, only weak referrences.
+    //var nonThisAndLocalAppUniqueId = appUniqueId;
 
     _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents();
 
@@ -10484,6 +11270,43 @@ class ConditionModelApp extends ConditionModel
     initCompleteModel();
   }
 
+  /// This method is called cyclically (Timer) by the all app models managing class [ConditionModelApps] which calls this from one place. Based on this you can understand how it works.
+  /// Not seeing this method longer time, logically when [skipThisCycle] == true, [_appCycleMethod] has right to do it's stuff but it is sort of a command not a request to skip.
+  /// Good to remember that when the [_appCycleMethod] is called, an implementation of it may perform an operation or not based on if an operation from a previous call was finished and additional time gap can be applied like From [ConditionConfiguration].[gapBetweenLastFullyFinishedCheckingOutTheGlobalServerForChanges] or others depending on how the code looks right now. In at least one case this is easily achieved by [_oneCycleOfGettingUpdatesFromOrToTheGlobalServerNoParallelFunctionCalls] property object that allows for calling f.e. functionF([_oneCycleOfGettingUpdatesFromOrToTheGlobalServer]) method with with a time gap taken from [ConditionConfiguration] settings; So to summarize based on ConditionConfiguration actual settings you can call [_appCycleMethod] once per second, _oneCycleOfGettingUpdatesFromOrToTheGlobalServer will be called but will finish after 1200 ms so after a second another _appCycleMethod call arrives but _oneCycleOfGettingUpdatesFromOrToTheGlobalServer will not accept the call until finishes plus the mentioned time gap defined must elaps then another call will start succesfully. Which is intended to release some processor resources and will be modified in teh future with possible additional [ConditionModelApp] constructor custom options related to this aspect.
+  _appCycleMethod(
+      bool skipThisCycle, Set<ConditionModelCycleCallEvent>? cycleCallEvents) {
+    // TODO: IMPLEMENT THIS HERE YOU PERFORM ESPECIALLY GLOBAL SERVER OPERATIONS OF:
+    // 1. READING FROM GLOBAL SERVER
+    // 2. ALSO OF SENDING F.E. NEW MESSAGES THAT HAVE NO EXISTING MODEL OBJECT RIGHT NOW
+    // WARNING !!! if an old operation is not finished no new it to be started. For this you have 2 options:
+    // one is: old returned future is not finished yet, the second you just don't take action and return a finished future.
+
+    // We get a record from the global server, seek for proper model object or create one with changing data and retiring it and removing pointer to it of course if any pointer to it was not "seazed"(used in two or more different places) by the app model in the meantime in an independent way
+    debugPrint(
+        '${ConditionDebugPrint('ConditionModelApp constructor: We are in the registered anonymous method that should be unnatached from the finalizer in ConditionModelApps class when this ConditionModelApp object looses the last pointer to it. ${ConditionModelApps._allAndUniqueApps.length}, ${ConditionModelApps._allAndUniqueAppsWeakReferrenced.length}')}');
+
+    //if (ConditionModelApps
+    //    ._allowForThisCycleOfOverallCyclicallyPerformedOperationsOnTheApp(
+    //        this)) {
+    //ConditionModelApps._weakReferrencedApps
+    // TODO: #WJ24DN1C67PQ!WXM [Edit: NO! BUT YOU CAN UTILIZE COMPUTE FUNCTION WITH HOPE IT WILL SUDDENLY WORK WITH WEBASSEMBLY AND WITH THIS METHOD OR NOT THIS CLASS WILL BE UPDATED:  ConditionIsolateNoParallelFunctionCalls class with supporting classes, types exists] INVESTIGATE COMPREHENSIVELY MULTIPLATFORM ISOLATES/JS WEBWORKERS ESPECIALLY WITH LIMITATIONS TO WEBWORKERS TO DECIDE WHETHER OR NOT OT USE IT FOR BELOW STUFF (FALLBACK SOLUTION: THE EVENT LOOP), YOU CAN CREATE ONE CLASS FOR A PATTERN OF ACTION BELOW.
+    // TODO: BASED ON LAST EXPERIENCE OF COMMONLY REPEATED PATTERNS OF CODE AND BEHAVIOUR MAKE A STANDARIZED CLASS with one method that sync body right now is being executed or not, it's async aspect is being executed or not, returning future or null, null when f.e. body of last call is being executed. Check out if possible: There must be an implementation for both isolate and js workers or none of them (only event loop). There might be as convenience one async future for async aspect and sync future of sync aspect. Because this is not recomended to use synchronous future/completer there is an normal future with current value - which basically means that when the future is created it already has value and you don't need to wait async/await and use it in the code.    // ANY TODO IN THE METHODS PROBABLY AS WELL AS SOME OTHER TIMINGS WITH NOT HAVING TWO THE SAME METHOD CALLS AT THE SAME TIME.
+    // IMPORTANT: ADDITIONAL REASON WHY IT IS GOOD TO HAVE SUCH A CLASS IS FOR AN LESS KNOWLEDGABLE DEVELOPER LIKE ME (ACTUALLY I NEED TO DIVE INTO THIS ASPECT AND BE KNOWLEDGABLE :) ) TO HAVE 100% PERFORMED ACTION NOT DIVING DEEP INTO DART WORKINGS DETAILS. YOU JUST NEED TO KNOW - THIS WILL WORK 100% USING THIS CLASS. SORT OF SENSE THAT THE CODE IS SAFE IF IT NORMALLY WASN'T OR YOU DIDN'T KNOW IF IT WOULD BE SAFE.
+    // FIXME: TODO: HERE WE STOPPED AND LET'S START FROM HERE. need to analyse, think over and try to implement the _oneCycleOfGettingUpdatesFromOrToTheGlobalServer() part
+    // try to use ConditionIsolateNoParallelFunctionCalls<T> instead of custom implementation like in _oneCycleOfCyclicalRetiringAndUnlinkingModels()
+    //
+    //
+    // Ok educationally for me too: let's do _oneCycleOfCyclicalRetiringAndUnlinkingModels custom but _oneCycleOfGettingUpdatesFromOrToTheGlobalServer using the class mentioned (ConditionIsolateNoParallelFunctionCalls<T>)
+    _oneCycleOfCyclicalRetiringAndUnlinkingModels();
+
+    //_oneCycleOfGettingUpdatesFromOrToTheGlobalServer();
+    _oneCycleOfGettingUpdatesFromOrToTheGlobalServerNoParallelFunctionCalls
+        .functionF(_oneCycleOfGettingUpdatesFromOrToTheGlobalServer);
+    //}
+
+    //return Future.value();
+  }
+
   /// [it got statc] Important: The object returned contains the time but also info of possible problems like, time is or may be incorect because it's changed since the last call see details of the object returned because it is to be used by time-now request in the app. Calling this method by all models may possibly involve performing additional time related stuff for all models attached to the app object, this is still in the process of design. This method may need to be used by all models and they have conditionModelApp property; but if there is no need to use this method like possibly in ConditionModelDataManagement class or so all need to use instance [ConditionTimeNowMillisecondsSinceEpoch] with it's time property so all time related issues are managed properly. The method will care for any changing of the device's time and react adequately;
   static ConditionTimeNowMillisecondsSinceEpoch
       getTimeNowMillisecondsSinceEpoch() {
@@ -10499,7 +11322,7 @@ class ConditionModelApp extends ConditionModel
       throw Exception(
           'catched Exception method hangOnModelOperationIfNeeded has been being implemented but not yet implemented or not fully implemented');
     } catch (e) {
-      debugPrint('$e');
+      debugPrint('${ConditionDebugPrint('$e')}');
     }
 
     // Below it is object that has the time but may inform you about issues, and one time for this entire method body
@@ -10644,71 +11467,71 @@ class ConditionModelApp extends ConditionModel
         ) {
       return;
     } else {
-//probably // the below do do is not about user models, so you don't care but return to it.
-//implement like now // [TO DO: #AP9EWHP98HQ748TGPF] throw exception if model is in the conditionModelApp, think over what to do if a model is scheduled for unlinking but not retired
-// we make sure if one part of code is made synchronously in the event loop, not parallel synchronous action is performed to avoid changing state like we start checking model is not being retired but after half of a method body the situation change we think not and get a model that will be retired and removed in a while
-// conditionModelApp method must return synchronically such an object if exists but
-// but if it is scheduled for unlinking we make sure retire method is not being executed now and won't be if the model will be returned
-// at the same time we move the model from scheduled for unlinking to the normal list
-// For this we need to define a method in conditionModelApp maybe also with information sort of "it is scheduled for retirement"
-// can you 100% stop retiring such a model and return it? We want to do it synchronously if possible but
-// IMPLEMTING IT IS ABOUT AN EXISTING ID NOT A NEW MODEL - THIS IS NOT AN ISSUE WITH A NEW MODEL
-// test it by creating two such objects, etc. that in now way something is missed and delayed and two objects are added at once or in time period apart
+      //probably // the below do do is not about user models, so you don't care but return to it.
+      //implement like now // [TO DO: #AP9EWHP98HQ748TGPF] throw exception if model is in the conditionModelApp, think over what to do if a model is scheduled for unlinking but not retired
+      // we make sure if one part of code is made synchronously in the event loop, not parallel synchronous action is performed to avoid changing state like we start checking model is not being retired but after half of a method body the situation change we think not and get a model that will be retired and removed in a while
+      // conditionModelApp method must return synchronically such an object if exists but
+      // but if it is scheduled for unlinking we make sure retire method is not being executed now and won't be if the model will be returned
+      // at the same time we move the model from scheduled for unlinking to the normal list
+      // For this we need to define a method in conditionModelApp maybe also with information sort of "it is scheduled for retirement"
+      // can you 100% stop retiring such a model and return it? We want to do it synchronously if possible but
+      // IMPLEMTING IT IS ABOUT AN EXISTING ID NOT A NEW MODEL - THIS IS NOT AN ISSUE WITH A NEW MODEL
+      // test it by creating two such objects, etc. that in now way something is missed and delayed and two objects are added at once or in time period apart
 
-// So this is the moment where model is not retired and not being retired right now
-// 1.   _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents()
-//    this is synchronous stream so the info is up to date when model is in the tree again or for the first time
-//    conditionModelApp._changesStreamControllerAllAppModelsChangesControllers.stream
-//        .listen((event) {
-//        event is that it was added to the tree - retire checkthis out when called
-//        _allAppModelsScheduledForUnlinking.remove(childModel);
-//        _allAppModels.add(childModel);
-//    or from appmodels to scheduled
-//
-// =====================================================================
-// =====================================================================
-// PROBABLY BELOW IS THE ESSENCE WHAT TO DO IN THIS "BOX", READ MORE FOR CONTEXT IF NECESSARY
-// =====================================================================
-//Wait // we have two new types of model list for conditionModelApp/
-//Wait2 // with no id also can go here all models must be retired and unlinked and they maybe in the process of something they may consume resourcess, they too should be handled correctly
-// A. models that weren't yet added to the _allAppModels set which is synchronously done with synchronous stream event via addChild
-//    ! id>0 (update probably with no id too) _allAppModelsNewModelsWaitingRoom for new models if moved to the _allAppModels they never return to _allAppModelsNewModelsWaitingRoom
-//    because the app will have them in _allAppModels, _allAppModelsScheduledForUnlinking and by this they can be tracked until they are unlinked because they were successfully retired
-//    THIS IS ONLY FOR MODELS WITH KNOWN ID FROM THE BEGINNING - THIS IS WHY DUPLICATE IS POSSIBLE, MAKE SURE USER MODELS IS NOT PROBLE (I AM ALMOST SURE IT IS NOT A PROBLEM)
-//    ALL NEW MODELS WITH ID GO THERE AND THEY ARE MOVED
-//    !!! WARNING THEY PROBABLY WILL BE ADDED IN THE ConditionModel CONSTRUCTOR like in addchild that calls _performAddingChildToParentModel
-//        remembering the addChild using synchronous stream event
-//    !!! so that it is managed in one place
-//    model._changesStreamController.add(ConditionModelInfoEventModelTreeOperationModelHasJustBeenAddedToTheModelTree(this, childModel));
-//    WARNING BUT HOW TO UNLINK A MODEL IN _allAppModelsNewModelsWaitingRoom
-//    BECAUSE ALL TO BE UNLINKED EVERYWHERE MODELS MUST CALL RETIRE() FIRST WE CAN SEND THE MODEL TO THE _allAppModelsScheduledForUnlinking
-//    AND THIS MUST BE DONE AT THE VERY TOP OF THE RETIRE METHOD AS IF IT WAS MOVED TO THE UNLINKING LIST/SET
-//    AND IN THAT PLACE IT WOULD BE DONE CYCLICALLY IF NECESSARY, PROBABLY NO MORE TO CARE FOR BUT MAKE SURE
-//    such waiting-room model can be retired so again a model in the process of retirement or something couldn't be added could it?
-// =====================================================================
-// =====================================================================
-// =====================================================================
+      // So this is the moment where model is not retired and not being retired right now
+      // 1.   _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents()
+      //    this is synchronous stream so the info is up to date when model is in the tree again or for the first time
+      //    conditionModelApp._changesStreamControllerAllAppModelsChangesControllers.stream
+      //        .listen((event) {
+      //        event is that it was added to the tree - retire checkthis out when called
+      //        _allAppModelsScheduledForUnlinking.remove(childModel);
+      //        _allAppModels.add(childModel);
+      //    or from appmodels to scheduled
+      //
+      // =====================================================================
+      // =====================================================================
+      // PROBABLY BELOW IS THE ESSENCE WHAT TO DO IN THIS "BOX", READ MORE FOR CONTEXT IF NECESSARY
+      // =====================================================================
+      //Wait // we have two new types of model list for conditionModelApp/
+      //Wait2 // with no id also can go here all models must be retired and unlinked and they maybe in the process of something they may consume resourcess, they too should be handled correctly
+      // A. models that weren't yet added to the _allAppModels set which is synchronously done with synchronous stream event via addChild
+      //    ! id>0 (update probably with no id too) _allAppModelsNewModelsWaitingRoom for new models if moved to the _allAppModels they never return to _allAppModelsNewModelsWaitingRoom
+      //    because the app will have them in _allAppModels, _allAppModelsScheduledForUnlinking and by this they can be tracked until they are unlinked because they were successfully retired
+      //    THIS IS ONLY FOR MODELS WITH KNOWN ID FROM THE BEGINNING - THIS IS WHY DUPLICATE IS POSSIBLE, MAKE SURE USER MODELS IS NOT PROBLE (I AM ALMOST SURE IT IS NOT A PROBLEM)
+      //    ALL NEW MODELS WITH ID GO THERE AND THEY ARE MOVED
+      //    !!! WARNING THEY PROBABLY WILL BE ADDED IN THE ConditionModel CONSTRUCTOR like in addchild that calls _performAddingChildToParentModel
+      //        remembering the addChild using synchronous stream event
+      //    !!! so that it is managed in one place
+      //    model._changesStreamController.add(ConditionModelInfoEventModelTreeOperationModelHasJustBeenAddedToTheModelTree(this, childModel));
+      //    WARNING BUT HOW TO UNLINK A MODEL IN _allAppModelsNewModelsWaitingRoom
+      //    BECAUSE ALL TO BE UNLINKED EVERYWHERE MODELS MUST CALL RETIRE() FIRST WE CAN SEND THE MODEL TO THE _allAppModelsScheduledForUnlinking
+      //    AND THIS MUST BE DONE AT THE VERY TOP OF THE RETIRE METHOD AS IF IT WAS MOVED TO THE UNLINKING LIST/SET
+      //    AND IN THAT PLACE IT WOULD BE DONE CYCLICALLY IF NECESSARY, PROBABLY NO MORE TO CARE FOR BUT MAKE SURE
+      //    such waiting-room model can be retired so again a model in the process of retirement or something couldn't be added could it?
+      // =====================================================================
+      // =====================================================================
+      // =====================================================================
 
-//HERE BEST STEPS PROBABLY BASED ON THE ABOVE
-// !!!!!!!!!!1 ALL ABOUT A TYPICAL MODEL WITH ID KNOWN !!!!!!!!!!!!!!!!!!!!!!1
-// BUT WE MUST DO IT SYNCHRONOUSLY
-// 1. So if the model is in the tree right now (synchronously performed, changed, and informed)
-//      it is in the appModel list or otherwise appmodelscheduled .... list
-//      or it is not here nor here
-//      SO I JUST NOTICED IF NOWHERE THERE MAY BE 2 STANDALONE INSTANCES OF THE SAME MODEL - A LOOPHOLE.
-//      SO YOU HAVE TO ADD EACH MODEL TO SOME LIST ANYWAY SORT OF WAITING ROOM YOU ARE ALWAYS AND ONLY ONCE: BEFORE THE CHILD WAS ADDED
-//      AND REMOVED FROM THE LIST EXACTLY WHEN _allAppModels.add(childModel) IS SYNCHRONOUSLY CALLED
-//
-// 2. reminder the id of the model is known. then we can get the model but a third-party programmer doing it on his own SHOULD create/GET model with the option retireModelWhenWhenRemovedFromTheModelTree == false
-//      And we can clearly inform him about it
-//      Now the tricky part
-//  3. reminder the id of the model is known.  we can publicly get information about model OF THIS ID, maybe record/tuple, conditionmodelapp.gettheexistingmodel() we get it with sychronous info if it is in the appmodels or scheduledforunlinking, etc. maybe willberetiredifremovedfromthetree, etc.
-//     a: model is/is not on the app list
-//     b: create the new model with the known id if not on the list
-//  4. reminder the id of the model is known. As a convenience. based on 3 we create new model with the id and throw exception if a model was found on the list
-//     a: the exception may send a working model with possibly addidional information, exactly that in 3. and you can catch it and assign in the catch body the model showed there - if you want.
+      //HERE BEST STEPS PROBABLY BASED ON THE ABOVE
+      // !!!!!!!!!!1 ALL ABOUT A TYPICAL MODEL WITH ID KNOWN !!!!!!!!!!!!!!!!!!!!!!1
+      // BUT WE MUST DO IT SYNCHRONOUSLY
+      // 1. So if the model is in the tree right now (synchronously performed, changed, and informed)
+      //      it is in the appModel list or otherwise appmodelscheduled .... list
+      //      or it is not here nor here
+      //      SO I JUST NOTICED IF NOWHERE THERE MAY BE 2 STANDALONE INSTANCES OF THE SAME MODEL - A LOOPHOLE.
+      //      SO YOU HAVE TO ADD EACH MODEL TO SOME LIST ANYWAY SORT OF WAITING ROOM YOU ARE ALWAYS AND ONLY ONCE: BEFORE THE CHILD WAS ADDED
+      //      AND REMOVED FROM THE LIST EXACTLY WHEN _allAppModels.add(childModel) IS SYNCHRONOUSLY CALLED
+      //
+      // 2. reminder the id of the model is known. then we can get the model but a third-party programmer doing it on his own SHOULD create/GET model with the option retireModelWhenWhenRemovedFromTheModelTree == false
+      //      And we can clearly inform him about it
+      //      Now the tricky part
+      //  3. reminder the id of the model is known.  we can publicly get information about model OF THIS ID, maybe record/tuple, conditionmodelapp.gettheexistingmodel() we get it with sychronous info if it is in the appmodels or scheduledforunlinking, etc. maybe willberetiredifremovedfromthetree, etc.
+      //     a: model is/is not on the app list
+      //     b: create the new model with the known id if not on the list
+      //  4. reminder the id of the model is known. As a convenience. based on 3 we create new model with the id and throw exception if a model was found on the list
+      //     a: the exception may send a working model with possibly addidional information, exactly that in 3. and you can catch it and assign in the catch body the model showed there - if you want.
 
-// 5. Try to make relevant descriptions and examples
+      // 5. Try to make relevant descriptions and examples
 
       //retire // cannot last for two long - like 30 seconds or so
       // and because of the design retire cares fully for this
@@ -10738,8 +11561,8 @@ class ConditionModelApp extends ConditionModel
       //ConditionModelInfoEventConditionModelAppModelSetsManagementModelHasJustRetired
 
       //    .then((bool hasTheModelBeenRetired) {
-      //  debugPrint(
-      //      '_oneTimeRetireAndUnlinkModelAction() method and inside it a retire().then() call on a model, hasTheModelBeenRetired == $hasTheModelBeenRetired, if true we can remove the model from _allAppModelsScheduledForUnlinking Set which will result in having no link to the retired model in the entire application (it should be so if a programmer not implemented this the link would be left somewhere but the model would be useless and possibly throw exceptions at any time)');
+      //  debugPrint('${ConditionDebugPrint(
+      //      '_oneTimeRetireAndUnlinkModelAction() method and inside it a retire().then() call on a model, hasTheModelBeenRetired == $hasTheModelBeenRetired, if true we can remove the model from _allAppModelsScheduledForUnlinking Set which will result in having no link to the retired model in the entire application (it should be so if a programmer not implemented this the link would be left somewhere but the model would be useless and possibly throw exceptions at any time)')}');
       //
       //  // make sure that in this method by cyclical call it hasn't been removed in the meantime
       //  if (hasTheModelBeenRetired) {
@@ -10749,12 +11572,12 @@ class ConditionModelApp extends ConditionModel
       //        .remove(conditionModelAppDescendantModel);
       //  }
       //
-      //  debugPrint(
-      //      '_oneTimeRetireAndUnlinkModelAction() method and inside it a retire().then(); if the model had been retired i has just been removed from the _allAppModelsScheduledForUnlinking Set. As just mentioned there should be no link to the model in the entire application now.');
+      //  debugPrint('${ConditionDebugPrint(
+      //      '_oneTimeRetireAndUnlinkModelAction() method and inside it a retire().then(); if the model had been retired i has just been removed from the _allAppModelsScheduledForUnlinking Set. As just mentioned there should be no link to the model in the entire application now.')}');
 
       //}).catchError((e) {
-      //  debugPrint(
-      //      '_oneTimeRetireAndUnlinkModelAction() method and inside it a retire().catchError() call on a model the model conditionModelAppDescendantModel.isRetired == {$conditionModelAppDescendantModel.isRetired} = if retired the model despite the error will be removed from _allAppModelsScheduledForUnlinking because it is retired (like impossible but if it happened it is retired and it matter most), exception: $e');
+      //  debugPrint('${ConditionDebugPrint(
+      //      '_oneTimeRetireAndUnlinkModelAction() method and inside it a retire().catchError() call on a model the model conditionModelAppDescendantModel.isRetired == {$conditionModelAppDescendantModel.isRetired} = if retired the model despite the error will be removed from _allAppModelsScheduledForUnlinking because it is retired (like impossible but if it happened it is retired and it matter most), exception: $e')}');
       //  // on error it should never be retired but if it is retired it will be removed on another cyclical call _oneTimeRetireAndUnlinkModelAction()
       //});
     }
@@ -10768,20 +11591,25 @@ class ConditionModelApp extends ConditionModel
       false;
 
   /// This method may change in a way that one call of it picks up only one or couple of models not all as it is now, so counter property might be needed. Cosider that not many models scheduled for unlinkning may be at once, so not sure there is need to make it more sophisticated. However you can probably focus just on this method and add a counter property to this class. Remember: changes to the existing Set while it is being iterated by for throws exception. Now it is done on the event loop, (Warning, Edit: you can't use Isolates/Workers/Threads ? probably read why) but it would be better if threads and workers/js were used instead. For now probably workers cannot be used, at least not now. Much in the process depends on one full set of actions pefromed synchronously but on the event loop. So if one method is being executed now, you may feel comfortable that simultanously there is no other method being executed and changing some important data you thought in the first method code that nothing/no f.e. model property can change until you finish the first method/piece of code execution. For this you must make sure if a particular action you can perform using isolates/workers/threads
+  /// Probably this one will be left educationally called in a custom way not using the class (ConditionIsolateNoParallelFunctionCalls<T>) like for [_oneCycleOfGettingUpdatesFromOrToTheGlobalServer]
   _oneCycleOfCyclicalRetiringAndUnlinkingModels() {
     /// With future possible massive data situations in mind (never?). To make sure that f.e. 5000 (impossible?) models aren't synchronously still in the process of analysing
     /// Let's make sure this method is called with at least 10 seconds intervall
     if (_isOneCycleOfCyclicalRetiringAndUnlinkingModelsMethodAlreadyInProgress ||
-            _allAppModelsScheduledForUnlinking.isEmpty ||
-            _lastAllowedOneCycleOfCyclicalRetiringAndUnlinkingModelsFinishedCall ==
-                null ||
-            ConditionModelApp.getTimeNowMillisecondsSinceEpoch().time -
-                    _lastAllowedOneCycleOfCyclicalRetiringAndUnlinkingModelsFinishedCall!
-                        .time <
-                10000 // 10 seconds
-        ) {
+        _allAppModelsScheduledForUnlinking.isEmpty ||
+        _lastAllowedOneCycleOfCyclicalRetiringAndUnlinkingModelsFinishedCall ==
+            null ||
+        ConditionModelApp.getTimeNowMillisecondsSinceEpoch().time -
+                _lastAllowedOneCycleOfCyclicalRetiringAndUnlinkingModelsFinishedCall!
+                    .time <
+            ConditionConfiguration
+                .gapBetweenLastFullyFinishedOneCycleOfCyclicalRetiringAndUnlinkingModels) {
+      debugPrint(
+          '${ConditionDebugPrint('_oneCycleOfCyclicalRetiringAndUnlinkingModels() of [ConditionModelApp] no call allowed')}');
       return;
     }
+    debugPrint(
+        '${ConditionDebugPrint('_oneCycleOfCyclicalRetiringAndUnlinkingModels() of [ConditionModelApp] call allowed')}');
 
     // this method is run on the event loop, when it is finished first _oneTimeRetireModelAction is called
     // so it shouldn't throw any exception when _oneTimeRetireModelAction removes _allAppModelsScheduledForUnlinking[i] element
@@ -10797,7 +11625,7 @@ class ConditionModelApp extends ConditionModel
     } catch (e) {
       /// to make sure we can cyclically call the method
       debugPrint(
-          '_oneCycleOfCyclicalRetiringAndUnlinkingModels() of [ConditionModelApp] class exception: $e');
+          '${ConditionDebugPrint('_oneCycleOfCyclicalRetiringAndUnlinkingModels() of [ConditionModelApp] class exception: $e')}');
       _isOneCycleOfCyclicalRetiringAndUnlinkingModelsMethodAlreadyInProgress =
           false;
       _lastAllowedOneCycleOfCyclicalRetiringAndUnlinkingModelsFinishedCall =
@@ -10826,18 +11654,29 @@ class ConditionModelApp extends ConditionModel
   }
 
   /// You may use this in one synchronous code on the event loop. Public, it informes whether or not the model is either in [_allAppModelsNewModelsWaitingRoom], [_allAppModels], [_allAppModelsScheduledForUnlinking]
-  ConditionModelParentIdModel? getModelIfItIsAlreadyInTheAppInstance(int id) {
+  ConditionModelParentIdModel? getModelIfItIsAlreadyInTheAppInstance(
+      int id, bool isIncomingModelUserModel) {
     for (final ConditionModelParentIdModel model
         in _allAppModelsNewModelsWaitingRoom) {
       // it is understood that this time a model if not null has proper int id > 1, no need to check it out like with event.id
-      if (model['id'] != null && model['id'] == id) {
+      if ((isIncomingModelUserModel && model is ConditionModelUser ||
+              !isIncomingModelUserModel && model is! ConditionModelUser) &&
+          model['id'] != null &&
+          model['id'] == id) {
+        debugPrint(
+            '${ConditionDebugPrint('getModelIfItIsAlreadyInTheAppInstance(int id) a model is already in the _allAppModelsNewModelsWaitingRoom : method id = $id , model.id: ${model.id}  ')}');
         return model;
       }
     }
 
     for (final ConditionModelParentIdModel model in _allAppModels) {
       // it is understood that this time a model if not null has proper int id > 1, no need to check it out like with event.id
-      if (model['id'] != null && model['id'] == id) {
+      if ((isIncomingModelUserModel && model is ConditionModelUser ||
+              !isIncomingModelUserModel && model is! ConditionModelUser) &&
+          model['id'] != null &&
+          model['id'] == id) {
+        debugPrint(
+            '${ConditionDebugPrint('getModelIfItIsAlreadyInTheAppInstance(int id) a model is already in the _allAppModels : method id = $id , model.id: ${model.id}  ')}');
         return model;
       }
     }
@@ -10873,7 +11712,12 @@ class ConditionModelApp extends ConditionModel
     for (final ConditionModelParentIdModel model
         in _allAppModelsScheduledForUnlinking) {
       // it is understood that this time a model if not null has proper int id > 1, no need to check it out like with event.id
-      if (model['id'] != null && model['id'] == id) {
+      if ((isIncomingModelUserModel && model is ConditionModelUser ||
+              !isIncomingModelUserModel && model is! ConditionModelUser) &&
+          model['id'] != null &&
+          model['id'] == id) {
+        debugPrint(
+            '${ConditionDebugPrint('getModelIfItIsAlreadyInTheAppInstance(int id) a model is already in the _allAppModelsScheduledForUnlinking : method id = $id , model.id: ${model.id}  ')}');
         return model;
       }
     }
@@ -10886,19 +11730,23 @@ class ConditionModelApp extends ConditionModel
     // so stuff performed here is as it should be time unexpesive
     // the developer considered it necessary for the stuff here to be done synchronously
     // with related some stuff scheduled asynchronously when necessary
-    conditionModelApp
+    conditionModelApp!
         ._changesStreamControllerAllAppModelsChangesControllers.stream
         .listen((event) {
+      debugPrint(
+          '${ConditionDebugPrintErrorTrace('[ConditionModelApp] instance _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() method event received. ${event.runtimeType}')}');
+
       // !!!!!!! WARNING! REALLY READ THIS: EVENT ORDER AAAAAAAAAAAAAAAAAAAA!
       // last related event sent (earlier ConditionModelInfoEventModelTreeOperationModelHasJustBeenAddedToTheModelTree)
       // so you catch the last one (all is well prepared) AND DON'T CHANGE THE EVENT ORDER!!!
       // The relevant comment in the addChild and addParentLink or similar name
       if (event
           is ConditionModelInfoEventModelAcceptModelToTheConditionModelAppWaitingRoomSet) {
+        debugPrint(
+            '${ConditionDebugPrintErrorTrace('[ConditionModelApp] instance _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() #a45764687sdlnconnanudpiur 1, event.model.runtimeType is ${event.model.runtimeType}')}');
         // it is checked in the constructor of the event model but if anytime something changed think the process over...
         // if (this is! ConditionModelUser) {
         // }
-
         // this for new model/object instances with (with id, no id, maybe more - check it out if something changed)
         // do we have a second model with the same id?
         //
@@ -10916,18 +11764,37 @@ class ConditionModelApp extends ConditionModel
         }
 
         ConditionModelParentIdModel? model =
-            getModelIfItIsAlreadyInTheAppInstance(event.id!);
+            getModelIfItIsAlreadyInTheAppInstance(
+                event.id!, event.model is ConditionModelUser);
 
         if (model != null) {
+          // Yes, like addChild performed not fully constructed object or first event (this one here) somehow arrived second
+          // FIXME: My understanding is that even though the stream is synchronous addChild sends the event sooner than the constructor of a model/newly created one - the constructor should be faster. Cannot understand the reason why.
+          // FIXME: a model was added via addChild to before this event was sent which is all great
+          // this can be seen in the else if right after this stream event if: if event is ConditionModelInfoEventModelTreeOperationModelHasJustReceivedChildModel
+          // there the only place in the entire app _allAppModels.add(childModel); which is triggered in addChild (exactly addChild calls _performAddingChildToParentModel)
+          // 1. Solution - possibly worse: Before another proposition will be layed out it may be that not throwing could be enough in this case but for broader context:
+          // 1. Solution - rather better: i could use a model's property like _itWasAtLeastOnceAdded but you have to know the full cycle of adding and removing models to find a solution not causing any repercussions around the rest of the code. But out-of knowing the broader context it sound fine.
+
+          // however it should be programmatically solved that no exception is thrown in this particular case.
+          debugPrint(
+              '${ConditionDebugPrintErrorTrace('Some debug data to the event to be thrown: ${model.id} : ${event.id} ')}');
+          // FIXME: also // event.model displays strange stuff :)
+          debugPrint(
+              '${ConditionDebugPrintErrorTrace('Some debug data to the event to be thrown: ${model} : ${event.model is ConditionModelContact ? event.model as ConditionModelContact : event.model}')}');
           throw ConditionModelAppExceptionAnotherConditionModelParentIdModelWithTheSameIdIsAlreadyInTheAppInstance(
               model);
         }
 
         _allAppModelsNewModelsWaitingRoom.add(event.model);
+        debugPrint(
+            '${ConditionDebugPrintErrorTrace('ConditionModelApp _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() model has just been added to the [_allAppModelsNewModelsWaitingRoom] [Set]. Event hat caused it: ${event.runtimeType}')}');
       } else if (event
               is ConditionModelInfoEventModelTreeOperationModelHasJustReceivedChildModel
           // ! removed not to handle the same situation twice: ||  event is ConditionModelInfoEventModelTreeOperationChildModelHasJustReceivedParentLinkModel
           ) {
+        debugPrint(
+            '${ConditionDebugPrintErrorTrace('[ConditionModelApp] instance _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() #a45764687sdlnconnanudpiur 2')}');
         // corrected Error? // this would be done twice because the two events are issued at the same time basically
         // so we need to handle just one, which is better?
 
@@ -10948,7 +11815,7 @@ class ConditionModelApp extends ConditionModel
         _allAppModels.add(childModel);
 
         debugPrint(
-            'ConditionModelApp _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() model has just been added to the [_allAppModels] [Set]. Event hat caused it: ${event.runtimeType}');
+            '${ConditionDebugPrintErrorTrace('ConditionModelApp _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() model has just been added to the [_allAppModels] [Set]. Event hat caused it: ${event.runtimeType}')}, the model added is of ${event.childModel.runtimeType}, it\' parent is of ${event.parentModel.runtimeType}, data of the added child model is ${event.childModel}');
       } else if (
           // See the above comments at the beginning of this if, the event order is important
           // And i see two first events might be four but then action would be performed unnecesarily twice so for each major situation just one of two to pick from was chosen
@@ -10957,6 +11824,8 @@ class ConditionModelApp extends ConditionModel
                   is ConditionModelInfoEventModelTreeOperationChildModelHasJustHadHisParentLinkModelRemoved ||
               event
                   is ConditionModelInfoEventModelTreeOperationRetireModelWhenWhenRemovedFromTheModelTree) {
+        debugPrint(
+            '${ConditionDebugPrint('[ConditionModelApp] instance _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() #a45764687sdlnconnanudpiur 3')}');
         //
         //
         final childModel = event
@@ -10966,7 +11835,7 @@ class ConditionModelApp extends ConditionModel
                     as ConditionModelInfoEventModelTreeOperationChildModelHasJustReceivedParentLinkModel)
                 .childModel;
         debugPrint(
-            'ConditionModelApp _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() an event arrived: ${event.runtimeType}');
+            '${ConditionDebugPrint('ConditionModelApp _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() an event arrived: ${event.runtimeType}')}');
 
         // See the above comments at the beginning of this if, the event order is important
         // app models is set, no need to check if _allAppModels.contains(event.childModel)
@@ -11036,6 +11905,8 @@ class ConditionModelApp extends ConditionModel
       // There is also a big chance that there is quick review there and also in the retire method about the order of the stuff
       else if (event
           is ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustBeenCalledOnModel) {
+        debugPrint(
+            '${ConditionDebugPrint('[ConditionModelApp] instance _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() #a45764687sdlnconnanudpiur 4')}');
         // synchronously before the event _lastRetireMethodCall has been updated;
         // important - the switch between the [Set]s will always work because because it is on the event loop but synchronous
         // assume that if from waiting room, not first to _allAppModels but from waiting room directly to unlinking Set is probably no problem. Isn't it?
@@ -11049,6 +11920,8 @@ class ConditionModelApp extends ConditionModel
           ||
           event
               is ConditionModelInfoEventConditionModelAppModelSetsManagementRetireMethodHasJustFinishedItsSynchronousAspectOfBodyCodeExecution) {
+        debugPrint(
+            '${ConditionDebugPrint('[ConditionModelApp] instance _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() #a45764687sdlnconnanudpiur 5')}');
         // TODO: REVIEW: it might be that for now these two events don't need to be handled,
         // because all the retire()-related properties related to the current state of the model should
         // block this instance of ConditionModelApp from removing model as far as i remember from the final
@@ -11078,6 +11951,8 @@ class ConditionModelApp extends ConditionModel
         }
       } else if (event
           is ConditionModelInfoEventConditionModelAppModelSetsManagementModelHasJustRetired) {
+        debugPrint(
+            '${ConditionDebugPrint('[ConditionModelApp] instance _prepareActionsToTheModelTreeModelAddingRemovingStreamEvents() #a45764687sdlnconnanudpiur 6')}');
         // _oneCycleOfCyclicalRetiringAndUnlinkingModels() calls for a model _oneTimeRetireAndUnlinkModelAction
         // and the latter calls model.retire() method if conditions are met like but it doesn't wait for the completer/future
         // to be retired and remove the model from _allAppModelsScheduledForUnlinking because it must be done synchronously
@@ -11134,37 +12009,68 @@ class ConditionModelApp extends ConditionModel
     }
 
     debugPrint(
-        'restoreMyChildren() of ConditionModelApp: let\'s get into a loop creating last logged-in users.');
+        '${ConditionDebugPrint('restoreMyChildren() of ConditionModelApp: let\'s get into a loop creating last logged-in users.')}');
     // _children (users);
     // activeUser;
+
+//    return;
 
     // educationally this['this['currently_logged_users_ids'] will never throw exception, it will return null instead but currently_logged_users_ids property may throw it if the property.value (getter) hasn't gotten any value yet (late initialisation error)
     if (this['currently_logged_users_ids'] != null &&
         currently_logged_users_ids!.isNotEmpty) {
       debugPrint(
-          'restoreMyChildren() of ConditionModelApp is not empty and not null: currently_logged_users_ids!.isNotEmpty');
+          '${ConditionDebugPrint('restoreMyChildren() of ConditionModelApp is not empty and not null: currently_logged_users_ids!.isNotEmpty')}');
 
       if (ConditionConfiguration.debugMode &&
           ConditionConfiguration.initDbStage != null &&
           ConditionConfiguration.initDbStage! >= 2) {
         scheduleMicrotask(() async {
           try {
-            String localServerUsersCommand = '''
-              INSERT INTO "t8QjKjA_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "password", "server_id", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (1,	123,	1,	1,	'adfafaasdfasfafaasfasfsf1@gmail.com.debug',	NULL,	'r!igPn94#95',	3,	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);
-              INSERT INTO "t8QjKjA_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "password", "server_id", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (2,	123,	2,	1,	'adfafaasdfasfafaasfasfsf2@gmail.com.debug',	NULL,	'r!igPn94#95',	2,	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);
-              INSERT INTO "t8QjKjA_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "password", "server_id", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (3,	123,	3,	1,	'adfafaasdfasfafaasfasfsf3@gmail.com.debug',	NULL,	'r!igPn94#95',	1,	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);
+            final ConditionTimeNowMillisecondsSinceEpoch commonTimestampNow =
+                ConditionModelApp.getTimeNowMillisecondsSinceEpoch();
+
+            // !!!!! READ MAIN.DART: THERE an exception is thrown f.e. when profileUser is <=3 and initDbStage is not null
+            // in the debug mode the below on the global server the ids for the first three users are in the opposite direction than on the local server.
+            //final int someNumberSwitcher =
+            //    ConditionConfiguration.profileUser! <= 3
+            //        ? 4 - ConditionConfiguration.profileUser!
+            //        : ConditionConfiguration.profileUser!;
+
+            /// READ: first three users to id = 3 is when ConditionConfiguration.profileUser == null || == 1
+            /// The rest sort of normally like profileUser = 4 then we logg in as 4 user.
+            String localServerUsersCommand = ConditionConfiguration
+                        .profileUser ==
+                    null
+                // "self-educational": would be wrong and in the main.dart file an exception is thrown - see !!!! read comment just above: || ConditionConfiguration.profileUser != null && ConditionConfiguration.profileUser <= 3
+                ? '''
+              INSERT INTO "t8QjKjA_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "password", "server_id", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (1,	123,	1,	1,	'adfafaasdfasfafaasfasfsf1@gmail.com.debug',	NULL,	'r!igPn94#95',	3,	NULL,	NULL,	NULL,	NULL,	NULL,	${commonTimestampNow.time},	${commonTimestampNow.time + 100 + 2},	NULL,	NULL,	NULL,	NULL,	0);
+              INSERT INTO "t8QjKjA_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "password", "server_id", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (2,	123,	2,	1,	'adfafaasdfasfafaasfasfsf2@gmail.com.debug',	NULL,	'r!igPn94#95',	2,	NULL,	NULL,	NULL,	NULL,	NULL,	${commonTimestampNow.time + 1},	${commonTimestampNow.time + 100 + 1},	NULL,	NULL,	NULL,	NULL,	0);
+              INSERT INTO "t8QjKjA_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "password", "server_id", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (3,	123,	3,	1,	'adfafaasdfasfafaasfasfsf3@gmail.com.debug',	NULL,	'r!igPn94#95',	1,	NULL,	NULL,	NULL,	NULL,	NULL,	${commonTimestampNow.time + 2},	${commonTimestampNow.time + 100},	NULL,	NULL,	NULL,	NULL,	0);              
+            '''
+                : '''
+              INSERT INTO "t8QjKjA_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "password", "server_id", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (1,	123,	1,	1,	'adfafaasdfasfafaasfasfsf${ConditionConfiguration.profileUser}@gmail.com.debug',	NULL,	'r!igPn94#95', ${ConditionConfiguration.profileUser},	NULL,	NULL,	NULL,	NULL,	NULL,	${commonTimestampNow.time},	${commonTimestampNow.time + 100},	NULL,	NULL,	NULL,	NULL,	0);
             ''';
-            String globalServerUsersCommand = '''
-              INSERT INTO "Rzi3a7d_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "server_id", "password", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (1,	123,	3,	1,	'adfafaasdfasfafaasfasfsf3@gmail.com.debug',	NULL,	1,	'r!igPn94#95',	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);
-              INSERT INTO "Rzi3a7d_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "server_id", "password", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (2,	123,	2,	1,	'adfafaasdfasfafaasfasfsf2@gmail.com.debug',	NULL,	2,	'r!igPn94#95',	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);
-              INSERT INTO "Rzi3a7d_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "server_id", "password", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (3,	123,	1,	1,	'adfafaasdfasfafaasfasfsf1@gmail.com.debug',	NULL,	3,	'r!igPn94#95',	NULL,	NULL,	NULL,	NULL,	NULL,	12121212,	NULL,	NULL,	NULL,	NULL,	NULL,	0);            
-            ''';
+
+            /// READ: first three users to id = 3 is when ConditionConfiguration.profileUser == null || == 1
+            /// The rest sort of normally like profileUser = 4 then we logg in as 4 user.
+            String globalServerUsersCommand =
+                ConditionConfiguration.profileUser == null
+                    ? '''
+              INSERT INTO "Rzi3a7d_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "server_id", "password", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (1,	123,	3,	1,	'adfafaasdfasfafaasfasfsf3@gmail.com.debug',	NULL,	1,	'r!igPn94#95',	NULL,	NULL,	NULL,	NULL,	NULL,	${commonTimestampNow.time + 2},	${commonTimestampNow.time + 100},	NULL,	NULL,	NULL,	NULL,	0);
+              INSERT INTO "Rzi3a7d_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "server_id", "password", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (2,	123,	2,	1,	'adfafaasdfasfafaasfasfsf2@gmail.com.debug',	NULL,	2,	'r!igPn94#95',	NULL,	NULL,	NULL,	NULL,	NULL,	${commonTimestampNow.time + 1},	${commonTimestampNow.time + 100 + 1},	NULL,	NULL,	NULL,	NULL,	0);
+              INSERT INTO "Rzi3a7d_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "server_id", "password", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (3,	123,	1,	1,	'adfafaasdfasfafaasfasfsf1@gmail.com.debug',	NULL,	3,	'r!igPn94#95',	NULL,	NULL,	NULL,	NULL,	NULL,	${commonTimestampNow.time},	${commonTimestampNow.time + 100 + 2},	NULL,	NULL,	NULL,	NULL,	0);            
+            '''
+                    : ConditionConfiguration.profileUser! > 3
+                        ? '''
+              INSERT INTO "Rzi3a7d_ConditionModelUser" ("id", "app_id", "local_id", "to_be_synchronized", "e_mail", "phone_number", "server_id", "password", "local_server_login", "local_server_key", "one_time_insertion_key", "server_one_time_insertion_key", "url_alias", "creation_date_timestamp", "server_creation_date_timestamp", "update_date_timestamp", "server_update_date_timestamp", "parent_id", "server_parent_id", "user_id") VALUES (${ConditionConfiguration.profileUser},	123,	1,	1,	'adfafaasdfasfafaasfasfsf${ConditionConfiguration.profileUser}@gmail.com.debug',	NULL,	${ConditionConfiguration.profileUser},	'r!igPn94#95',	NULL,	NULL,	NULL,	NULL,	NULL,	${commonTimestampNow.time},	${commonTimestampNow.time + 100},	NULL,	NULL,	NULL,	NULL,	0);            
+            '''
+                        : '';
 
             debugPrint(
-                'restoreMyChildren() of ConditionModelApp we want to directly insert into some example default users to the global and local server the commands for the local and global server are like this correspondingly:');
+                '${ConditionDebugPrint('restoreMyChildren() of ConditionModelApp we want to directly insert into some example default users to the global and local server the commands for the local and global server are like this correspondingly:')}');
 
-            debugPrint(localServerUsersCommand);
-            debugPrint(globalServerUsersCommand);
+            debugPrint('${ConditionDebugPrint(localServerUsersCommand)}');
+            debugPrint('${ConditionDebugPrint(globalServerUsersCommand)}');
             // for debug tests we want have driverGlobal ready now, local driver is ready already.
             // default settings should have global server != null:
             ConditionDataManagementDriverSql debugDriverGlobal = await driver
@@ -11172,20 +12078,20 @@ class ConditionModelApp extends ConditionModel
                 .initCompleter
                 .future as ConditionDataManagementDriverSql;
             debugPrint(
-                'restoreMyChildren() of ConditionModelApp #etrwpoiejw#^%#^q3: 1');
+                '${ConditionDebugPrint('restoreMyChildren() of ConditionModelApp #etrwpoiejw#^%#^q3: 1')}');
             // !!! for sqlite3 plugin these operations are synchronous
             (driver as ConditionDataManagementDriverSql)
                 ._db
                 .db
                 .execute(localServerUsersCommand);
             debugPrint(
-                'restoreMyChildren() of ConditionModelApp #etrwpoiejw#^%#^q3: 2');
+                '${ConditionDebugPrint('restoreMyChildren() of ConditionModelApp #etrwpoiejw#^%#^q3: 2')}');
             debugDriverGlobal._db.db.execute(globalServerUsersCommand);
             debugPrint(
-                'restoreMyChildren() of ConditionModelApp direct insert users success !!!');
+                '${ConditionDebugPrint('restoreMyChildren() of ConditionModelApp direct insert users success !!!')}');
           } catch (e) {
             debugPrint(
-                'ConditionModelApp class, restoreMyChildren() method exception during inserting debug data, at this stage number 2 (verify if up-to-date info) users for both local and global server are to be created. The exception will be rethrown with it\' message that you are going to see after this message. Example command flutter run -d windows --debug -a debugging -a initDbStage=3 but this is stage 2');
+                '${ConditionDebugPrint('ConditionModelApp class, restoreMyChildren() method exception during inserting debug data, at this stage number 2 (verify if up-to-date info) users for both local and global server are to be created. The exception will be rethrown with it\' message that you are going to see after this message. Example command flutter run -d windows --debug -a debugging -a initDbStage=3 but this is stage 2')}');
             rethrow;
           }
         });
@@ -11194,7 +12100,7 @@ class ConditionModelApp extends ConditionModel
       for (String loggedId
           in (currently_logged_users_ids as String).split(',')) {
         debugPrint(
-            'reloginAllLoggedUsers(): let\'s re-create user model of id == $loggedId and ad it to the this.loggedUsers list.');
+            '${ConditionDebugPrint('reloginAllLoggedUsers(): let\'s re-create user model of id == $loggedId and ad it to the this.loggedUsers list.')}');
         // addChild desc this guarantiees that user will be inited when added using addChild
         // as for now [ConditionModelUser] objects must be inited == true to be added into the model tree.
         // as mentioned in readme and in ConditionConfiguration.maxNotLazyModelTreeRestorationLevel description
@@ -11211,16 +12117,19 @@ class ConditionModelApp extends ConditionModel
                 as ConditionDataManagementDriverSql;
           }
           final loggedIdInt = int.parse(loggedId);
-          addChild(
-              // BTW: this syntax dart language provides is just brilliant:
-              await ConditionModelUser(
-                      this,
-                      currently_active_user_id != null &&
-                              loggedIdInt == currently_active_user_id
-                          ? true
-                          : false,
-                      {'id': loggedIdInt}).getModelOnModelInitComplete()
-                  as ConditionModelUser);
+
+          /// See the ConditiionModelApp constructor which id in debug mode and why - ConditionConfiguration.profileUser played some role there
+
+          ConditionModelUser testUser = ConditionModelUser(
+              this,
+              currently_active_user_id != null &&
+                      loggedIdInt == currently_active_user_id
+                  ? true
+                  : false,
+              {'id': loggedIdInt});
+          await testUser.getModelOnModelInitComplete();
+
+          addChild(testUser);
         });
       }
     } else {
@@ -11325,7 +12234,7 @@ class ConditionModelApp extends ConditionModel
       throw Exception(
           'Catched old exception. Problems solved, retire and removal from conditionModelApp impossible when local erver inited is false. Much if not all stuff was solved in this way or the other- probably. Old exception message: removeChild() of ConditionModelApp class: of See README.md[To do id:#sf3fq7pnj86rc#^ creation_date:2023.05.31] : related pretty much stuff not implemented. Especially ConditionModelApp model (not the parentModel) must make sure the child is inited on the locall server before it is removed and retired. The second it cannot be removed at this stage of the library/app development until the child is globally inited with it\'s children and further descentants too. the mentioned to do has steps to implement before this exception is removed');
     } catch (e) {
-      debugPrint('$e');
+      debugPrint('${ConditionDebugPrint('$e')}');
     }
 
     if (!_children.contains(childModel)) {
@@ -11356,7 +12265,7 @@ class ConditionModelApp extends ConditionModel
   _requestGlobalServerAppKeyOnceAndThenPeriodically() async {
     try {
       debugPrint(
-          'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key value');
+          '${ConditionDebugPrint('class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key value')}');
       String serverKeyTemp = await driver.driverGlobal!
           .requestGlobalServerAppKey()
           .timeout(const Duration(
@@ -11364,7 +12273,7 @@ class ConditionModelApp extends ConditionModel
                   12)); // leave 12 seconds for global server operations worst but successful case scenarion, f.e. sqlite3 db file was blocked by heavy trafic, three attempts of internal server operations to obtain the key for the app which are going to be performed in about 6 seconds for three internal method invokations + 6 seconds for internal db operations themselves
 
       debugPrint(
-          'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key - just now it is about to be set up server_key = $serverKeyTemp');
+          '${ConditionDebugPrint('class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key - just now it is about to be set up server_key = $serverKeyTemp')}');
       a_server_key._fullyFeaturedValidateAndSetValue(
           serverKeyTemp, true, true, true);
       serverKeyReadyCompleter.complete(true);
@@ -11384,16 +12293,16 @@ class ConditionModelApp extends ConditionModel
       //   Causing statement:           SELECT count(*) FROM t8QjKjA_ConditionModelClasses;
 
       debugPrint(
-          'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key - just now should has been set up and is this[\'server_key\'] = ${this['server_key']}');
+          '${ConditionDebugPrint('class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() trying to set up the server_key - just now should has been set up and is this[\'server_key\'] = ${this['server_key']}')}');
     } catch (e) {
       debugPrint(
-          'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically(), method initCompleteModel() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed (now setting up cyclical checking out using Timer.periodic), and data synchronized. Exception thrown: $e');
+          '${ConditionDebugPrint('class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically(), method initCompleteModel() error (async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed (now setting up cyclical checking out using Timer.periodic), and data synchronized. Exception thrown: $e')}');
 
       // INFO: SOME SOLUTIONS LIKE BELOW MIGHT NEED MORE SOPHISTICATED SOLUTIONS
       Timer.periodic(Duration(seconds: 13), (timer) async {
         try {
           debugPrint(
-              'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() PERIODIC trying to set up the server_key value');
+              '${ConditionDebugPrint('class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() PERIODIC trying to set up the server_key value')}');
           String serverKeyTemp = await driver.driverGlobal!
               .requestGlobalServerAppKey()
               .timeout(const Duration(seconds: 12));
@@ -11402,23 +12311,42 @@ class ConditionModelApp extends ConditionModel
               serverKeyTemp, true, true, true);
           serverKeyReadyCompleter.complete(true);
           debugPrint(
-              'class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() PERIODIC to set up the server_key - just now should has been set up server_key = $server_key');
+              '${ConditionDebugPrint('class [ConditionModelApp] _requestGlobalServerAppKeyOnceAndThenPeriodically() PERIODIC to set up the server_key - just now should has been set up server_key = $server_key')}');
 
           if (timer.isActive) {
             timer.cancel();
           }
         } catch (e) {
           debugPrint(
-              'class [ConditionModelApp], method initCompleteModel() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e');
+              '${ConditionDebugPrint('class [ConditionModelApp], method initCompleteModel() trying to periodically get te server_key error (probably timeout, read more, async ExceptionType: e.runtimetype == ${(e is Exception) ? e.runtimeType.toString() : 'The error object is not an Exception class object.'}): After initiation of the model it revealed that server_key property is null, the key is needed to send and receive data (which means synchronize local server data with the remote global server), so setting server_key up failed. Not a big deal it will be set up at a later point in time as needed, and data synchronized. Exception thrown: $e')}');
         }
       });
     }
   }
 
-  /// Read carefully, this entire "subcycle" is called here cyclically along with other method(s), the cycle is triggered in initCompleteModel() method. What does it mean that this method handles a subcycle, basically you are to asses the resources consuming actions and f.e. 10 actions try to divide in a way that you try to perform f.e. one action per call. Make sure that no action is started before another is in progress also make the same sure that the other methods cyclically called do not jam the whole process. Rethink how the timer intervall act and related async issues.
-  _oneCycleOfGettingUpdatesFromOrToTheGlobalServer() {
-    // to do :)
+  /// See _oneCycleOfGettingUpdatesFromOrToTheGlobalServer property that uses the method in a way that you need to read it's desc and this probably too.
+  /// As a rule in the library in most ? situations the method returns Future but is returned the synchronically executed method body
+  Future<void> __oneCycleOfGettingUpdatesFromOrToTheGlobalServer() {
+    debugPrint(
+        '${ConditionDebugPrint('_oneCycleOfGettingUpdatesFromOrToTheGlobalServer call')}');
+
+    Completer<void> completer = Completer();
+    Timer(Duration(seconds: 5), () {
+      completer.complete();
+    });
+
+    /// All logged users have their user objects
+
+    return completer.future;
   }
+
+  /// FIXME: Update the docs - now there is this property but it uses this.__oneCycleOfGettingUpdatesFromOrToTheGlobalServer so that no "blue-underscore" "errors" are shown
+  /// FIXME: Warning and Update the property docs: Warning! Previously here there was a regular method, not a property with anonymous function attached for an important reason: There is the ConditionIsolateNoParallelFunctionCalls<void> _oneCycleOfGettingUpdatesFromOrToTheGlobalServerNoParallelFunctionCalls property uses this function (previously the normal method) object because the function object here is assigned only to this class instance and has unchangeable identity (which can be 100% unfailingly checked by identical() operator and visibly checked by the 99.9% identityHashcode method which only once per 50000 objects can return the same value for comlitely different objects). the ConditionIsolateNoParallelFunctionCalls<void> functionF for the object's some constructor settings can check if two functionF objects are identical. If you pass this _oneCycleOfGettingUpdatesFromOrToTheGlobalServer as function the objects will be the same - identical and a function can be called and no exception will be thrown. But if this _oneCycleOfGettingUpdatesFromOrToTheGlobalServer would be a regular meethod defined like "_oneCycleOfGettingUpdatesFromOrToTheGlobalServer() {}" it would be passed to the functionF method as a brand new object each time the functionF is called so it wouldn't be identical() and the identityHascode()s would be different, an exception would be thrown.
+  /// Read carefully, this entire "subcycle" is called here cyclically along with other method(s), the cycle is triggered in initCompleteModel() method. What does it mean that this method handles a subcycle, basically you are to asses the resources consuming actions and f.e. 10 actions try to divide in a way that you try to perform f.e. one action per call. Make sure that no action is started before another is in progress also make the same sure that the other methods cyclically called do not jam the whole process. Rethink how the timer intervall act and related async issues.
+  /// For comparison to call cyclically _oneCycleOfCyclicalRetiringAndUnlinkingModels() defines it's own allow or not allow call with some time gaps, but this method [_oneCycleOfGettingUpdatesFromOrToTheGlobalServer] is cyclically called through [_oneCycleOfGettingUpdatesFromOrToTheGlobalServerNoParallelFunctionCalls] object that does the gaps and not allow call when another is pending with unfinished future depending on additional settings, etc.
+  late final ConditionIsolateNoParallelFunctionCallsFunctionF<void>
+      _oneCycleOfGettingUpdatesFromOrToTheGlobalServer =
+      __oneCycleOfGettingUpdatesFromOrToTheGlobalServer;
 
   @override
   initCompleteModel() async {
@@ -11427,7 +12355,8 @@ class ConditionModelApp extends ConditionModel
     // you may block because you must have local server (static version of the models is in store),
     await driver.getDriverOnDriverInited();
 
-    debugPrint('!!We\'ve entered the initCompleteModel() ');
+    debugPrint(
+        '${ConditionDebugPrint('!!We\'ve entered the initCompleteModel() ')}');
     bool allowForUsersRelogin = false;
     try {
       // if the model is read successfuly from local server the server_key
@@ -11438,33 +12367,47 @@ class ConditionModelApp extends ConditionModel
       await initModel(); // initModel returns "this". We just need to wait until it finishes it ofcourse is always true.
       bool isInited = true;
       debugPrint(
-          'Custom implementation of initCompleteModel() the value of isInited == $isInited : Model of [ConditionModelApp] has been inited. Now we can restore or not f.e. last logged and last active user or whatever.');
-      debugPrint('The value of model.inited is: $inited');
+          '${ConditionDebugPrint('Custom implementation of initCompleteModel() the value of isInited == $isInited : Model of [ConditionModelApp] has been inited. Now we can restore or not f.e. last logged and last active user or whatever.')}');
       debugPrint(
-          'Let\'s try to automatically relogin all logged users and then to bring to screen\'s front the last active logged in user with some of his/her lazily logged widgets');
+          '${ConditionDebugPrint('The value of model.inited is: $inited')}');
+      debugPrint(
+          '${ConditionDebugPrint('Let\'s try to automatically relogin all logged users and then to bring to screen\'s front the last active logged in user with some of his/her lazily logged widgets')}');
       allowForUsersRelogin = true;
-      debugPrint('!!!!!!!!!!!!!!!!!!!!! 22222 WE ARE HERE ');
+      debugPrint(
+          '${ConditionDebugPrint('!!!!!!!!!!!!!!!!!!!!! 22222 WE ARE HERE ')}');
     } catch (e) {
       // ARE WE GOING TO USE NOT ENDLESSLY INVOKED TIMER TO invoke initModel() again with some addons if necessary? Some properties might has been set already.
-      debugPrint('!!!!!!!!!!!!!!!!!!!!! 11111 WE ARE HERE ');
       debugPrint(
-          'Custom implementation of initCompleteModel(): Model of [ConditionModelApp] hasn\'t been inited. The error of a Future (future.completeError()) thrown is $e');
+          '${ConditionDebugPrint('!!!!!!!!!!!!!!!!!!!!! 11111 WE ARE HERE ')}');
+      debugPrint(
+          '${ConditionDebugPrint('Custom implementation of initCompleteModel(): Model of [ConditionModelApp] hasn\'t been inited. The error of a Future (future.completeError()) thrown is $e')}');
       rethrow;
     }
 
     // Notification: You might want to change this timer so that manages it's subtimers. Now one timer makes it all.
     // While this is performed every 5 seconds the _oneCycleOfCyclicalRetiringAndUnlinkingModels() method has it's own clock
     // and the clock allows to execute fully the method after a 10 second break so the longest period might be 10 + 5 = 15 seconds
-    Timer.periodic(const Duration(seconds: 5), (timer) {
-      // this is done in the method classed beoow if (!_allAppModelsScheduledForUnlinking.isEmpty) {
-      if (ConditionModelApps
-          ._allowForThisCycleOfOverallCyclicallyPerformedOperationsOnTheApp(
-              this)) {
-        _oneCycleOfCyclicalRetiringAndUnlinkingModels();
-        _oneCycleOfGettingUpdatesFromOrToTheGlobalServer();
-      }
-      //}
-    });
+    // FIXME: The problem: there is this in this endles timer and if you even add to ConditionModalApps timer instead there is "this" moved there and the finalizer will never be triggered.
+    // So you have no choice and detect different situations, which possibly will involve
+    // 1. Any periodic endless timer, any needs referencd to app object - don't know what to do about id.
+    // MAYBE ConditionModelApp could emit a broadcast event and the app could subscribe; only if pointer is not stored.
+    // !!! HOW DO WE KNOW THAT. Here and in the conditionmodel constructor there are streams and Finalizer was Triggered but for the Timer it didn't.
+    // !!! So maybe we could try
+    /////////////////////////////////////////////////////
+    // So try to use such bypasses it there is any.
+    // 2. Model fields removing "this" and possibly making them private. You then have app in the widget.
+    // 3. So in the widget could possibly get it's model and app only when necessary - like there is one state in the tree. Additionally to the retire, but if possible it should be retire() independent.
+    // FIXME: SEE EARLIER FIXME HERE :)
+    //Timer.periodic(const Duration(seconds: 5), (timer) {
+    // this is done in the method classed beoow if (!_allAppModelsScheduledForUnlinking.isEmpty) {
+    //if (ConditionModelApps
+    //    ._allowForThisCycleOfOverallCyclicallyPerformedOperationsOnTheApp(
+    //        this)) {
+    //  _oneCycleOfCyclicalRetiringAndUnlinkingModels();
+    //  _oneCycleOfGettingUpdatesFromOrToTheGlobalServer();
+    //}
+    //}
+    //});
 
     /// ! Important: this part was previously at the bottom of the function. However global
     /// server cannot block the app rendering on the screen. All you have on you local server
@@ -11489,7 +12432,7 @@ class ConditionModelApp extends ConditionModel
         // In an emergency situation you need to wait for the internet connection or
         // server availability anyway so max ten second is not too long and balanced approach
         debugPrint(
-            'class [ConditionModelApp], method initCompleteModel() now awaiting for up to 12x2=24 seconds to get server_key from the global server of the [ConditionModelApp] object representing one app instance (may be one or more)');
+            '${ConditionDebugPrint('class [ConditionModelApp], method initCompleteModel() now awaiting for up to 12x2=24 seconds to get server_key from the global server of the [ConditionModelApp] object representing one app instance (may be one or more)')}');
         // Again: doing this one time await allows for quicker and smoother data updates/synchronisation to global server
         // because we can immediatelly use the server_key
         // otherwise the data to be updated will be read from the database in less efficient way
@@ -11498,7 +12441,7 @@ class ConditionModelApp extends ConditionModel
         if (null != serverKeyHelperContainer) {
           if (serverKeyHelperContainer!.isEmpty) {
             debugPrint(
-                'initCompleteModel(): [ConditionModelApp] class we are throwing error because canTheKeyBeUsed == false, no db operation caused this error. This particular exception is not a problem, it is an option to avoid more sophisticated approach');
+                '${ConditionDebugPrint('initCompleteModel(): [ConditionModelApp] class we are throwing error because canTheKeyBeUsed == false, no db operation caused this error. This particular exception is not a problem, it is an option to avoid more sophisticated approach')}');
             // must be error here because at the moment of writing this comment an exception would allow for generation new key, but first MUST the temporary key be check out properly
             throw Error();
           }
@@ -11509,23 +12452,23 @@ class ConditionModelApp extends ConditionModel
 
           try {
             debugPrint(
-                'class [ConditionModelApp], method initCompleteModel() We are now going to check out if we can use the locally (in the local server) stored server_key canTheKeyBeUsed waiting for success or exception');
+                '${ConditionDebugPrint('class [ConditionModelApp], method initCompleteModel() We are now going to check out if we can use the locally (in the local server) stored server_key canTheKeyBeUsed waiting for success or exception')}');
             bool canTheKeyBeUsed = await driver.driverGlobal!
                 .checkOutIfGlobalServerAppKeyIsValid(
                     (serverKeyHelperContainer as String))
                 .timeout(const Duration(seconds: 12));
             debugPrint(
-                'class [ConditionModelApp], method initCompleteModel() can we use server_key? : canTheKeyBeUsed == $canTheKeyBeUsed ');
+                '${ConditionDebugPrint('class [ConditionModelApp], method initCompleteModel() can we use server_key? : canTheKeyBeUsed == $canTheKeyBeUsed ')}');
             if (!canTheKeyBeUsed) {
               debugPrint(
-                  'class [ConditionModelApp], method initCompleteModel() result of checkOutIfGlobalServerAppKeyIsValid is that: because as already said we cannot use the key we need to get a new one and set it up for server_key property using _requestGlobalServerAppKeyOnceAndThenPeriodically');
+                  '${ConditionDebugPrint('class [ConditionModelApp], method initCompleteModel() result of checkOutIfGlobalServerAppKeyIsValid is that: because as already said we cannot use the key we need to get a new one and set it up for server_key property using _requestGlobalServerAppKeyOnceAndThenPeriodically')}');
               // reading the full condition this method will cause setting up a NEW value
               // to server_key in normal way - it will be synchronized with global server
               // IS THIS MODEL CLASS SYNCHRONIZED WITH GLOBAL SERVER? NO? DONT REMEMBER :)
               await _requestGlobalServerAppKeyOnceAndThenPeriodically();
             } else {
               debugPrint(
-                  'class [ConditionModelApp], method initCompleteModel() SUCCESS  result of checkOutIfGlobalServerAppKeyIsValid is that:- The key can be used so we set up server_key with the value we can use, for some internals see comments where this printed message is in the code');
+                  '${ConditionDebugPrint('class [ConditionModelApp], method initCompleteModel() SUCCESS  result of checkOutIfGlobalServerAppKeyIsValid is that:- The key can be used so we set up server_key with the value we can use, for some internals see comments where this printed message is in the code')}');
               // now we can set up the final property, and we can do it once for this object life cycle.
               // but!!! the model is already inited in this case it is from read() method (readRawer?)
               // and we have to set the !!! server_key value using different way
@@ -11536,14 +12479,14 @@ class ConditionModelApp extends ConditionModel
             }
           } catch (e) {
             debugPrint(
-                'initCompleteModel(): [ConditionModelApp] class exception during checking out if we can use serverKeyHelperContainer setter/getter key read using read() model data method. Another attempts to set up the server_key later will be made. The error was: $e');
+                '${ConditionDebugPrint('initCompleteModel(): [ConditionModelApp] class exception during checking out if we can use serverKeyHelperContainer setter/getter key read using read() model data method. Another attempts to set up the server_key later will be made. The error was: $e')}');
           }
         } else {
           await _requestGlobalServerAppKeyOnceAndThenPeriodically();
         }
       } catch (e) {
         debugPrint(
-            'initCompleteModel(): [ConditionModelApp] class, driver.driverGlobal!.getDriverOnDriverInited() not able to init global driver, error: $e only local server can be used');
+            '${ConditionDebugPrint('initCompleteModel(): [ConditionModelApp] class, driver.driverGlobal!.getDriverOnDriverInited() not able to init global driver, error: $e only local server can be used')}');
       }
     }
   }
@@ -11558,7 +12501,7 @@ class ConditionModelApp extends ConditionModel
 
   @override
   void operator []=(key, value) {
-    debugPrint('yerttttt1____' + key);
+    debugPrint('${ConditionDebugPrint('yerttttt1____' + key)}');
 
     switch (key) {
       case 'server_key':
@@ -11586,14 +12529,14 @@ class ConditionModelApp extends ConditionModel
 
   @protected
   set server_key(String? value) {
-    debugPrint('server_key setter: stage 1');
+    debugPrint('${ConditionDebugPrint('server_key setter: stage 1')}');
     a_server_key.validateAndSet(value);
-    debugPrint('server_key setter: stage 2');
+    debugPrint('${ConditionDebugPrint('server_key setter: stage 2')}');
     if (server_key != null && server_key!.isNotEmpty) {
-      debugPrint('server_key setter: stage 3');
+      debugPrint('${ConditionDebugPrint('server_key setter: stage 3')}');
 
       serverKeyReadyCompleter.complete(true);
-      debugPrint('server_key setter: stage 4');
+      debugPrint('${ConditionDebugPrint('server_key setter: stage 4')}');
     }
   }
 
@@ -11775,14 +12718,18 @@ class ConditionModelUser extends ConditionModelWidget
       if (ConditionConfiguration.debugMode &&
           ConditionConfiguration.initDbStage != null &&
           ConditionConfiguration.initDbStage! >= 3) {
+        /// IMPORTANT HERE WE CREATE USER USING THE MODEL WAY, BUT BELOW IS REGULAR INSERT INTO
         contactdebug = ConditionModelContact(
           conditionModelApp,
           this,
           // error and solutions to similar problems where reasonably possible: parent_id is required to be 0 because "this" is ConditionModelUser, but we could set it in addChild if hangOnWithServerCreateUntilParentAllows: true and isAllModelDataProvidedViaConstructor: false
           // at the same time we could set up owner_contact_id similarly if these properties are not set up somewhere !!!!!!! analyse what is and what should be
+          // A fake email of user globalserver id = 3: adfafaasdfasfafaasfasfsf1@gmail.com.debug (at the time of writing :) )
+          // See below ConditionConfiguration.initDbStage! >= 4
+          // In the debug mode this contact will have subcontact with id =1 mail with ...1... in the default profile - good to rememember that the ...1... will belong to a parent contact / group when reading any messages.
           <String, dynamic>{
             'title': 'waiting contact',
-            'contact_e_mail': 'adfafaasdfasfafaasfasfsf3@gmail.com.debug',
+            'contact_e_mail': 'adfafaasdfasfafaasfasfsf2@gmail.com.debug',
             //'user_id': //id, is it// allowed when hangOnWithServerCreateUntilParentAllows: true see addChild?
           },
           changesStreamController: contactChangesStreamController,
@@ -11851,12 +12798,13 @@ class ConditionModelUser extends ConditionModelWidget
           ConditionConfiguration.initDbStage! >= 4) {
         // the previous contact was added synchronously, now in the debug settings we know we have (once had?) user_id
         // but we have to pass the parent_id but also wait for its id first asynchronously, this time with no autorestore children.
+        // See below ConditionConfiguration.initDbStage! >= 3
         var contactdebug2 = ConditionModelContact(
             conditionModelApp,
             this, // one constructor class try to take user_id from the user if no initial data supplied
             <String, dynamic>{
               //'user_id': this['id'],
-              'title': 'non-waiting contact',
+              'title': 'non-waiting contact2',
               // user_id if not supplied is taken from conditionModelUser param
               // educaionally parent_id must be null if it is a top level contact (which is checked in the addChild method) which can later be added
               // as it just below after here neccessary await is by addChild
@@ -11893,7 +12841,7 @@ class ConditionModelUser extends ConditionModelWidget
 
       try {
         debugPrint(
-            'restoreMyChildren() method. We are going to call local server driver.readAll() method to restore top level contacts.');
+            '${ConditionDebugPrint('restoreMyChildren() method. We are going to call local server driver.readAll() method to restore top level contacts.')}');
         // add constructor param that the object is fully restored from a full the map, thanks to it we wont make two requests to a db
         // add educational info on that here that an object can be fully created from a map or just you pass an id.
         // at the same time what if someone created an object with fake data but right id? hence think how hermetize itf
@@ -11918,14 +12866,14 @@ class ConditionModelUser extends ConditionModelWidget
         );
 
         debugPrint(
-            'restoreMyChildren() method. A result of local server driver.readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :');
+            '${ConditionDebugPrint('restoreMyChildren() method. A result of local server driver.readAll (that was invoked by requestGlobalServerAppKeyActualDBRequestHelper(key)) has arrived. Here how it looks like: conditionMapList == $conditionMapList and :')}');
 
         if (conditionMapList == null || conditionMapList.isEmpty) {
           debugPrint(
-              'It is null or empty :( but it is NOT a db error! A new key will be obtained in a while or later');
+              '${ConditionDebugPrint('It is null or empty :( but it is NOT a db error! A new key will be obtained in a while or later')}');
         } else {
           debugPrint(
-              'result: It is not null :) so we recreate the contact objects if fly');
+              '${ConditionDebugPrint('result: It is not null :) so we recreate the contact objects if fly')}');
 
           // fix the below;
 
@@ -11976,7 +12924,7 @@ class ConditionModelUser extends ConditionModelWidget
       } catch (e) {
         // In the future here there will be some predefined ConditionApp standarized errors, to separate you from low-level implementation custom errors for different db engines.
         debugPrint(
-            'checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) Predefined error message, rather throw Excepthion custom class, There was a db_error,error $e');
+            '${ConditionDebugPrint('checkOutIfGlobalServerAppKeyIsValidActualDBRequestHelper(key) Predefined error message, rather throw Excepthion custom class, There was a db_error,error $e')}');
         // now in debug it rethrows but it should seek a way for the app to recover itself from this situation?
         // normally it should never throw and catch here.
         rethrow;
@@ -11986,29 +12934,29 @@ class ConditionModelUser extends ConditionModelWidget
     //model._completerInitModelGlobalServer.future
 /*
       contactdebug.getModelOnModelInitComplete().then((model) {
-        debugPrint(
-            'B] We are in [ConditionModelUser]\'s restoreTreeTopLevelModelsOrMostRecentMessagesModels() in then() of getModelOnModelInitComplete() method of a ConditionModelContact model. the model just has been inited and is ready to use. Let\'s debug-update a field/property of the model. Each time the value will be different - timestamp');
+        debugPrint('${ConditionDebugPrint(
+            'B] We are in [ConditionModelUser]\'s restoreTreeTopLevelModelsOrMostRecentMessagesModels() in then() of getModelOnModelInitComplete() method of a ConditionModelContact model. the model just has been inited and is ready to use. Let\'s debug-update a field/property of the model. Each time the value will be different - timestamp')}');
         contactdebug.description =
             DateTime.now().millisecondsSinceEpoch.toString();
-        debugPrint(
-            'B] And the value now is contactdebug.description == ${contactdebug.description}');
+        debugPrint('${ConditionDebugPrint(
+            'B] And the value now is contactdebug.description == ${contactdebug.description}')}');
       }).catchError((error) {
-        debugPrint('catchError flag #cef14');
+        debugPrint('${ConditionDebugPrint('catchError flag #cef14')}');
 
-        debugPrint(
-            'B] Error of: We are in [ConditionModelUser]\'s restoreTreeTopLevelModelsOrMostRecentMessagesModels() in then() of getModelOnModelInitComplete() method of a ConditionModelContact model, the error message ${error.toString()}');
+        debugPrint('${ConditionDebugPrint(
+            'B] Error of: We are in [ConditionModelUser]\'s restoreTreeTopLevelModelsOrMostRecentMessagesModels() in then() of getModelOnModelInitComplete() method of a ConditionModelContact model, the error message ${error.toString()}')}');
       });
 
-      debugPrint(
-          'P] restoreTreeTopLevelModelsOrMostRecentMessagesModels(): let\'s get into a loop creating top lever models for later rendering widgets.');
-      debugPrint(
-          'P]restoreTreeTopLevelModelsOrMostRecentMessagesModels() conditionModelApp.currently_active_user_id ${conditionModelApp.currently_active_user_id} and currently processed user id is $id');
+      debugPrint('${ConditionDebugPrint(
+          'P] restoreTreeTopLevelModelsOrMostRecentMessagesModels(): let\'s get into a loop creating top lever models for later rendering widgets.')}');
+      debugPrint('${ConditionDebugPrint(
+          'P]restoreTreeTopLevelModelsOrMostRecentMessagesModels() conditionModelApp.currently_active_user_id ${conditionModelApp.currently_active_user_id} and currently processed user id is $id')}');
       if (conditionModelApp.currently_active_user_id == id) {
-        debugPrint(
-            'P]the currently processed user IS active and some of it\'s models are going to be restored now. Some other stuff yet may be done.');
+        debugPrint('${ConditionDebugPrint(
+            'P]the currently processed user IS active and some of it\'s models are going to be restored now. Some other stuff yet may be done.')}');
       } else {
-        debugPrint(
-            'P]the currently processed user is NOT active and it\'s models are not going to be restored now. Some other stuff yet may be done.');
+        debugPrint('${ConditionDebugPrint(
+            'P]the currently processed user is NOT active and it\'s models are not going to be restored now. Some other stuff yet may be done.')}');
       }
     */
   }
@@ -12016,7 +12964,7 @@ class ConditionModelUser extends ConditionModelWidget
   @override
   initCompleteModel() async {
     debugPrint(
-        '!!We\'ve entered the initCompleteModel() of ConditionModelUser ');
+        '${ConditionDebugPrint('!!We\'ve entered the initCompleteModel() of ConditionModelUser ')}');
     bool restoreSomeUsersWidgetModels = false;
     //The // exception should never occur (local server is assumed to always work) so any
     // exception maybe shouldn't be catched - redesign it better
@@ -12027,11 +12975,11 @@ class ConditionModelUser extends ConditionModelWidget
       // not a catched exception. To redesign?
       bool isInited = true;
       debugPrint(
-          'initCompleteModel() of ConditionModelUser Custom implementation of initCompleteModel(): Model of [ConditionModelUser] has been inited. Now we can restore all tree tree top-level widget models belonging to the currently logged AND FRONT SCREEN ACTIVE user models like contacts, messages, probably not rendering anything yet. Possibly some other users related stuff is going to be performed');
+          '${ConditionDebugPrint('initCompleteModel() of ConditionModelUser Custom implementation of initCompleteModel(): Model of [ConditionModelUser] has been inited. Now we can restore all tree tree top-level widget models belonging to the currently logged AND FRONT SCREEN ACTIVE user models like contacts, messages, probably not rendering anything yet. Possibly some other users related stuff is going to be performed')}');
       restoreSomeUsersWidgetModels = true;
     } catch (e) {
       debugPrint(
-          'Custom implementation of initCompleteModel(): Model of [ConditionModelUser] hasn\'t been inited. The error of a Future (future.completeError()) thrown is ${e.toString()}');
+          '${ConditionDebugPrint('Custom implementation of initCompleteModel(): Model of [ConditionModelUser] hasn\'t been inited. The error of a Future (future.completeError()) thrown is ${e.toString()}')}');
       // ARE WE GOING TO USE NOT ENDLESSLY INVOKED TIMER TO invoke initModel() again with some addons if necessary? Some properties might has been set already.
     }
 
